@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>고등학교 수행평가 일정 관리 시스템</title>
+  <style>
+    :root {
+      --primary-color: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; }
+
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1200px; margin: 0 auto 20px auto; background: var(--card-bg);
+      padding: 16px 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .user-section { display: flex; align-items: center; gap: 10px; }
+    .btn {
+      padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; font-size: 14px;
+    }
+    .btn-primary { background: var(--primary-color); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-sm { padding: 4px 8px; font-size: 12px; }
+
+    /* 컨트롤바 및과목 검색 */
+    .controls-bar {
+      max-width: 1200px; margin: 0 auto 20px auto; background: var(--card-bg);
+      padding: 16px 24px; border-radius: 12px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .searchable-select { position: relative; width: 220px; }
+    .searchable-select input {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px;
+    }
+    .select-dropdown {
+      position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto;
+      background: #fff; border: 1px solid var(--border-color); border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 100; display: none;
+    }
+    .select-group-title { background: #f1f5f9; padding: 6px 12px; font-weight: bold; font-size: 12px; color: var(--text-muted); }
+    .select-option { padding: 8px 12px; cursor: pointer; font-size: 14px; }
+    .select-option:hover { background: #e0e7ff; }
+
+    /* 달력 UI */
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto 10px auto; }
+    .calendar-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
+      max-width: 1200px; margin: 0 auto; background: var(--border-color);
+      border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden;
+    }
+    .day-header { background: #f1f5f9; text-align: center; padding: 10px; font-weight: bold; color: var(--text-muted); }
+    .day-cell {
+      background: var(--card-bg); height: 135px; padding: 6px; display: flex; flex-direction: column;
+      overflow: hidden; position: relative;
+    }
+    .day-number { font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--text-muted); }
+    .event-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; }
+    .event-item {
+      background: #e0e7ff; color: #3730a3; padding: 3px 6px; border-radius: 4px;
+      font-size: 11px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .more-btn {
+      margin-top: 2px; background: #f3f4f6; color: var(--primary-color); text-align: center;
+      padding: 2px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; border: none;
+    }
+
+    /* 모달 공통 */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);
+      display: none; justify-content: center; align-items: center; z-index: 1000;
+    }
+    .modal {
+      background: #fff; border-radius: 12px; width: 90%; max-width: 480px; padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15); max-height: 85vh; overflow-y: auto;
+    }
+    .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 16px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px;
+    }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .checkbox-label { font-size: 13px; display: flex; align-items: center; gap: 4px; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    .block-box { border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; margin-bottom: 8px; background: #fafafa; }
+    .block-title { font-size: 12px; font-weight: bold; color: var(--primary-color); margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h2>📅 고등학교 수행평가 달력</h2>
+    <div class="user-section" id="userSection">
+      <button class="btn btn-outline" onclick="openModal('loginModal')">로그인</button>
+      <button class="btn btn-primary" onclick="openModal('registerModal')">가입하기</button>
+    </div>
+  </header>
+
+  <div class="controls-bar">
+    <div>
+      <label style="font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">과목 필터 (검색)</label>
+      <div class="searchable-select">
+        <input type="text" id="subjectSearchInput" placeholder="과목 검색..." onfocus="showSubjectDropdown()" oninput="filterSubjectDropdown()">
+        <div class="select-dropdown" id="subjectDropdown"></div>
+      </div>
+    </div>
+
+    <div id="mySubjectFilterWrapper" style="display:none;">
+      <label style="font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">🎯 내 맞춤 일정만 보기</label>
+      <input type="checkbox" id="mySubjectOnlyFilter" onchange="renderCalendar()">
+    </div>
+
+    <div style="margin-left:auto; display:flex; gap:8px;">
+      <button class="btn btn-primary" onclick="openModal('addEventModal')">+ 일정 등록</button>
+      <button class="btn btn-outline" onclick="openModal('reportModal')">🚨 오류 신고</button>
+    </div>
+  </div>
+
+  <div class="calendar-header">
+    <button class="btn btn-outline" onclick="changeMonth(-1)">◀ 이전달</button>
+    <h3 id="currentMonthTitle">2026년 9월</h3>
+    <button class="btn btn-outline" onclick="changeMonth(1)">다음달 ▶</button>
+  </div>
+
+  <div class="calendar-grid" id="calendarGrid"></div>
+
+  <!-- 회원가입 모달 -->
+  <div class="modal-overlay" id="registerModal">
+    <div class="modal">
+      <div class="modal-title">학생 회원가입</div>
+      <div class="form-group">
+        <label>학번 (5자리, 예: 20301)</label>
+        <input type="text" id="regStudentId" placeholder="예: 20301">
+      </div>
+      <div class="form-group">
+        <label>이름</label>
+        <input type="text" id="regName" placeholder="홍길동">
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="regPassword">
+      </div>
+      <div class="form-group">
+        <label>학년</label>
+        <select id="regGrade" onchange="renderRegisterElectives()">
+          <option value="1학년">1학년</option>
+          <option value="2학년" selected>2학년</option>
+          <option value="3학년">3학년</option>
+        </select>
+      </div>
+      <div id="regElectiveArea"></div>
+      <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="handleRegister()">가입 완료</button>
+      <button class="btn btn-outline" style="width:100%; margin-top:8px;" onclick="closeModal('registerModal')">취소</button>
+    </div>
+  </div>
+
+  <!-- 선택과목 수정 모달 -->
+  <div class="modal-overlay" id="editSubjectModal">
+    <div class="modal">
+      <div class="modal-title">선택과목 수정</div>
+      <div id="editElectiveArea"></div>
+      <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="handleUpdateSubjects()">수정 저장</button>
+      <button class="btn btn-outline" style="width:100%; margin-top:8px;" onclick="closeModal('editSubjectModal')">취소</button>
+    </div>
+  </div>
+
+  <!-- 로그인 모달 -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal">
+      <div class="modal-title">로그인</div>
+      <div class="form-group">
+        <label>학번</label>
+        <input type="text" id="loginStudentId">
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="loginPassword">
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="handleLogin()">로그인</button>
+      <button class="btn btn-outline" style="width:100%; margin-top:8px;" onclick="closeModal('loginModal')">취소</button>
+    </div>
+  </div>
+
+  <!-- 일정 등록 모달 -->
+  <div class="modal-overlay" id="addEventModal">
+    <div class="modal">
+      <div class="modal-title">수행평가 일정 등록</div>
+      <div class="form-group">
+        <label>1. 학년 선택</label>
+        <select id="eventGrade" onchange="onEventGradeChange()">
+          <option value="1학년">1학년</option>
+          <option value="2학년" selected>2학년</option>
+          <option value="3학년">3학년</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>2. 과목 선택</label>
+        <select id="eventSubject"></select>
+      </div>
+      <div class="form-group">
+        <label>3. 대상 분반/반 선택 (복수선택 가능)</label>
+        <div class="checkbox-group" id="eventDivisionsContainer"></div>
+      </div>
+      <div class="form-group">
+        <label>평가 제목</label>
+        <input type="text" id="eventTitle" placeholder="예: 탐구보고서 제출">
+      </div>
+      <div class="form-group">
+        <label>마감 날짜</label>
+        <input type="date" id="eventDate">
+      </div>
+      <div class="form-group">
+        <label>비밀번호 (삭제 시 필요)</label>
+        <input type="password" id="eventPassword">
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="handleAddEvent()">등록하기</button>
+      <button class="btn btn-outline" style="width:100%; margin-top:8px;" onclick="closeModal('addEventModal')">취소</button>
+    </div>
+  </div>
+
+  <!-- +N개 더보기 상세 모달 -->
+  <div class="modal-overlay" id="dayEventsModal">
+    <div class="modal">
+      <div class="modal-title" id="dayModalTitle">일정 상세 보기</div>
+      <div id="dayEventsList" style="display:flex; flex-direction:column; gap:8px;"></div>
+      <button class="btn btn-outline" style="width:100%; margin-top:16px;" onclick="closeModal('dayEventsModal')">닫기</button>
+    </div>
+  </div>
+
+  <!-- 오류 신고 모달 -->
+  <div class="modal-overlay" id="reportModal">
+    <div class="modal">
+      <div class="modal-title">🚨 오류 신고</div>
+      <div class="form-group">
+        <label>내용</label>
+        <textarea id="reportContent" rows="4" placeholder="잘못된 일정 정보를 알려주세요."></textarea>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="handleReport()">신고 제출</button>
+      <button class="btn btn-outline" style="width:100%; margin-top:8px;" onclick="closeModal('reportModal')">취소</button>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbw_x3XJydc0f7ztzFui-B1SUpUWeTQaV1NnF1O8xFNdQw5pc-cQRixGjMOkuf3MBVRexA/exec";
+
+    // 데이터 정의 (엑셀 기반)
+    const SUBJECT_DATA = {
+      "1학년": ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학", "음악", "미술", "기술가정", "한문"],
+      "2학년": ["독서토론과 글쓰기", "물리학", "물질과 에너지", "사회와 문화", "세계문화와 영어", "세계시민과 지리", "세포와 물질대사", "역사로 탐구하는 현대세계", "윤리문제탐구", "화법과 언어", "미적분Ⅰ", "영어Ⅱ", "체육2", "미술 창작", "음악 연주와 창작"],
+      "3학년": ["가정과학 / 진로", "고전과 윤리", "과학과제연구", "교육학 / 운동과 건강", "동아시아사", "물리학Ⅱ", "미적분", "보건 / 운동과 건강", "사회문제탐구", "사회문화", "생명과학Ⅱ", "생활과 과학", "세계문제와 미래사회", "심리학 / 운동과 건강", "심화국어", "심화수학", "언어와 매체", "여행지리", "영어독해와 작문", "윤리와 사상", "일본문화 / 진로", "중국문화 / 진로", "지구과학Ⅱ", "진로영어", "한국지리", "현대문학감상", "화법과 작문", "화학Ⅱ", "확률과 통계"]
+    };
+
+    const BLOCKS = {
+      "2학년": {
+        "A분반": ["독서토론과 글쓰기", "사회와 문화", "세계문화와 영어", "세포와 물질대사"],
+        "B분반": ["독서토론과 글쓰기", "물리학", "물질과 에너지", "사회와 문화", "세계문화와 영어", "세포와 물질대사"],
+        "C분반": ["독서토론과 글쓰기", "물질과 에너지", "사회와 문화", "세계시민과 지리"]
+      },
+      "3학년": {
+        "D분반": ["가정과학 / 진로", "동아시아사", "물리학Ⅱ", "미적분", "사회문제탐구", "생명과학Ⅱ", "세계문제와 미래사회", "심화국어", "언어와 매체", "영어독해와 작문", "일본문화 / 진로", "지구과학Ⅱ", "화학Ⅱ", "확률과 통계"],
+        "E분반": ["고전과 윤리", "과학과제연구", "교육학 / 운동과 건강", "보건 / 운동과 건강", "사회문화", "생활과 과학", "심리학 / 운동과 건강", "심화수학", "여행지리", "윤리와 사상", "중국문화 / 진로", "진로영어", "한국지리", "현대문학감상", "화법과 작문"]
+      }
+    };
+
+    let currentUser = null;
+    let events = [];
+    let currentDate = new Date(2026, 8, 1);
+    let selectedSubjectFilter = "";
+
+    window.onload = function() {
+      initSubjectDropdown();
+      renderRegisterElectives();
+      onEventGradeChange();
+      renderCalendar();
+      fetchEvents();
+    };
+
+    // 과목 필터 검색 드롭다운
+    function initSubjectDropdown() {
+      const dropdown = document.getElementById("subjectDropdown");
+      dropdown.innerHTML = `<div class="select-option" onclick="selectSubject('')">전체 과목 보기</div>`;
+      
+      for (const [grade, subjects] of Object.entries(SUBJECT_DATA)) {
+        const groupTitle = document.createElement("div");
+        groupTitle.className = "select-group-title";
+        groupTitle.innerText = grade;
+        dropdown.appendChild(groupTitle);
+
+        subjects.forEach(sub => {
+          const opt = document.createElement("div");
+          opt.className = "select-option";
+          opt.innerText = sub;
+          opt.onclick = () => selectSubject(sub);
+          dropdown.appendChild(opt);
+        });
+      }
+    }
+
+    function showSubjectDropdown() { document.getElementById("subjectDropdown").style.display = "block"; }
+    function filterSubjectDropdown() {
+      const val = document.getElementById("subjectSearchInput").value.toLowerCase();
+      const options = document.querySelectorAll("#subjectDropdown .select-option");
+      options.forEach(opt => {
+        opt.style.display = opt.innerText.toLowerCase().includes(val) ? "block" : "none";
+      });
+    }
+    function selectSubject(sub) {
+      selectedSubjectFilter = sub;
+      document.getElementById("subjectSearchInput").value = sub || "전체 과목";
+      document.getElementById("subjectDropdown").style.display = "none";
+      renderCalendar();
+    }
+
+    // 회원가입/수정 시 선택과목 블록 동적 생성
+    function renderRegisterElectives() {
+      const grade = document.getElementById("regGrade").value;
+      const container = document.getElementById("regElectiveArea");
+      container.innerHTML = generateElectiveHTML(grade, {});
+    }
+
+    function generateElectiveHTML(grade, userSubjects) {
+      if (grade === "1학년") return `<div class="block-box"><div class="block-title">1학년은 공통 과목을 수강합니다.</div></div>`;
+      
+      let html = "";
+      const blocks = BLOCKS[grade] || {};
+      for (const [blockName, subs] of Object.entries(blocks)) {
+        html += `<div class="block-box">
+                  <div class="block-title">${blockName} 과목 선택</div>
+                  <select class="elective-select" data-block="${blockName}">
+                    <option value="">-- 선택 안함 --</option>
+                    ${subs.map(s => `<option value="${s}" ${userSubjects[blockName] === s ? 'selected' : ''}>${s}</option>`).join('')}
+                  </select>
+                 </div>`;
+      }
+      return html;
+    }
+
+    // 일정 등록 시 학년 변경 로직
+    function onEventGradeChange() {
+      const grade = document.getElementById("eventGrade").value;
+      const subSelect = document.getElementById("eventSubject");
+      const divContainer = document.getElementById("eventDivisionsContainer");
+      
+      subSelect.innerHTML = "";
+      (SUBJECT_DATA[grade] || []).forEach(sub => {
+        const opt = document.createElement("option");
+        opt.value = sub;
+        opt.innerText = sub;
+        subSelect.appendChild(opt);
+      });
+
+      divContainer.innerHTML = "";
+      let divs = ["전체"];
+      if (grade === "2학년") divs = ["전체", "A분반", "B분반", "C분반"];
+      if (grade === "3학년") divs = ["전체", "D분반", "E분반"];
+
+      divs.forEach(d => {
+        const label = document.createElement("label");
+        label.className = "checkbox-label";
+        label.innerHTML = `<input type="checkbox" value="${d}" ${d === '전체' ? 'checked' : ''}> ${d}`;
+        divContainer.appendChild(label);
+      });
+    }
+
+    // 달력 그리기 (+N개 더보기 모달 및 내 맞춤 일정 적용)
+    function renderCalendar() {
+      const grid = document.getElementById("calendarGrid");
+      grid.innerHTML = "";
+      
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      document.getElementById("currentMonthTitle").innerText = `${year}년 ${month + 1}월`;
+
+      const days = ["일", "월", "화", "수", "목", "금", "토"];
+      days.forEach(d => {
+        const dh = document.createElement("div");
+        dh.className = "day-header";
+        dh.innerText = d;
+        grid.appendChild(dh);
+      });
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const lastDate = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement("div");
+        empty.className = "day-cell";
+        empty.style.background = "#f8fafc";
+        grid.appendChild(empty);
+      }
+
+      const mySubjectOnly = document.getElementById("mySubjectOnlyFilter").checked;
+
+      for (let date = 1; date <= lastDate; date++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+        const cell = document.createElement("div");
+        cell.className = "day-cell";
+
+        const num = document.createElement("div");
+        num.className = "day-number";
+        num.innerText = date;
+        cell.appendChild(num);
+
+        const dayEvts = events.filter(e => {
+          if (e.date !== dateStr) return false;
+          if (selectedSubjectFilter && e.subject !== selectedSubjectFilter) return false;
+          
+          if (mySubjectOnly && currentUser) {
+            if (e.grade !== "전체" && e.grade !== currentUser.grade) return false;
+            const mySubs = Object.values(currentUser.subjects || {});
+            const isMySubject = (SUBJECT_DATA["1학년"].includes(e.subject)) || mySubs.includes(e.subject);
+            if (!isMySubject) return false;
+          }
+          return true;
+        });
+
+        const evtList = document.createElement("div");
+        evtList.className = "event-list";
+
+        const maxDisplay = 3;
+        const displayEvts = dayEvts.slice(0, maxDisplay);
+
+        displayEvts.forEach(evt => {
+          const item = document.createElement("div");
+          item.className = "event-item";
+          item.innerHTML = `[${evt.subject}] ${evt.title}`;
+          item.onclick = () => deleteEventPrompt(evt.id);
+          evtList.appendChild(item);
+        });
+
+        cell.appendChild(evtList);
+
+        if (dayEvts.length > maxDisplay) {
+          const moreBtn = document.createElement("button");
+          moreBtn.className = "more-btn";
+          moreBtn.innerText = `+${dayEvts.length - maxDisplay}개 더보기`;
+          moreBtn.onclick = () => openDayEventsModal(dateStr, dayEvts);
+          cell.appendChild(moreBtn);
+        }
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function changeMonth(delta) {
+      currentDate.setMonth(currentDate.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function openDayEventsModal(dateStr, dayEvts) {
+      document.getElementById("dayModalTitle").innerText = `${dateStr} 일정 상세 목록`;
+      const container = document.getElementById("dayEventsList");
+      container.innerHTML = "";
+
+      dayEvts.forEach(evt => {
+        const div = document.createElement("div");
+        div.className = "event-item";
+        div.style.padding = "10px";
+        div.style.fontSize = "13px";
+        div.style.display = "flex";
+        div.style.justifyContent = "space-between";
+        div.innerHTML = `<div><strong>[${evt.subject}]</strong> ${evt.title}</div>
+                         <button class="btn btn-danger btn-sm" onclick="deleteEventPrompt('${evt.id}')">삭제</button>`;
+        container.appendChild(div);
+      });
+
+      openModal("dayEventsModal");
+    }
+
+    // 서버 통신
+    async function fetchEvents() {
+      try {
+        const res = await fetch(`${API_URL}?action=getEvents`);
+        events = await res.json();
+        renderCalendar();
+      } catch (err) {
+        console.error("일정 불러오기 오류:", err);
+      }
+    }
+
+    async function handleRegister() {
+      const studentId = document.getElementById("regStudentId").value;
+      const name = document.getElementById("regName").value;
+      const password = document.getElementById("regPassword").value;
+      const grade = document.getElementById("regGrade").value;
+
+      if (!studentId || !password) return alert("학번과 비밀번호를 입력하세요.");
+
+      const selectedSubjects = {};
+      document.querySelectorAll("#regElectiveArea .elective-select").forEach(sel => {
+        selectedSubjects[sel.dataset.block] = sel.value;
+      });
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "register",
+          data: { studentId, name, password, grade, subjects: selectedSubjects }
+        })
+      });
+      const data = await res.json();
+      alert(data.message);
+      if (data.success) closeModal("registerModal");
+    }
+
+    async function handleLogin() {
+      const studentId = document.getElementById("loginStudentId").value;
+      const password = document.getElementById("loginPassword").value;
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "login", studentId, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        currentUser = data.user;
+        updateUserUI();
+        alert("로그인 되었습니다.");
+        closeModal("loginModal");
+        renderCalendar();
+      } else {
+        alert(data.message);
+      }
+    }
+
+    function updateUserUI() {
+      document.getElementById("userSection").innerHTML = `
+        <span><strong>${currentUser.studentId} (${currentUser.name || '학생'})</strong></span>
+        <button class="btn btn-outline btn-sm" onclick="openEditSubjectsModal()">과목 수정</button>
+      `;
+      document.getElementById("mySubjectFilterWrapper").style.display = "block";
+    }
+
+    function openEditSubjectsModal() {
+      if (!currentUser) return;
+      const container = document.getElementById("editElectiveArea");
+      container.innerHTML = generateElectiveHTML(currentUser.grade, currentUser.subjects || {});
+      openModal("editSubjectModal");
+    }
+
+    async function handleUpdateSubjects() {
+      const updatedSubjects = {};
+      document.querySelectorAll("#editElectiveArea .elective-select").forEach(sel => {
+        updatedSubjects[sel.dataset.block] = sel.value;
+      });
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "updateSubjects",
+          studentId: currentUser.studentId,
+          subjects: updatedSubjects
+        })
+      });
+      const data = await res.json();
+      alert(data.message);
+      if (data.success) {
+        currentUser.subjects = updatedSubjects;
+        closeModal("editSubjectModal");
+        renderCalendar();
+      }
+    }
+
+    async function handleAddEvent() {
+      const grade = document.getElementById("eventGrade").value;
+      const subject = document.getElementById("eventSubject").value;
+      const title = document.getElementById("eventTitle").value;
+      const date = document.getElementById("eventDate").value;
+      const password = document.getElementById("eventPassword").value;
+      const divisions = Array.from(document.querySelectorAll("#eventDivisionsContainer input:checked")).map(cb => cb.value);
+
+      if (!title || !date) return alert("제목과 날짜를 입력하세요.");
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "createEvent",
+          data: { grade, subject, divisions, title, date, password }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("일정이 추가되었습니다.");
+        closeModal("addEventModal");
+        fetchEvents();
+      }
+    }
+
+    async function deleteEventPrompt(id) {
+      const password = prompt("삭제를 위해 비밀번호를 입력하세요:");
+      if (!password) return;
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "deleteEvent", id, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("삭제되었습니다.");
+        closeModal("dayEventsModal");
+        fetchEvents();
+      } else {
+        alert(data.message);
+      }
+    }
+
+    async function handleReport() {
+      const content = document.getElementById("reportContent").value;
+      if (!content) return alert("신고 내용을 입력하세요.");
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "report", data: { content } })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("오류 신고가 접수되었습니다.");
+        closeModal("reportModal");
+      }
+    }
+
+    function openModal(id) { document.getElementById(id).style.display = "flex"; }
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
+  </script>
+</body>
+</html>
