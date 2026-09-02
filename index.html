@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>명지여고 수행평가 일정표</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; }
@@ -13,8 +14,10 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
 
+    <!-- 토스트 알림 메시지 컨테이너 -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 max-w-sm"></div>
 
+    <!-- 커스텀 삭제/확인 비밀번호 모달 -->
     <div id="confirm-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[80] p-4">
         <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative z-[90]">
             <h3 id="confirm-modal-title" class="text-lg font-black text-slate-800 mb-2">일정 삭제 확인</h3>
@@ -27,6 +30,7 @@
         </div>
     </div>
 
+    <!-- 기존 가입 중복 안내 및 비밀번호 찾기 모달 -->
     <div id="duplicate-signup-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[70] p-4">
         <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center">
             <div class="text-3xl mb-2">⚠️</div>
@@ -43,6 +47,7 @@
         </div>
     </div>
 
+    <!-- 수정 요청 비교 모달 -->
     <div id="claim-compare-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[110] p-4">
         <div class="bg-white rounded-3xl w-full max-w-2xl p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
             <h3 class="text-xl font-black text-slate-800 mb-4 pb-2 border-b border-slate-200">🔍 수행평가 수정 요청 비교</h3>
@@ -63,6 +68,7 @@
         </div>
     </div>
 
+    <!-- 로그인/회원가입/과목수정 오버레이 모달 -->
     <div id="login-screen" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
         <div class="bg-white rounded-3xl w-full max-w-xl p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
             <div class="text-center mb-6">
@@ -97,6 +103,7 @@
         </div>
     </div>
 
+    <!-- 관리자 전용 대시보드 -->
     <div id="admin-dashboard-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[90] p-4 hidden">
         <div class="bg-white rounded-3xl w-full max-w-4xl p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center pb-4 border-b border-slate-200 mb-4">
@@ -135,6 +142,7 @@
         </div>
     </div>
 
+    <!-- 메인 대시보드 -->
     <div class="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-xl">
         <header class="flex flex-col md:flex-row justify-between items-center border-b-2 border-blue-500 pb-5 mb-6 gap-4">
             <div>
@@ -231,6 +239,7 @@
             </div>
         </div>
 
+        <!-- D-Day 임박 수행평가 위젯 대시보드 -->
         <div class="mb-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-4 rounded-2xl border border-blue-200 shadow-sm transition-all duration-300">
             <div class="flex justify-between items-center gap-2">
                 <div class="flex items-center gap-1.5 min-w-0">
@@ -246,11 +255,14 @@
             <div id="dday-widget-container" class="mt-3 flex overflow-x-auto gap-3 pb-2 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent hidden"></div>
         </div>
 
+        <!-- 캘린더 메인 뷰 -->
         <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
 
+        <!-- 리스트 메인 뷰 -->
         <div id="list-view-container" class="hidden space-y-3"></div>
     </div>
 
+    <!-- 수행평가 등록 / 수정 요청 모달 -->
     <div id="register-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
             <h3 id="register-modal-heading" class="text-xl font-black text-blue-600 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
@@ -312,10 +324,10 @@
         </div>
     </div>
 
+    <!-- 상세 보기 및 삭제/수정요청 모달 -->
     <div id="detail-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <h3 id="detail-title" class="text-xl font-black text-slate-800 mb-3 pb-2 border-b border-slate-100">수행평가 상세정보</h3>
-            
             <div class="space-y-2 text-sm mb-6">
                 <p><strong>📚 과목:</strong> <span id="detail-subject-text"></span></p>
                 <p><strong>🎯 대상:</strong> <span id="detail-target-text"></span></p>
@@ -325,405 +337,277 @@
                     <p id="detail-desc-text" class="whitespace-pre-wrap text-slate-700"></p>
                 </div>
             </div>
-
             <div class="flex justify-between items-center pt-2 border-t border-slate-100 gap-2">
                 <div class="flex gap-2">
                     <button onclick="requestDeleteEvent()" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-2 rounded-lg text-xs transition">🗑️ 일정 삭제</button>
                     <button onclick="openClaimModalFromDetail()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-3 py-2 rounded-lg text-xs transition">✏️ 수정 요청</button>
                 </div>
-                <button onclick="closeModal('detail-modal')" class="bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold px-4 py-2 rounded-lg text-xs transition">닫기</button>
+                <button onclick="closeModal('detail-modal')" class="bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold px-3 py-2 rounded-lg text-xs transition">닫기</button>
             </div>
         </div>
     </div>
 
+    <!-- 오류 신고 모달 -->
     <div id="report-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <h3 class="text-xl font-black text-amber-600 mb-2 pb-2 border-b border-slate-100 flex items-center gap-2">
-                ⚠️ 오류 및 오탈자 신고
-            </h3>
-            <p class="text-xs text-slate-500 mb-4">일정 오류, 날짜 오타, 과목 표시 오류 등을 제보해 주시면 확인 후 반영하겠습니다.</p>
-
-            <form onsubmit="handleReportSubmit(event)" class="space-y-4">
+            <h3 id="report-modal-heading" class="text-xl font-black text-amber-600 mb-3 pb-2 border-b border-slate-100">⚠️ 시스템 오류 신고</h3>
+            <p id="report-modal-desc" class="text-xs text-slate-500 mb-4">입력 오류 또는 시스템 개선 요청 사항을 작성해 주세요.</p>
+            
+            <div class="space-y-3 mb-6">
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">관련 수행평가 (선택사항)</label>
-                    <select id="report-event-id" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:border-amber-500">
-                        <option value="">일반 시스템 / 전체 오류 신고</option>
-                    </select>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">신고자 성명 / 학번 / 소속</label>
+                    <input type="text" id="report-author" placeholder="예: 20105 김동영 또는 2학년부 교사" class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-amber-500">
                 </div>
-
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">신고 제목 *</label>
-                    <input type="text" id="report-title" required placeholder="예: 2학년 문학 수행평가 날짜가 잘못되었습니다." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">신고 내용 *</label>
+                    <textarea id="report-content" rows="4" placeholder="오류 내용이나 건의사항을 상세히 적어주세요." class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-amber-500"></textarea>
                 </div>
+            </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">구체적인 오류 내용 *</label>
-                    <textarea id="report-desc" rows="4" required placeholder="어떤 부분이 잘못되었는지 상세히 적어주세요." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-amber-500"></textarea>
-                </div>
-
-                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                    <button type="button" onclick="closeModal('report-modal')" class="bg-slate-400 hover:bg-slate-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition">취소</button>
-                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-5 py-2 rounded-lg text-sm transition">신고 제출</button>
-                </div>
-            </form>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal('report-modal')" class="bg-slate-400 hover:bg-slate-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition">취소</button>
+                <button onclick="submitReport()" id="report-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5">제출</button>
+            </div>
         </div>
     </div>
 
     <script>
-        /**
-         * ⚠️ 아래 GAS_API_URL 변수에 본인의 Google Apps Script 배포 URL을 입력하세요.
-         */
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwqS9kO_o809o0G84a440Xwz46t3B1qP2-lKqT6oA3k_T0g4tV7d6W-B_d_yH1V4-w/exec";
+        const ADMIN_MASTER_PASSWORD = "9999";
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxeeunLDnAgXQil_NxuaK_up2BWYnufQRWwvQFERv4wKV2CC2XSC_rdLtqBb9kl4Ryk/exec';
 
-        // 데이터베이스 상수 지정
-        const SUBJECTS_BY_GRADE = {
-            "1학년": [
-                { name: "공통국어2", isCommon: true }, { name: "공통수학2", isCommon: true }, { name: "공통영어2", isCommon: true },
-                { name: "한국사2", isCommon: true }, { name: "통합과학2", isCommon: true }, { name: "통합사회2", isCommon: true },
-                { name: "과학탐구실험2", isCommon: true }, { name: "스포츠과학", isCommon: true }, { name: "미술", isCommon: true },
-                { name: "음악", isCommon: true }, { name: "기술가정", isCommon: true }, { name: "한문", isCommon: true }
-            ],
-            "2학년": [
-                { name: "미적분1", isCommon: true }, { name: "화법과 언어", isCommon: true }, { name: "영어2", isCommon: true },
-                { name: "체육", isCommon: true }, { name: "미술창작", isCommon: true }, { name: "음악연주와창작", isCommon: true },
-                { name: "일본어", isCommon: true }, { name: "중국어", isCommon: true },
-                { name: "독서토론과 글쓰기", isCommon: false, groups: ["2학년 A반", "2학년 B반", "2학년 C반"] },
-                { name: "물질과 에너지", isCommon: false, groups: ["2학년 B반", "2학년 C반"] },
-                { name: "사회와 문화", isCommon: false, groups: ["2학년 A1반", "2학년 A2반", "2학년 B반", "2학년 C반"] },
-                { name: "세계문화와 영어", isCommon: false, groups: ["2학년 A반", "2학년 B반"] },
-                { name: "세계시민과 지리", isCommon: false, groups: ["2학년 A반", "2학년 B반", "2학년 C반"] },
-                { name: "세포와 물질대사", isCommon: false, groups: ["2학년 A반", "2학년 B반", "2학년 C반"] },
-                { name: "역사로 탐구하는 현대세계", isCommon: false, groups: ["2학년 B반", "2학년 C반"] },
-                { name: "윤리문제탐구", isCommon: false, groups: ["2학년 A반", "2학년 B반", "2학년 C반"] }
-            ],
-            "3학년": [
-                { name: "과학과제연구", isCommon: false, groups: ["3학년 D반", "3학년 J반"] },
-                { name: "사회문제탐구", isCommon: false, groups: ["3학년 D반", "3학년 E반", "3학년 F반"] },
-                { name: "생명과학Ⅱ", isCommon: false, groups: ["3학년 D반", "3학년 E반", "3학년 L반"] },
-                { name: "심리학 / 운동과 건강", isCommon: false, groups: ["3학년 D반", "3학년 G반", "3학년 I반", "3학년 L반"] },
-                { name: "영어독해와 작문", isCommon: false, groups: ["3학년 D반", "3학년 F반", "3학년 I반", "3학년 K반"] },
-                { name: "일본문화 / 진로", isCommon: false, groups: ["3학년 D반", "3학년 H반", "3학년 J반", "3학년 L반"] },
-                { name: "진로영어", isCommon: false, groups: ["3학년 D반", "3학년 F반", "3학년 I반"] },
-                { name: "가정과학 / 진로", isCommon: false, groups: ["3학년 E반", "3학년 M반"] },
-                { name: "고전과 윤리", isCommon: false, groups: ["3학년 E반", "3학년 L반"] },
-                { name: "생활과 과학", isCommon: false, groups: ["3학년 E반", "3학년 G반", "3학년 H반", "3학년 I반"] },
-                { name: "언어와 매체", isCommon: false, groups: ["3학년 E반", "3학년 F반", "3학년 G반", "3학년 I반"] },
-                { name: "여행지리", isCommon: false, groups: ["3학년 E반", "3학년 J반"] },
-                { name: "영미 문학 읽기", isCommon: false, groups: ["3학년 E반", "3학년 K반", "3학년 L반", "3학년 M반"] },
-                { name: "지구시스템과학", isCommon: false, groups: ["3학년 E반", "3학년 H반", "3학년 I반"] },
-                { name: "기하", isCommon: false, groups: ["3학년 F반", "3학년 G반", "3학년 K반"] },
-                { name: "세계사", isCommon: false, groups: ["3학년 F반", "3학년 G반", "3학년 J반"] },
-                { name: "수학과제 탐구", isCommon: false, groups: ["3학년 F반", "3학년 H반", "3학년 J반", "3학년 M반"] },
-                { name: "화학Ⅱ", isCommon: false, groups: ["3학년 F반", "3학년 H반", "3학년 L반"] },
-                { name: "경제", isCommon: false, groups: ["3학년 G반", "3학년 J반", "3학년 M반"] },
-                { name: "독서", isCommon: false, groups: ["3학년 G반", "3학년 H반", "3학년 K반", "3학년 L반"] },
-                { name: "물리학Ⅱ", isCommon: false, groups: ["3학년 G반", "3학년 K반"] },
-                { name: "인공지능 수학", isCommon: false, groups: ["3학년 G반", "3학년 H반"] },
-                { name: "미적분", isCommon: false, groups: ["3학년 H반", "3학년 I반", "3학년 J반", "3학년 L반"] },
-                { name: "보건", isCommon: false, groups: ["3학년 I반", "3학년 J반", "3학년 K반", "3학년 M반"] },
-                { name: "철학", isCommon: false, groups: ["3학년 I반", "3학년 K반"] },
-                { name: "현대 세계의 변화", isCommon: false, groups: ["3학년 I반", "3학년 L반", "3학년 M반"] },
-                { name: "융합과학 탐구", isCommon: false, groups: ["3학년 J반", "3학년 K반", "3학년 M반"] },
-                { name: "중국어Ⅱ", isCommon: false, groups: ["3학년 K반", "3학년 L반"] },
-                { name: "스포츠 생활", isCommon: false, groups: ["3학년 M반"] }
-            ]
+        const COURSE_DATA = {
+            "1학년": {
+                "공통국어2": [], "공통수학2": [], "공통영어2": [],
+                "한국사2": [], "통합과학2": [], "통합사회2": [], "과학탐구실험2": [], "스포츠과학": [],
+                "미술": [], "음악": [], "기술가정": [], "한문": []
+            },
+            "2학년": {
+                "미적분1": [], "화법과 언어": [], "영어2": [], "체육": [], "미술창작": [], "음악연주와창작": [], "일본어": [], "중국어": [],
+                "독서토론과 글쓰기": ["A", "B", "C"],
+                "물질과 에너지": ["B", "C"],
+                "사회와 문화": ["A1", "A2", "B", "C"],
+                "세계문화와 영어": ["A", "B"],
+                "세계시민과 지리": ["A", "B", "C"],
+                "세포와 물질대사": ["A", "B", "C"],
+                "역사로 탐구하는 현대세계": ["B", "C"],
+                "윤리문제탐구": ["A", "B", "C"]
+            },
+            "3학년": {
+                "과학과제연구": ["D", "J"],
+                "사회문제탐구": ["D", "E", "F"],
+                "생명과학Ⅱ": ["D", "E", "L"],
+                "심리학 / 운동과 건강": ["D", "G", "I", "L"],
+                "영어독해와 작문": ["D", "F", "I", "K"],
+                "일본문화 / 진로": ["D", "H", "J", "L"],
+                "진로영어": ["D", "F", "I"],
+                "가정과학 / 진로": ["E", "M"],
+                "고전과 윤리": ["E", "L"],
+                "생활과 과학": ["E", "G", "H", "I"],
+                "언어와 매체": ["E", "G"],
+                "화학Ⅱ": ["E", "L"],
+                "확률과 통계": ["E", "J", "K", "L", "M"],
+                "심화국어": ["F", "K"],
+                "지구과학Ⅱ": ["F"],
+                "화법과 작문": ["F", "G", "H", "K", "M"],
+                "보건 / 운동과 건강": ["G", "K"],
+                "사회문화": ["G", "H", "J"],
+                "여행지리": ["G", "H", "M"],
+                "교육학 / 운동과 건강": ["H"],
+                "미적분": ["H", "I"],
+                "세계문제와 미래사회": ["I", "J"],
+                "윤리와 사상": ["I", "J"],
+                "동아시아사": ["M"],
+                "심화수학": ["M"],
+                "현대문학감상": ["J", "M"],
+                "물리학Ⅱ": ["K"],
+                "한국지리": ["K"],
+                "중국문화 / 진로": ["L"]
+            }
         };
 
-        const COLOR_PALETTE = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#a855f7", "#64748b", "#d97706", "#6366f1", "#14b8a6", "#0284c7", "#22c55e", "#eab308"];
+        const GRADE_3_BLOCK_MAP = {
+            "과학과제연구": ["D", "J"],
+            "사회문제탐구": ["D", "E", "F"],
+            "생명과학Ⅱ": ["D", "E", "L"],
+            "심리학 / 운동과 건강": ["D", "G", "I", "L"],
+            "영어독해와 작문": ["D", "F", "I", "K"],
+            "일본문화 / 진로": ["D", "H", "J", "L"],
+            "진로영어": ["D", "F", "I"],
+            "가정과학 / 진로": ["E", "M"],
+            "고전과 윤리": ["E", "L"],
+            "생활과 과학": ["E", "G", "H", "I"],
+            "언어와 매체": ["E", "G"],
+            "화학Ⅱ": ["E", "L"],
+            "확률과 통계": ["E", "J", "K", "L", "M"],
+            "심화국어": ["F", "K"],
+            "지구과학Ⅱ": ["F"],
+            "화법과 작문": ["F", "G", "H", "K", "M"],
+            "보건 / 운동과 건강": ["G", "K"],
+            "사회문화": ["G", "H", "J"],
+            "여행지리": ["G", "H", "M"],
+            "교육학 / 운동과 건강": ["H"],
+            "미적분": ["H", "I"],
+            "세계문제와 미래사회": ["I", "J"],
+            "윤리와 사상": ["I", "J"],
+            "동아시아사": ["M"],
+            "심화수학": ["M"],
+            "현대문학감상": ["J", "M"],
+            "물리학Ⅱ": ["K"],
+            "한국지리": ["K"],
+            "중국문화 / 진로": ["L"]
+        };
 
-        // 전역 상태 관리
-        let eventsDB = [];
-        let claimItemsDB = [];
+        let sampleEvents = [];
+        let registeredUsersDB = {};
         let reportItemsDB = [];
-        let activeAdminTab = 'reports'; // 'reports' | 'claims'
+        let claimItemsDB = [];
+        let currentAdminTab = 'reports';
 
-        let currentDate = new Date();
-        let selectedEventId = null;
-        let isClaimMode = false;
-        let activeClaimEventId = null;
-        let viewMode = 'calendar'; // 'calendar' | 'list'
-        let currentUser = null; // { studentId, name, grade, classNum, subjects: {} }
+        let currentDate = new Date(2026, 8, 1);
+        let activeEventForDetail = null;
+        let currentUser = null; 
+        let currentModalMode = 'login';
+        let currentViewMode = 'calendar';
+        let isDDayWidgetExpanded = false;
+        let isDataLoaded = false;
+        let isEditClaimMode = false;
 
-        // 앱 초기화
-        window.addEventListener('DOMContentLoaded', () => {
-            loadUserFromStorage();
-            fetchDataFromGas();
-        });
-
-        // 사용자 상태 로드 및 UI 업데이트
-        function loadUserFromStorage() {
-            const saved = localStorage.getItem('school_schedule_user');
-            if (saved) {
-                try {
-                    currentUser = JSON.parse(saved);
-                    updateUserUI();
-                } catch (e) {
-                    currentUser = null;
-                }
-            } else {
-                updateUserUI();
-            }
+        function getTodayDateString() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
-        function updateUserUI() {
-            const userBadge = document.getElementById('user-badge');
-            const loginBtn = document.getElementById('login-open-btn');
-            const signupBtn = document.getElementById('signup-open-btn');
-            const badgeInfoText = document.getElementById('badge-info-text');
-            const adminPanelBtn = document.getElementById('admin-panel-open-btn');
-
-            if (currentUser) {
-                userBadge.classList.remove('hidden');
-                userBadge.classList.add('flex');
-                loginBtn.parentElement.classList.add('hidden');
-                signupBtn.parentElement.classList.add('hidden');
-
-                if (currentUser.isGuest) {
-                    badgeInfoText.textContent = `👁️ 손님 모드 (전체 보기)`;
-                    document.getElementById('edit-subject-btn').classList.add('hidden');
-                    adminPanelBtn.classList.add('hidden');
-                } else if (currentUser.isAdmin) {
-                    badgeInfoText.textContent = `👑 관리자 계정 (${currentUser.studentId})`;
-                    document.getElementById('edit-subject-btn').classList.add('hidden');
-                    adminPanelBtn.classList.remove('hidden');
-                } else {
-                    badgeInfoText.textContent = `🎓 ${currentUser.grade} ${currentUser.classNum}반 (${currentUser.studentId})`;
-                    document.getElementById('edit-subject-btn').classList.remove('hidden');
-                    adminPanelBtn.classList.add('hidden');
-                }
-
-                if (currentUser.grade && !currentUser.isGuest && !currentUser.isAdmin) {
-                    document.getElementById('filter-grade').value = currentUser.grade;
-                    document.getElementById('filter-class').value = currentUser.classNum;
-                }
-            } else {
-                userBadge.classList.add('hidden');
-                userBadge.classList.remove('flex');
-                loginBtn.parentElement.classList.remove('hidden');
-                signupBtn.parentElement.classList.remove('hidden');
-                adminPanelBtn.classList.add('hidden');
-            }
-
-            populateSubjectFilter();
-            renderCalendar();
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-slate-800';
+            toast.className = `${bgClass} text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg transition transform duration-300 opacity-0 translate-y-2 flex items-center gap-2`;
+            toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-2'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
-        function handleDisabledButtonClick(e) {
-            // 버튼 클릭 시 특별 이벤트 확장용
-        }
-
-        function openAdminDashboard() {
-            if (!currentUser || !currentUser.isAdmin) {
-                showToast('관리자만 접근할 수 있습니다.', 'error');
-                return;
-            }
-            renderAdminList();
-            document.getElementById('admin-dashboard-modal').classList.remove('hidden');
-        }
-
-        function switchAdminTab(tab) {
-            activeAdminTab = tab;
-            const repBtn = document.getElementById('admin-tab-reports-btn');
-            const clmBtn = document.getElementById('admin-tab-claims-btn');
-
-            if (tab === 'reports') {
-                repBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition";
-                clmBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition";
-            } else {
-                repBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition";
-                clmBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white transition";
-            }
-            renderAdminList();
-        }
-
-        function renderAdminList() {
-            const container = document.getElementById('admin-list-container');
-            const statusFilter = document.getElementById('admin-filter-status').value;
-
-            document.getElementById('admin-report-count').textContent = reportItemsDB.length;
-            document.getElementById('admin-claim-count').textContent = claimItemsDB.length;
-
-            let list = activeAdminTab === 'reports' ? reportItemsDB : claimItemsDB;
-
-            if (statusFilter !== 'all') {
-                list = list.filter(item => (item.status || '접수됨') === statusFilter);
-            }
-
-            if (list.length === 0) {
-                container.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs">내역이 존재하지 않습니다.</div>`;
-                return;
-            }
-
-            let html = '';
-            list.forEach(item => {
-                const status = item.status || '접수됨';
-                let statusBadgeClass = 'bg-amber-100 text-amber-700 border-amber-200';
-                if (status === '확인 완료') statusBadgeClass = 'bg-blue-100 text-blue-700 border-blue-200';
-                if (status === '승인됨') statusBadgeClass = 'bg-emerald-100 text-emerald-700 border-emerald-200';
-
-                const formattedDate = item.createdAt ? new Date(item.createdAt).toLocaleString('ko-KR') : '';
-
-                if (activeAdminTab === 'reports') {
-                    html += `
-                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between gap-3 items-start md:items-center">
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-md border ${statusBadgeClass}">${status}</span>
-                                    <h4 class="font-bold text-sm text-slate-800">${escapeHtml(item.title)}</h4>
-                                </div>
-                                <p class="text-xs text-slate-600">${escapeHtml(item.description)}</p>
-                                <p class="text-[10px] text-slate-400">신고자 학번: ${item.studentId || '익명'} | 접수시각: ${formattedDate}</p>
-                            </div>
-                            <div class="flex items-center gap-2 self-end md:self-center">
-                                <button onclick="updateAdminItemStatus('reports', '${item.id}', '확인 완료')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold px-3 py-1.5 rounded-xl text-xs transition">확인완료 처리</button>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    html += `
-                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between gap-3 items-start md:items-center">
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-md border ${statusBadgeClass}">${status}</span>
-                                    <h4 class="font-bold text-sm text-slate-800">요청 과목: ${escapeHtml(item.subject)} - ${escapeHtml(item.title)}</h4>
-                                </div>
-                                <p class="text-xs text-slate-600">요청 대상: ${escapeHtml(item.target)} | 날짜: ${item.date}</p>
-                                <p class="text-[10px] text-slate-400">요청자 학번: ${item.studentId || '익명'} | 접수시각: ${formattedDate}</p>
-                            </div>
-                            <div class="flex items-center gap-2 self-end md:self-center">
-                                <button onclick="openClaimCompareModal('${item.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">🔍 변경사항 비교 및 승인</button>
-                            </div>
-                        </div>
-                    `;
+        function setInteractiveButtonsState(enabled) {
+            const btnIds = ['login-open-btn', 'signup-open-btn', 'register-open-btn', 'report-open-btn', 'edit-subject-btn', 'admin-panel-open-btn'];
+            btnIds.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.disabled = !enabled;
+                    if (!enabled) {
+                        btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
                 }
             });
-
-            container.innerHTML = html;
         }
 
-        async function updateAdminItemStatus(type, id, newStatus) {
-            try {
-                showToast('상태를 업데이트하고 있습니다...', 'info');
-                const resp = await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'updateAdminStatus', type, id, status: newStatus })
-                });
-                const res = await resp.json();
-                if (res.status === 'success') {
-                    if (type === 'reports') {
-                        const idx = reportItemsDB.findIndex(r => r.id === id);
-                        if (idx !== -1) reportItemsDB[idx].status = newStatus;
-                    } else {
-                        const idx = claimItemsDB.findIndex(c => c.id === id);
-                        if (idx !== -1) claimItemsDB[idx].status = newStatus;
-                    }
-                    renderAdminList();
-                    showToast('상태가 변경되었습니다.', 'success');
-                } else {
-                    showToast('처리 중 오류가 발생했습니다.', 'error');
-                }
-            } catch (err) {
-                showToast('서버 연동 오류가 발생했습니다.', 'error');
+        function handleDisabledButtonClick(event) {
+            if (!isDataLoaded) {
+                showToast('데이터 로딩 중입니다.', 'error');
+                event.stopPropagation();
             }
         }
 
-        function openClaimCompareModal(claimId) {
-            const claim = claimItemsDB.find(c => c.id === claimId);
-            if (!claim) return;
-
-            const originalEvent = eventsDB.find(e => e.id === claim.eventId);
-
-            const beforeContainer = document.getElementById('compare-before-content');
-            const afterContainer = document.getElementById('compare-after-content');
-
-            if (originalEvent) {
-                beforeContainer.innerHTML = `
-                    <p><strong>제목:</strong> ${escapeHtml(originalEvent.title)}</p>
-                    <p><strong>과목:</strong> ${escapeHtml(originalEvent.subject)}</p>
-                    <p><strong>대상:</strong> ${escapeHtml(originalEvent.target)}</p>
-                    <p><strong>날짜:</strong> ${originalEvent.date}</p>
-                    <p><strong>설명:</strong> ${escapeHtml(originalEvent.description || '없음')}</p>
-                `;
-            } else {
-                beforeContainer.innerHTML = `<p class="text-rose-500 font-bold">기존 수행평가 일정을 찾을 수 없습니다.</p>`;
+        window.onload = function() {
+            const savedUser = localStorage.getItem('school_schedule_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
             }
 
-            afterContainer.innerHTML = `
-                <p><strong>제목:</strong> ${escapeHtml(claim.title)}</p>
-                <p><strong>과목:</strong> ${escapeHtml(claim.subject)}</p>
-                <p><strong>대상:</strong> ${escapeHtml(claim.target)}</p>
-                <p><strong>날짜:</strong> ${claim.date}</p>
-                <p><strong>설명:</strong> ${escapeHtml(claim.description || '없음')}</p>
-            `;
+            const cachedEvents = localStorage.getItem('school_schedule_events_cache');
+            const cachedUsers = localStorage.getItem('school_schedule_users_cache');
+            const cachedReports = localStorage.getItem('school_schedule_reports_cache');
+            const cachedClaims = localStorage.getItem('school_schedule_claims_cache');
 
-            const approveBtn = document.getElementById('compare-approve-btn');
-            approveBtn.onclick = () => approveClaim(claimId);
+            if (cachedEvents) {
+                try {
+                    sampleEvents = JSON.parse(cachedEvents);
+                    isDataLoaded = true;
+                    setInteractiveButtonsState(true);
+                    applyUserSession();
+                } catch (e) { console.error("캐시 파싱 오류", e); }
+            }
+            if (cachedUsers) { try { registeredUsersDB = JSON.parse(cachedUsers); } catch(e){} }
+            if (cachedReports) { try { reportItemsDB = JSON.parse(cachedReports); } catch(e){} }
+            if (cachedClaims) { try { claimItemsDB = JSON.parse(cachedClaims); } catch(e){} }
 
-            document.getElementById('claim-compare-modal').classList.remove('hidden');
-        }
+            fetchDataFromGas();
+            setupLoginInputListener();
+        };
 
-        async function approveClaim(claimId) {
-            closeModal('claim-compare-modal');
-            await updateAdminItemStatus('claims', claimId, '승인됨');
-            await fetchDataFromGas();
-        }
-
-        // GAS 서버 데이터 동기화
         async function fetchDataFromGas() {
             const syncBadge = document.getElementById('gas-sync-badge');
-            syncBadge.textContent = '🟡';
-            syncBadge.title = '데이터 불러오는 중...';
-
+            if (!GAS_WEB_APP_URL) {
+                syncBadge.innerHTML = '🔴';
+                syncBadge.title = '구글 시트 연동 안됨 (URL 미설정)';
+                setInteractiveButtonsState(false);
+                return;
+            }
             try {
-                const resp = await fetch(`${GAS_API_URL}?action=getAllData`);
-                const data = await resp.json();
-
-                if (data && data.events) {
-                    eventsDB = data.events;
-                    claimItemsDB = data.claims || [];
-                    reportItemsDB = data.reports || [];
-
-                    localStorage.setItem('school_schedule_cache', JSON.stringify(eventsDB));
-                    localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
-                    localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
-
-                    syncBadge.textContent = '🟢';
-                    syncBadge.title = 'GAS 서버 연동 완료';
-                } else {
-                    throw new Error('응답 데이터 형식 오류');
+                const res = await fetch(`${GAS_WEB_APP_URL}?action=getEvents`);
+                const json = await res.json();
+                if (json.status === "success" && Array.isArray(json.data)) {
+                    sampleEvents = json.data;
+                    localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
                 }
-            } catch (e) {
-                console.warn("GAS 연동 실패 -> 캐시된 로컬 스토리지 데이터 사용", e);
-                const cachedEvents = localStorage.getItem('school_schedule_cache');
-                if (cachedEvents) eventsDB = JSON.parse(cachedEvents);
 
-                const cachedClaims = localStorage.getItem('school_schedule_claims_cache');
-                if (cachedClaims) claimItemsDB = JSON.parse(cachedClaims);
+                const userRes = await fetch(`${GAS_WEB_APP_URL}?action=getUsers`);
+                const userJson = await userRes.json();
+                if (userJson.status === "success" && userJson.data) {
+                    registeredUsersDB = { ...registeredUsersDB, ...userJson.data };
+                    localStorage.setItem('school_schedule_users_cache', JSON.stringify(registeredUsersDB));
+                }
 
-                const cachedReports = localStorage.getItem('school_schedule_reports_cache');
-                if (cachedReports) reportItemsDB = JSON.parse(cachedReports);
+                try {
+                    const reportRes = await fetch(`${GAS_WEB_APP_URL}?action=getReports`);
+                    const reportJson = await reportRes.json();
+                    if (reportJson.status === "success" && Array.isArray(reportJson.data)) {
+                        reportItemsDB = reportJson.data;
+                        localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+                    }
+                } catch (e) {}
 
-                syncBadge.textContent = '🔴';
-                syncBadge.title = '로컬 데이터 사용 중 (서버 연결 불가)';
+                try {
+                    const claimRes = await fetch(`${GAS_WEB_APP_URL}?action=getClaims`);
+                    const claimJson = await claimRes.json();
+                    if (claimJson.status === "success" && Array.isArray(claimJson.data)) {
+                        claimItemsDB = claimJson.data;
+                        localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+                    }
+                } catch (e) {}
+
+                syncBadge.innerHTML = '🟢';
+                syncBadge.title = '구글 시트 라이브 연동 완료';
+                isDataLoaded = true;
+                setInteractiveButtonsState(true);
+            } catch (err) {
+                console.error("데이터 로드 실패:", err);
+                syncBadge.innerHTML = '🟡';
+                syncBadge.title = '오프라인 모드 (캐시된 데이터 사용 중)';
+                if (sampleEvents.length > 0) {
+                    isDataLoaded = true;
+                    setInteractiveButtonsState(true);
+                } else {
+                    isDataLoaded = false;
+                    setInteractiveButtonsState(false);
+                    showToast('네트워크 지연 또는 오프라인 상태입니다.', 'error');
+                }
+            } finally {
+                applyUserSession();
             }
-
-            populateSubjectFilter();
-            renderCalendar();
-            if (!document.getElementById('admin-dashboard-modal').classList.contains('hidden')) {
-                renderAdminList();
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem('school_schedule_user');
-            currentUser = null;
-            showToast('로그아웃 되었습니다.', 'info');
-            updateUserUI();
         }
 
         function setViewMode(mode) {
-            viewMode = mode;
+            currentViewMode = mode;
             const calBtn = document.getElementById('view-mode-calendar-btn');
             const listBtn = document.getElementById('view-mode-list-btn');
             const calGrid = document.getElementById('calendar-grid');
@@ -733,654 +617,963 @@
                 calBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition bg-white text-blue-600 shadow-sm";
                 listBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-800";
                 calGrid.classList.remove('hidden');
-                calGrid.classList.add('grid');
                 listContainer.classList.add('hidden');
             } else {
                 listBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition bg-white text-blue-600 shadow-sm";
                 calBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-800";
                 calGrid.classList.add('hidden');
-                calGrid.classList.remove('grid');
                 listContainer.classList.remove('hidden');
             }
-            renderCalendar();
+            renderMainView();
         }
 
         function toggleDDayWidget() {
             const container = document.getElementById('dday-widget-container');
-            const btn = document.getElementById('dday-toggle-btn');
-            if (container.classList.contains('hidden')) {
+            const toggleBtn = document.getElementById('dday-toggle-btn');
+            isDDayWidgetExpanded = !isDDayWidgetExpanded;
+
+            if (isDDayWidgetExpanded) {
                 container.classList.remove('hidden');
-                btn.textContent = '▲ 접기';
+                toggleBtn.textContent = '▲ 접기';
             } else {
                 container.classList.add('hidden');
-                btn.textContent = '▼ 보기';
+                toggleBtn.textContent = '▼ 보기';
             }
         }
 
-        function changeMonth(delta) {
-            currentDate.setMonth(currentDate.getMonth() + delta);
-            renderCalendar();
+        function checkDataLoadedOrWarn() {
+            if (!isDataLoaded) {
+                showToast('데이터 로딩 중입니다.', 'error');
+                return false;
+            }
+            return true;
         }
 
-        function handleFilterChange() {
-            populateSubjectFilter();
-            renderCalendar();
+        function openLoginModal(mode) {
+            if (!checkDataLoadedOrWarn()) return;
+
+            currentModalMode = mode;
+            const screen = document.getElementById('login-screen');
+            const titleEl = document.getElementById('login-modal-title');
+            const descEl = document.getElementById('login-modal-desc');
+            const submitBtn = document.getElementById('login-submit-btn');
+            const stepContainer = document.getElementById('subject-selection-step');
+            const idField = document.getElementById('login-id-field');
+            const pwField = document.getElementById('login-pw-field');
+
+            screen.classList.remove('hidden');
+            idField.classList.remove('hidden');
+            pwField.classList.remove('hidden');
+
+            document.getElementById('login-student-id').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-subject-dynamic-area').innerHTML = '';
+
+            if (mode === 'signup') {
+                titleEl.textContent = '신규 학생 간편 가입';
+                descEl.textContent = '학번 5자리를 입력하여 수강 과목을 설정하세요.';
+                submitBtn.innerHTML = '가입하기';
+                stepContainer.classList.remove('hidden');
+                triggerSubjectSelectionBuild();
+            } else if (mode === 'edit') {
+                titleEl.textContent = '선택 과목 정보 수정';
+                descEl.textContent = `${currentUser.studentId} 학생의 맞춤 수강 과목을 재설정합니다.`;
+                submitBtn.innerHTML = '수강 과목 수정 완료';
+                idField.classList.add('hidden');
+                pwField.classList.add('hidden');
+                stepContainer.classList.remove('hidden');
+                triggerSubjectSelectionBuildForEdit();
+            } else {
+                titleEl.textContent = '맞춤 로그인';
+                descEl.textContent = '학번과 비밀번호를 입력해주세요.';
+                submitBtn.innerHTML = '로그인';
+                stepContainer.classList.add('hidden');
+            }
         }
 
-        function handleClassFilterChange() {
-            renderCalendar();
+        function openEditSubjectsModal() {
+            if (!currentUser) return;
+            openLoginModal('edit');
         }
 
-        function handleSubjectFilterChange() {
-            renderCalendar();
+        function setupLoginInputListener() {
+            const studentIdInput = document.getElementById('login-student-id');
+            studentIdInput.addEventListener('input', () => {
+                if (currentModalMode === 'signup') {
+                    triggerSubjectSelectionBuild();
+                }
+            });
         }
 
-        function populateSubjectFilter() {
-            const gradeFilter = document.getElementById('filter-grade').value;
+        function triggerSubjectSelectionBuildForEdit() {
+            if (!currentUser) return;
+            buildSubjectSelectionUI(currentUser.studentId);
+        }
+
+        function triggerSubjectSelectionBuild() {
+            const val = document.getElementById('login-student-id').value.trim();
+            buildSubjectSelectionUI(val);
+        }
+
+        function buildSubjectSelectionUI(studentIdVal) {
+            const stepContainer = document.getElementById('subject-selection-step');
+            const dynamicArea = document.getElementById('login-subject-dynamic-area');
+            
+            dynamicArea.innerHTML = '';
+            if (studentIdVal && studentIdVal.length >= 5) {
+                const gradeNum = studentIdVal.charAt(0);
+                let gradeStr = gradeNum === '1' ? '1학년' : gradeNum === '2' ? '2학년' : gradeNum === '3' ? '3학년' : '';
+                let classNum = String(parseInt(studentIdVal.substring(1, 3), 10)) || "1";
+
+                if (gradeStr && COURSE_DATA[gradeStr]) {
+                    stepContainer.classList.remove('hidden');
+                    const existingCourses = (currentUser && currentUser.enrolledCourses) ? currentUser.enrolledCourses : [];
+
+                    if (gradeStr === '1학년') {
+                        let html = `<div class="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-blue-200 space-y-2">
+                            <p class="text-blue-700">📌 1학년 공통 과목 (자동 수강)</p>
+                            <div class="flex flex-wrap gap-2">`;
+                        const commonSubjects1 = ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학"];
+                        commonSubjects1.forEach(sub => {
+                            html += `<label class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border"><input type="checkbox" name="login-course" value="${sub}:전체" checked disabled class="rounded text-blue-600"> <span>${sub}</span></label>`;
+                        });
+                        html += `</div></div>`;
+
+                        const isMusicSelected = existingCourses.includes("음악:전체");
+                        html += `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-2">
+                            <label class="block font-bold text-xs text-blue-800">🎨 예술 과목 선택 (택 1) *</label>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music" value="미술:전체" ${!isMusicSelected ? 'checked' : ''} class="text-blue-600"> 미술</label>
+                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music" value="음악:전체" ${isMusicSelected ? 'checked' : ''} class="text-blue-600"> 음악</label>
+                            </div>
+                        </div>`;
+                        dynamicArea.innerHTML = html;
+
+                    } else if (gradeStr === '2학년') {
+                        let langSub = parseInt(classNum) === 7 ? "중국어" : "일본어";
+                        let html = `<div class="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-blue-200 space-y-2">
+                            <p class="text-blue-700">📌 2학년 공통 과목 및 제2외국어 (${classNum}반 기준 자동수강: ${langSub})</p>
+                            <div class="flex flex-wrap gap-2">`;
+                        const commonSubjects2 = ["미적분1", "화법과 언어", "영어2", "체육", langSub];
+                        commonSubjects2.forEach(sub => {
+                            html += `<label class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border"><input type="checkbox" name="login-course" value="${sub}:전체" checked disabled class="rounded text-blue-600"> <span>${sub}</span></label>`;
+                        });
+                        html += `</div></div>`;
+
+                        const isMusic2Selected = existingCourses.includes("음악연주와창작:전체");
+                        html += `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-2">
+                            <label class="block font-bold text-xs text-blue-800">🎨 미술창작 / 음악연주와창작 선택 (택 1) *</label>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music-2" value="미술창작:전체" ${!isMusic2Selected ? 'checked' : ''} class="text-blue-600"> 미술창작</label>
+                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music-2" value="음악연주와창작:전체" ${isMusic2Selected ? 'checked' : ''} class="text-blue-600"> 음악연주와창작</label>
+                            </div>
+                        </div>`;
+
+                        const getSelectedForSlot = (slotLetter) => {
+                            const found = existingCourses.find(c => c.endsWith(`:${slotLetter}반`) || c.endsWith(`:${slotLetter}1반`) || c.endsWith(`:${slotLetter}2반`));
+                            return found || "";
+                        };
+
+                        const selectedA = getSelectedForSlot("A");
+                        const selectedB = getSelectedForSlot("B");
+                        const selectedC = getSelectedForSlot("C");
+
+                        let htmlA = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
+                            <label class="block font-bold text-xs text-blue-800">🎯 A반 선택 과목 *</label>
+                            <select name="login-slot-course" data-slot="A" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
+                                <option value="">수강 과목 미선택</option>
+                                <option value="독서토론과 글쓰기:A반" ${selectedA === "독서토론과 글쓰기:A반" ? "selected" : ""}>독서토론과 글쓰기</option>
+                                <option value="사회와 문화:A1반" ${selectedA === "사회와 문화:A1반" ? "selected" : ""}>사회와 문화 (A1)</option>
+                                <option value="사회와 문화:A2반" ${selectedA === "사회와 문화:A2반" ? "selected" : ""}>사회와 문화 (A2)</option>
+                                <option value="세계문화와 영어:A반" ${selectedA === "세계문화와 영어:A반" ? "selected" : ""}>세계문화와 영어</option>
+                                <option value="세계시민과 지리:A반" ${selectedA === "세계시민과 지리:A반" ? "selected" : ""}>세계시민과 지리</option>
+                                <option value="세포와 물질대사:A반" ${selectedA === "세포와 물질대사:A반" ? "selected" : ""}>세포와 물질대사</option>
+                                <option value="윤리문제탐구:A반" ${selectedA === "윤리문제탐구:A반" ? "selected" : ""}>윤리문제탐구</option>
+                            </select></div>`;
+
+                        let htmlB = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
+                            <label class="block font-bold text-xs text-blue-800">🎯 B반 선택 과목 *</label>
+                            <select name="login-slot-course" data-slot="B" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
+                                <option value="">수강 과목 미선택</option>
+                                <option value="독서토론과 글쓰기:B반" ${selectedB === "독서토론과 글쓰기:B반" ? "selected" : ""}>독서토론과 글쓰기</option>
+                                <option value="물질과 에너지:B반" ${selectedB === "물질과 에너지:B반" ? "selected" : ""}>물질과 에너지</option>
+                                <option value="사회와 문화:B반" ${selectedB === "사회와 문화:B반" ? "selected" : ""}>사회와 문화</option>
+                                <option value="세계문화와 영어:B반" ${selectedB === "세계문화와 영어:B반" ? "selected" : ""}>세계문화와 영어</option>
+                                <option value="세계시민과 지리:B반" ${selectedB === "세계시민과 지리:B반" ? "selected" : ""}>세계시민과 지리</option>
+                                <option value="세포와 물질대사:B반" ${selectedB === "세포와 물질대사:B반" ? "selected" : ""}>세포와 물질대사</option>
+                                <option value="역사로 탐구하는 현대세계:B반" ${selectedB === "역사로 탐구하는 현대세계:B반" ? "selected" : ""}>역사로 탐구하는 현대세계</option>
+                                <option value="윤리문제탐구:B반" ${selectedB === "윤리문제탐구:B반" ? "selected" : ""}>윤리문제탐구</option>
+                            </select></div>`;
+
+                        let htmlC = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
+                            <label class="block font-bold text-xs text-blue-800">🎯 C반 선택 과목 *</label>
+                            <select name="login-slot-course" data-slot="C" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
+                                <option value="">수강 과목 미선택</option>
+                                <option value="독서토론과 글쓰기:C반" ${selectedC === "독서토론과 글쓰기:C반" ? "selected" : ""}>독서토론과 글쓰기</option>
+                                <option value="물질과 에너지:C반" ${selectedC === "물질과 에너지:C반" ? "selected" : ""}>물질과 에너지</option>
+                                <option value="사회와 문화:C반" ${selectedC === "사회와 문화:C반" ? "selected" : ""}>사회와 문화</option>
+                                <option value="세계시민과 지리:C반" ${selectedC === "세계시민과 지리:C반" ? "selected" : ""}>세계시민과 지리</option>
+                                <option value="세포와 물질대사:C반" ${selectedC === "세포와 물질대사:C반" ? "selected" : ""}>세포와 물질대사</option>
+                                <option value="역사로 탐구하는 현대세계:C반" ${selectedC === "역사로 탐구하는 현대세계:C반" ? "selected" : ""}>역사로 탐구하는 현대세계</option>
+                                <option value="윤리문제탐구:C반" ${selectedC === "윤리문제탐구:C반" ? "selected" : ""}>윤리문제탐구</option>
+                            </select></div>`;
+
+                        dynamicArea.innerHTML = html + htmlA + htmlB + htmlC;
+
+                    } else if (gradeStr === '3학년') {
+                        const getSelectedForBlock = (blockLetter) => {
+                            const found = existingCourses.find(c => c.endsWith(`:${blockLetter}반`));
+                            return found || "";
+                        };
+
+                        let html = `<div class="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-blue-200 space-y-2">
+                            <p class="text-blue-700">📌 3학년 블록별 선택 과목 (D ~ M)</p>
+                            <div class="grid grid-cols-2 gap-2">`;
+                        
+                        ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'].forEach(block => {
+                            const currentVal = getSelectedForBlock(block);
+                            html += `<div>
+                                <label class="block font-bold text-[11px] text-slate-600 mb-1">${block} 블록 선택 *</label>
+                                <select name="login-grade3-block" data-block="${block}" onchange="validateGrade3Duplicate(this)" class="w-full px-2 py-1.5 border rounded text-xs bg-slate-50">
+                                    <option value="">선택 안함</option>`;
+                            
+                            Object.keys(GRADE_3_BLOCK_MAP).forEach(sub => {
+                                if (GRADE_3_BLOCK_MAP[sub].includes(block)) {
+                                    const optionVal = `${sub}:${block}반`;
+                                    const isSel = (currentVal === optionVal) ? "selected" : "";
+                                    html += `<option value="${optionVal}" ${isSel}>${sub} (${block}반)</option>`;
+                                }
+                            });
+                            html += `</select></div>`;
+                        });
+                        html += `</div></div>`;
+                        dynamicArea.innerHTML = html;
+                    }
+                }
+            }
+        }
+
+        function validateGrade2Duplicate(changedSelect) {
+            const selectedVal = changedSelect.value;
+            if (!selectedVal) return;
+            const subjectName = selectedVal.split(':')[0];
+
+            const allSelects = document.querySelectorAll('select[name="login-slot-course"]');
+            for (let sel of allSelects) {
+                if (sel !== changedSelect && sel.value) {
+                    const otherSubjectName = sel.value.split(':')[0];
+                    if (otherSubjectName === subjectName) {
+                        alert(`[오류] 동일한 과목("${subjectName}")을 다른 분반에서 중복으로 선택할 수 없습니다.`);
+                        changedSelect.value = "";
+                        return;
+                    }
+                }
+            }
+        }
+
+        function validateGrade3Duplicate(changedSelect) {
+            const selectedVal = changedSelect.value;
+            if (!selectedVal) return;
+            const subjectName = selectedVal.split(':')[0];
+
+            const allSelects = document.querySelectorAll('select[name="login-grade3-block"]');
+            for (let sel of allSelects) {
+                if (sel !== changedSelect && sel.value) {
+                    const otherSubjectName = sel.value.split(':')[0];
+                    if (otherSubjectName === subjectName) {
+                        alert(`[오류] 동일한 과목("${subjectName}")을 다른 분반에서 중복으로 선택할 수 없습니다.`);
+                        changedSelect.value = "";
+                        return;
+                    }
+                }
+            }
+        }
+
+        function handleResetAndReRegister() {
+            const studentId = document.getElementById('login-student-id').value.trim();
+            closeModal('duplicate-signup-modal');
+            
+            if (confirm("기존 학번의 데이터를 모두 지우고 다시 가입하시겠습니까?")) {
+                delete registeredUsersDB[studentId];
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'deleteUser', studentId: studentId })
+                    }).catch(err => console.error("사용자 데이터 삭제 통신 오류:", err));
+                }
+                executeSignupProcess();
+            }
+        }
+
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+
+            const studentId = document.getElementById('login-student-id').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            if (studentId === ADMIN_MASTER_PASSWORD || password === ADMIN_MASTER_PASSWORD || studentId === "admin") {
+                if (password === ADMIN_MASTER_PASSWORD || studentId === ADMIN_MASTER_PASSWORD) {
+                    currentUser = {
+                        studentId: "관리자(교사)",
+                        gradeStr: "교사",
+                        classNum: "전체",
+                        isAdmin: true,
+                        enrolledCourses: []
+                    };
+                    localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+                    closeModal('login-screen');
+                    applyUserSession();
+                    showToast('관리자(마스터) 계정으로 로그인되었습니다.', 'success');
+                    return;
+                }
+            }
+
+            if (studentId.length < 5) {
+                alert("⚠️ 올바른 학번 5자리를 입력해 주세요 (예: 20105).");
+                return;
+            }
+
+            let existingUser = registeredUsersDB[studentId];
+
+            if (currentModalMode === 'login') {
+                if (!existingUser) {
+                    alert("⚠️ 등록되지 않은 학번입니다. 먼저 [간편 가입]을 진행해 주세요.");
+                    return;
+                }
+                if (existingUser.password !== password) {
+                    alert("🔒 비밀번호가 일치하지 않습니다. 다시 확인 후 입력해 주세요.");
+                    return;
+                }
+                currentUser = existingUser;
+                localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+                closeModal('login-screen');
+                applyUserSession();
+                showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
+            } else if (currentModalMode === 'signup') {
+                if (existingUser) {
+                    document.getElementById('duplicate-signup-modal').classList.remove('hidden');
+                    return;
+                }
+                executeSignupProcess();
+            } else if (currentModalMode === 'edit') {
+                executeEditProcess();
+            }
+        }
+
+        async function executeSignupProcess() {
+            const submitBtn = document.getElementById('login-submit-btn');
+            const originalBtnHtml = submitBtn.innerHTML;
+            const studentId = document.getElementById('login-student-id').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            const gradeNum = studentId.charAt(0);
+            let gradeStr = gradeNum === '1' ? '1학년' : gradeNum === '2' ? '2학년' : gradeNum === '3' ? '3학년' : '';
+            let classNum = String(parseInt(studentId.substring(1, 3), 10)) || "1";
+
+            const validateSelectionFilled = (gradeStr) => {
+                if (gradeStr === '2학년') {
+                    const slotSelects = document.querySelectorAll('select[name="login-slot-course"]');
+                    for (let sel of slotSelects) {
+                        if (!sel.value) { alert("⚠️ 수강 과목을 선택해 주세요."); sel.focus(); return false; }
+                    }
+                } else if (gradeStr === '3학년') {
+                    const blockSelects = document.querySelectorAll('select[name="login-grade3-block"]');
+                    for (let sel of blockSelects) {
+                        if (!sel.value) { alert("⚠️ 수강 과목을 선택해 주세요."); sel.focus(); return false; }
+                    }
+                }
+                return true;
+            };
+
+            if (!validateSelectionFilled(gradeStr)) return;
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
+
+                let collectedCourses = [];
+                if (gradeStr === '1학년') {
+                    ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학"].forEach(s => collectedCourses.push(`${s}:전체`));
+                    const artMusicRadio = document.querySelector('input[name="login-art-music"]:checked');
+                    if (artMusicRadio) collectedCourses.push(artMusicRadio.value);
+                } else if (gradeStr === '2학년') {
+                    let langSub = parseInt(classNum) === 7 ? "중국어" : "일본어";
+                    [ "미적분1", "화법과 언어", "영어2", "체육", langSub ].forEach(s => collectedCourses.push(`${s}:전체`));
+                    const artMusicRadio2 = document.querySelector('input[name="login-art-music-2"]:checked');
+                    if (artMusicRadio2) collectedCourses.push(artMusicRadio2.value);
+
+                    document.querySelectorAll('select[name="login-slot-course"]').forEach(sel => {
+                        if (sel.value) collectedCourses.push(sel.value);
+                    });
+                } else if (gradeStr === '3학년') {
+                    document.querySelectorAll('select[name="login-grade3-block"]').forEach(sel => {
+                        if (sel.value) collectedCourses.push(sel.value);
+                    });
+                }
+
+                currentUser = {
+                    studentId,
+                    gradeStr,
+                    classNum,
+                    password,
+                    enrolledCourses: collectedCourses
+                };
+
+                registeredUsersDB[studentId] = currentUser;
+                localStorage.setItem('school_schedule_users_cache', JSON.stringify(registeredUsersDB));
+
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'registerUser', user: currentUser })
+                    }).catch(err => console.error("회원 정보 저장 통신 오류:", err));
+                }
+
+                localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+                closeModal('login-screen');
+                applyUserSession();
+                showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
+            } catch (err) {
+                console.error(err);
+                alert("처리 도중 오류가 발생했습니다: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+            }
+        }
+
+        async function executeEditProcess() {
+            const submitBtn = document.getElementById('login-submit-btn');
+            const originalBtnHtml = submitBtn.innerHTML;
+            let studentId = currentUser.studentId;
+            let gradeStr = currentUser.gradeStr;
+            let classNum = currentUser.classNum;
+
+            const validateSelectionFilled = (gradeStr) => {
+                if (gradeStr === '2학년') {
+                    const slotSelects = document.querySelectorAll('select[name="login-slot-course"]');
+                    for (let sel of slotSelects) {
+                        if (!sel.value) { alert("⚠️ 수강 과목을 선택해 주세요."); sel.focus(); return false; }
+                    }
+                } else if (gradeStr === '3학년') {
+                    const blockSelects = document.querySelectorAll('select[name="login-grade3-block"]');
+                    for (let sel of blockSelects) {
+                        if (!sel.value) { alert("⚠️ 수강 과목을 선택해 주세요."); sel.focus(); return false; }
+                    }
+                }
+                return true;
+            };
+
+            if (!validateSelectionFilled(gradeStr)) return;
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
+
+                let collectedCourses = [];
+                if (gradeStr === '1학년') {
+                    ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학"].forEach(s => collectedCourses.push(`${s}:전체`));
+                    const artMusicRadio = document.querySelector('input[name="login-art-music"]:checked');
+                    if (artMusicRadio) collectedCourses.push(artMusicRadio.value);
+                } else if (gradeStr === '2학년') {
+                    let langSub = parseInt(classNum) === 7 ? "중국어" : "일본어";
+                    [ "미적분1", "화법과 언어", "영어2", "체육", langSub ].forEach(s => collectedCourses.push(`${s}:전체`));
+                    const artMusicRadio2 = document.querySelector('input[name="login-art-music-2"]:checked');
+                    if (artMusicRadio2) collectedCourses.push(artMusicRadio2.value);
+
+                    document.querySelectorAll('select[name="login-slot-course"]').forEach(sel => {
+                        if (sel.value) collectedCourses.push(sel.value);
+                    });
+                } else if (gradeStr === '3학년') {
+                    document.querySelectorAll('select[name="login-grade3-block"]').forEach(sel => {
+                        if (sel.value) collectedCourses.push(sel.value);
+                    });
+                }
+
+                currentUser.enrolledCourses = collectedCourses;
+                registeredUsersDB[studentId] = currentUser;
+                localStorage.setItem('school_schedule_users_cache', JSON.stringify(registeredUsersDB));
+
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'registerUser', user: currentUser })
+                    }).catch(err => console.error("수강 과목 수정 저장 통신 오류:", err));
+                }
+
+                localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+                closeModal('login-screen');
+                applyUserSession();
+                showToast('수강 과목 정보가 정상적으로 수정되었습니다.', 'success');
+            } catch (err) {
+                console.error(err);
+                alert("처리 도중 오류가 발생했습니다: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+            }
+        }
+
+        function applyUserSession() {
+            const badge = document.getElementById('user-badge');
+            const badgeText = document.getElementById('badge-info-text');
+            const loginOpenBtn = document.getElementById('login-open-btn');
+            const signupOpenBtn = document.getElementById('signup-open-btn');
+            const adminPanelBtn = document.getElementById('admin-panel-open-btn');
+
+            if (!currentUser) {
+                badge.classList.add('hidden');
+                loginOpenBtn.classList.remove('hidden');
+                signupOpenBtn.classList.remove('hidden');
+                if (adminPanelBtn) adminPanelBtn.classList.add('hidden');
+            } else {
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+                loginOpenBtn.classList.add('hidden');
+                signupOpenBtn.classList.add('hidden');
+
+                if (currentUser.isAdmin) {
+                    badgeText.textContent = `🛠️ 관리자(교사)`;
+                    if (adminPanelBtn) adminPanelBtn.classList.remove('hidden');
+                } else {
+                    badgeText.textContent = `🎓 ${currentUser.studentId} 학생 (${currentUser.enrolledCourses ? currentUser.enrolledCourses.length : 0}개 과목)`;
+                    if (adminPanelBtn) adminPanelBtn.classList.add('hidden');
+                    document.getElementById('filter-grade').value = currentUser.gradeStr;
+                    document.getElementById('filter-class').value = currentUser.classNum;
+                }
+            }
+
+            updateFilterSubjects();
+            renderMainView();
+            renderDDayWidget();
+        }
+
+        function logout() {
+            localStorage.removeItem('school_schedule_user');
+            currentUser = null;
+            document.getElementById('user-badge').classList.add('hidden');
+            document.getElementById('user-badge').classList.remove('flex');
+            document.getElementById('login-open-btn').classList.remove('hidden');
+            document.getElementById('signup-open-btn').classList.remove('hidden');
+            document.getElementById('filter-grade').value = 'all';
+            document.getElementById('filter-class').value = 'all';
+            updateFilterSubjects();
+            renderMainView();
+            renderDDayWidget();
+            showToast('로그아웃되었습니다.', 'info');
+        }
+
+        function updateFilterSubjects() {
+            const filterGrade = document.getElementById('filter-grade').value;
             const subjectSelect = document.getElementById('filter-subject');
+            const currentSelectedSubject = subjectSelect.value;
+            let availableSubjects = new Set();
+            
+            let filteredEventsForSubject = sampleEvents.filter(e => {
+                if (filterGrade !== 'all' && !e.target.includes(filterGrade)) return false;
+                const selectedClass = document.getElementById('filter-class').value;
+                if (selectedClass !== 'all') {
+                    const classPattern = `${selectedClass}반`;
+                    const isNumericClassEvent = /\d+반/.test(e.target);
+                    if (!e.target.includes('전체') && !e.target.includes(classPattern) && isNumericClassEvent) return false;
+                }
+                return true;
+            });
+
+            filteredEventsForSubject.forEach(e => availableSubjects.add(e.subject));
+
+            if (availableSubjects.size === 0) {
+                if (currentUser && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
+                    currentUser.enrolledCourses.forEach(item => availableSubjects.add(item.split(':')[0]));
+                } else {
+                    if (filterGrade === 'all') {
+                        Object.values(COURSE_DATA).forEach(obj => Object.keys(obj).forEach(sub => availableSubjects.add(sub)));
+                    } else if (COURSE_DATA[filterGrade]) {
+                        Object.keys(COURSE_DATA[filterGrade]).forEach(sub => availableSubjects.add(sub));
+                    }
+                }
+            }
 
             subjectSelect.innerHTML = '<option value="all">전체 과목</option>';
-
-            let subjectsToOption = [];
-            if (gradeFilter === 'all') {
-                Object.values(SUBJECTS_BY_GRADE).forEach(list => {
-                    list.forEach(s => subjectsToOption.push(s.name));
-                });
-            } else if (SUBJECTS_BY_GRADE[gradeFilter]) {
-                subjectsToOption = SUBJECTS_BY_GRADE[gradeFilter].map(s => s.name);
-            }
-
-            subjectsToOption = [...new Set(subjectsToOption)];
-
-            subjectsToOption.forEach(sub => {
+            Array.from(availableSubjects).sort().forEach(sub => {
                 const opt = document.createElement('option');
                 opt.value = sub;
                 opt.textContent = sub;
                 subjectSelect.appendChild(opt);
             });
+
+            if (availableSubjects.has(currentSelectedSubject)) {
+                subjectSelect.value = currentSelectedSubject;
+            } else {
+                subjectSelect.value = 'all';
+            }
         }
 
-        // 메인 데이터 필터링 로직
-        function getFilteredEvents() {
-            const gradeFilter = document.getElementById('filter-grade').value;
-            const classFilter = document.getElementById('filter-class').value;
-            const subjectFilter = document.getElementById('filter-subject').value;
+        function handleFilterChange() {
+            updateFilterSubjects();
+            renderMainView();
+            renderDDayWidget();
+        }
 
-            return eventsDB.filter(event => {
-                if (subjectFilter !== 'all' && event.subject !== subjectFilter) {
+        function handleClassFilterChange() {
+            updateFilterSubjects();
+            renderMainView();
+            renderDDayWidget();
+        }
+
+        function handleSubjectFilterChange() {
+            renderMainView();
+            renderDDayWidget();
+        }
+
+        function isEventMatchingFilter(e) {
+            const selectedGrade = document.getElementById('filter-grade').value;
+            const selectedClass = document.getElementById('filter-class').value;
+            const selectedSubject = document.getElementById('filter-subject').value;
+
+            if (selectedSubject !== 'all' && e.subject !== selectedSubject) {
+                return false;
+            }
+
+            if (selectedGrade !== 'all' && !e.target.includes(selectedGrade)) {
+                return false;
+            }
+
+            if (selectedClass !== 'all') {
+                const classPattern = `${selectedClass}반`;
+                const isNumericClassEvent = /\d+반/.test(e.target);
+
+                if (!e.target.includes('전체') && !e.target.includes(classPattern) && isNumericClassEvent) {
                     return false;
                 }
+            }
 
-                if (gradeFilter !== 'all') {
-                    const gradePrefix = gradeFilter.charAt(0); // "1", "2", "3"
-                    const isGradeMatch = event.target.includes(gradeFilter) ||
-                        event.target.startsWith(`${gradePrefix}학년`) ||
-                        (SUBJECTS_BY_GRADE[gradeFilter] && SUBJECTS_BY_GRADE[gradeFilter].some(s => s.name === event.subject));
-
-                    if (!isGradeMatch) return false;
-                }
-
-                if (classFilter !== 'all') {
-                    const targetStr = event.target;
-                    
-                    if (targetStr.includes('전체')) {
-                        // 전체 대상은 통과
-                    } else if (targetStr.includes(`${classFilter}반`)) {
-                        // "1반", "2반" 형태 일치
-                    } else {
-                        // 특정 그룹 분반
-                        let isMatch = false;
-                        if (currentUser && currentUser.subjects && currentUser.grade) {
-                            const userClassGroup = currentUser.subjects[event.subject];
-                            if (userClassGroup && targetStr.includes(userClassGroup)) {
-                                isMatch = true;
-                            }
+            if (currentUser && !currentUser.isAdmin && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
+                let isMatchUserCourse = false;
+                currentUser.enrolledCourses.forEach(courseStr => {
+                    let parts = courseStr.split(':');
+                    let subName = parts[0];
+                    let targetInfo = parts[1];
+                    if (e.subject === subName) {
+                        if (targetInfo === '전체' || e.target.includes(targetInfo)) {
+                            isMatchUserCourse = true;
                         }
-                        if (!isMatch) return false;
                     }
-                }
+                });
+                if (!isMatchUserCourse) return false;
+            }
 
-                if (currentUser && !currentUser.isGuest && !currentUser.isAdmin) {
-                    const userGrade = currentUser.grade;
-                    const userClass = currentUser.classNum;
-
-                    const eventGradeNum = event.target.charAt(0);
-                    const userGradeNum = userGrade.charAt(0);
-
-                    if (eventGradeNum === userGradeNum || (SUBJECTS_BY_GRADE[userGrade] && SUBJECTS_BY_GRADE[userGrade].some(s => s.name === event.subject))) {
-                        if (event.target.includes('전체')) {
-                            return true;
-                        }
-                        if (event.target.includes(`${userClass}반`)) {
-                            return true;
-                        }
-                        if (currentUser.subjects && currentUser.subjects[event.subject]) {
-                            const userGroup = currentUser.subjects[event.subject];
-                            if (event.target.includes(userGroup)) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    } else {
-                        return false;
-                    }
-                }
-
-                return true;
-            });
+            return true;
         }
 
-        // 캘린더 및 리스트 뷰 렌더링
+        function renderMainView() {
+            if (currentViewMode === 'calendar') {
+                renderCalendar();
+            } else {
+                renderListView();
+            }
+        }
+
         function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
 
             document.getElementById('current-month-year').textContent = `${year}년 ${month + 1}월`;
 
-            const filteredEvents = getFilteredEvents();
-
-            renderDDayWidget(filteredEvents);
-
-            if (viewMode === 'list') {
-                renderListView(filteredEvents);
-                return;
-            }
-
-            const calendarGrid = document.getElementById('calendar-grid');
-            calendarGrid.innerHTML = '';
-
             const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
-            daysOfWeek.forEach((day, idx) => {
+            daysOfWeek.forEach((day, index) => {
                 const header = document.createElement('div');
-                header.className = `text-center font-bold text-xs py-2 ${idx === 0 ? 'text-rose-500' : idx === 6 ? 'text-blue-500' : 'text-slate-600'}`;
+                header.className = `text-center font-bold text-xs py-2 rounded-lg ${index === 0 ? 'text-rose-500 bg-rose-50/50' : index === 6 ? 'text-blue-500 bg-blue-50/50' : 'text-slate-600 bg-slate-100'}`;
                 header.textContent = day;
-                calendarGrid.appendChild(header);
+                grid.appendChild(header);
             });
 
-            const firstDay = new Date(year, month, 1).getDay();
-            const lastDate = new Date(year, month + 1, 0).getDate();
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const lastDay = new Date(year, month + 1, 0).getDate();
 
-            for (let i = 0; i < firstDay; i++) {
+            for (let i = 0; i < firstDayIndex; i++) {
                 const emptyCell = document.createElement('div');
-                emptyCell.className = "bg-slate-50/50 rounded-xl min-h-[100px] border border-slate-100/50";
-                calendarGrid.appendChild(emptyCell);
+                emptyCell.className = 'bg-slate-50/40 rounded-xl min-h-[100px] border border-dashed border-slate-200 opacity-40';
+                grid.appendChild(emptyCell);
             }
 
-            const today = new Date();
-            const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
-
-            for (let date = 1; date <= lastDate; date++) {
+            for (let day = 1; day <= lastDay; day++) {
                 const cell = document.createElement('div');
-                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-                const isToday = isCurrentMonth && today.getDate() === date;
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = dateStr === getTodayDateString();
 
-                cell.className = `bg-white rounded-xl min-h-[110px] p-1.5 border ${isToday ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200'} flex flex-col justify-between hover:shadow-md transition`;
+                cell.className = `bg-white rounded-xl min-h-[100px] p-2 border ${isToday ? 'border-blue-600 ring-4 ring-blue-100 bg-blue-50/30' : 'border-slate-200'} flex flex-col gap-1 transition hover:shadow-md`;
+                
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'flex justify-between items-center text-xs font-bold';
+                dayHeader.innerHTML = `<span class="${isToday ? 'bg-blue-600 text-white px-2 py-0.5 rounded-full shadow' : 'text-slate-700'}">${day}</span>${isToday ? '<span class="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded animate-pulse">오늘</span>' : ''}`;
+                cell.appendChild(dayHeader);
 
-                const dayOfWeek = new Date(year, month, date).getDay();
-                let dateColorClass = 'text-slate-700';
-                if (dayOfWeek === 0) dateColorClass = 'text-rose-500 font-extrabold';
-                if (dayOfWeek === 6) dateColorClass = 'text-blue-500 font-extrabold';
+                const eventsContainer = document.createElement('div');
+                eventsContainer.className = 'flex flex-col gap-1 overflow-y-auto max-h-[80px] scrollbar-none';
 
-                let dateHeaderHtml = `<div class="flex justify-between items-center mb-1">
-                    <span class="text-xs ${dateColorClass} ${isToday ? 'bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-black' : ''}">${date}</span>
-                </div>`;
-
-                const dayEvents = filteredEvents.filter(e => e.date === dateString);
-
-                let eventsHtml = '<div class="space-y-1 overflow-y-auto max-h-[90px] pr-0.5 scrollbar-thin">';
-                dayEvents.forEach(e => {
-                    const bgColor = e.color || '#3b82f6';
-                    eventsHtml += `
-                        <div onclick="openDetailModal('${e.id}')" style="border-left-color: ${bgColor};" class="bg-slate-50 hover:bg-blue-50 border-l-4 p-1 rounded text-[11px] cursor-pointer transition shadow-xs group">
-                            <div class="font-bold text-slate-800 truncate group-hover:text-blue-600">${escapeHtml(e.subject)}</div>
-                            <div class="text-[10px] text-slate-500 truncate">${escapeHtml(e.title)}</div>
-                        </div>
-                    `;
+                const dayEvents = sampleEvents.filter(e => e.date === dateStr && isEventMatchingFilter(e));
+                dayEvents.forEach(ev => {
+                    const pill = document.createElement('button');
+                    pill.onclick = () => openDetailModal(ev);
+                    const isTodayEvent = ev.date === getTodayDateString();
+                    pill.className = `text-left text-[10px] font-bold px-2 py-1 rounded-lg text-white truncate shadow-sm transition transform hover:scale-[1.02] active:scale-95 flex items-center justify-between ${isTodayEvent ? 'ring-2 ring-yellow-300 font-black' : ''}`;
+                    pill.style.backgroundColor = ev.color || '#3b82f6';
+                    pill.title = `[${ev.subject}] ${ev.title} (${ev.target})`;
+                    pill.innerHTML = `<span>[${ev.subject}] ${ev.title}</span>${isTodayEvent ? '<span class="bg-yellow-300 text-slate-900 text-[8px] px-1 rounded ml-1 shrink-0">D-0</span>' : ''}`;
+                    eventsContainer.appendChild(pill);
                 });
-                eventsHtml += '</div>';
 
-                cell.innerHTML = dateHeaderHtml + eventsHtml;
-                calendarGrid.appendChild(cell);
+                cell.appendChild(eventsContainer);
+                grid.appendChild(cell);
             }
         }
 
-        function renderListView(events) {
+        function renderListView() {
             const container = document.getElementById('list-view-container');
             container.innerHTML = '';
 
-            if (events.length === 0) {
-                container.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-slate-400 text-sm">해당 조건의 수행평가가 없습니다.</div>`;
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            document.getElementById('current-month-year').textContent = `${year}년 ${month + 1}월`;
+
+            const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+            const monthEvents = sampleEvents.filter(e => e.date && e.date.startsWith(monthPrefix) && isEventMatchingFilter(e));
+            monthEvents.sort((a, b) => a.date.localeCompare(b.date));
+
+            if (monthEvents.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-slate-400 text-sm font-semibold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    해당 월에 등록된 수행평가 일정이 없습니다.
+                </div>`;
                 return;
             }
 
-            const sorted = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            sorted.forEach(e => {
-                const item = document.createElement('div');
-                item.className = "bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 cursor-pointer";
-                item.onclick = () => openDetailModal(e.id);
-
-                const dDayText = getDDayText(e.date);
-
-                item.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-2.5 h-10 rounded-full" style="background-color: ${e.color || '#3b82f6'};"></div>
+            monthEvents.forEach(ev => {
+                const card = document.createElement('div');
+                card.onclick = () => openDetailModal(ev);
+                const isTodayEvent = ev.date === getTodayDateString();
+                
+                card.className = `bg-white p-4 rounded-xl border ${isTodayEvent ? 'border-blue-500 ring-2 ring-blue-100 bg-blue-50/10' : 'border-slate-200'} shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:border-blue-300 hover:shadow-md transition cursor-pointer`;
+                
+                card.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <div class="px-3 py-2 rounded-xl text-white font-black text-xs text-center shrink-0" style="background-color: ${ev.color || '#3b82f6'}">
+                            ${ev.date.substring(5)}
+                        </div>
                         <div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">${escapeHtml(e.subject)}</span>
-                                <span class="text-xs font-bold text-slate-500">${escapeHtml(e.target)}</span>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                ${isTodayEvent ? '<span class="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">🔥 오늘 수행평가</span>' : ''}
+                                <span class="bg-slate-100 text-slate-700 font-bold text-[11px] px-2 py-0.5 rounded">${ev.subject}</span>
+                                <span class="text-xs font-black text-slate-800">${ev.title}</span>
                             </div>
-                            <h4 class="font-bold text-sm text-slate-800 mt-0.5">${escapeHtml(e.title)}</h4>
+                            <p class="text-xs text-slate-500 mt-1">${ev.desc || '상세 내용 없음'}</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3 self-end sm:self-center">
-                        <span class="text-xs font-bold text-slate-500">📅 ${e.date}</span>
-                        <span class="text-xs font-black px-2.5 py-1 rounded-full ${dDayText.includes('D-Day') ? 'bg-rose-500 text-white animate-pulse' : 'bg-slate-100 text-slate-700'}">${dDayText}</span>
+                    <div class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg shrink-0">
+                        🎯 ${ev.target}
                     </div>
-                `;
-                container.appendChild(item);
-            });
-        }
-
-        function renderDDayWidget(events) {
-            const container = document.getElementById('dday-widget-container');
-            const badge = document.getElementById('dday-count-badge');
-            container.innerHTML = '';
-
-            const today = new Date();
-            today.setHours(0,0,0,0);
-
-            const upcoming = events.filter(e => {
-                const eDate = new Date(e.date);
-                eDate.setHours(0,0,0,0);
-                const diffTime = eDate - today;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                return diffDays >= 0 && diffDays <= 14;
-            }).sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            badge.textContent = `${upcoming.length}건`;
-
-            if (upcoming.length === 0) {
-                container.innerHTML = `<div class="text-xs text-slate-400 py-1">2주 이내 예정된 수행평가가 없습니다.</div>`;
-                return;
-            }
-
-            upcoming.forEach(e => {
-                const card = document.createElement('div');
-                card.onclick = () => openDetailModal(e.id);
-                card.className = "bg-white p-3 rounded-xl border border-blue-100 shadow-sm min-w-[200px] max-w-[220px] shrink-0 cursor-pointer hover:border-blue-300 transition";
-
-                const dDay = getDDayText(e.date);
-
-                card.innerHTML = `
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[10px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">${escapeHtml(e.subject)}</span>
-                        <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${dDay === 'D-Day' ? 'bg-rose-500 text-white' : 'bg-amber-100 text-amber-700'}">${dDay}</span>
-                    </div>
-                    <h4 class="text-xs font-bold text-slate-800 truncate">${escapeHtml(e.title)}</h4>
-                    <p class="text-[10px] text-slate-400 mt-1">📅 ${e.date} (${e.target})</p>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function getDDayText(dateStr) {
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            const target = new Date(dateStr);
-            target.setHours(0,0,0,0);
-
-            const diffTime = target - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays === 0) return 'D-Day';
-            if (diffDays > 0) return `D-${diffDays}`;
-            return `D+${Math.abs(diffDays)}`;
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderMainView();
         }
 
-        // 로그인 / 간편가입 / 수강과목 설정 관련 로직
-        function openLoginModal(mode) {
-            const title = document.getElementById('login-modal-title');
-            const desc = document.getElementById('login-modal-desc');
-            const submitBtn = document.getElementById('login-submit-btn');
-            const subjectStep = document.getElementById('subject-selection-step');
+        function renderDDayWidget() {
+            const container = document.getElementById('dday-widget-container');
+            const countBadge = document.getElementById('dday-count-badge');
+            container.innerHTML = '';
 
-            subjectStep.classList.add('hidden');
-            document.getElementById('login-student-id').value = '';
-            document.getElementById('login-password').value = '';
+            const todayStr = getTodayDateString();
+            const todayDateObj = new Date(todayStr);
 
-            if (mode === 'login') {
-                title.textContent = "명지여고 수행평가 로그인";
-                desc.textContent = "학번과 비밀번호를 입력하세요. (손님: guest / guest)";
-                submitBtn.textContent = "로그인";
-                submitBtn.dataset.mode = "login";
-            } else {
-                title.textContent = "✨ 학생 간편 회원가입";
-                desc.textContent = "학번 5자리와 비밀번호를 설정하여 가입하세요.";
-                submitBtn.textContent = "다음: 맞춤 과목 선택";
-                submitBtn.dataset.mode = "signup_step1";
+            const upcomingEvents = sampleEvents.filter(e => {
+                if (!e.date || !isEventMatchingFilter(e)) return false;
+                const evDateObj = new Date(e.date);
+                const diffTime = evDateObj - todayDateObj;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays >= 0 && diffDays <= 14;
+            }).map(e => {
+                const evDateObj = new Date(e.date);
+                const diffTime = evDateObj - todayDateObj;
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                return { ...e, diffDays };
+            }).sort((a, b) => a.diffDays - b.diffDays);
+
+            countBadge.textContent = `${upcomingEvents.length}건`;
+
+            if (upcomingEvents.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-400 font-medium py-1 px-2">14일 이내 임박한 수행평가 일정이 없습니다.</div>`;
+                return;
             }
 
-            document.getElementById('login-screen').classList.remove('hidden');
+            upcomingEvents.forEach(ev => {
+                const badgeText = ev.diffDays === 0 ? 'D-Day' : `D-${ev.diffDays}`;
+                const card = document.createElement('div');
+                card.onclick = () => openDetailModal(ev);
+                card.className = 'bg-white p-3 rounded-xl border border-blue-100 shadow-sm min-w-[220px] max-w-[260px] shrink-0 cursor-pointer hover:border-blue-400 transition flex flex-col justify-between';
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-1 mb-1">
+                        <span class="bg-blue-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full">${badgeText}</span>
+                        <span class="text-[10px] font-bold text-slate-400">${ev.date}</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-800 truncate">${ev.title}</div>
+                        <div class="text-[11px] text-slate-500 truncate">${ev.subject} (${ev.target})</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
         }
 
-        function handleLoginSubmit(e) {
-            e.preventDefault();
-            const mode = document.getElementById('login-submit-btn').dataset.mode;
-            const studentId = document.getElementById('login-student-id').value.trim();
-            const pwd = document.getElementById('login-password').value.trim();
+        function openRegisterModal(isEditRequest = false, eventObj = null) {
+            if (!checkDataLoadedOrWarn()) return;
 
-            if (mode === 'login') {
-                if (studentId === 'guest' && pwd === 'guest') {
-                    currentUser = { studentId: 'guest', isGuest: true };
-                    localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
-                    closeModal('login-screen');
-                    showToast('손님 모드로 로그인되었습니다.', 'success');
-                    updateUserUI();
-                    return;
-                }
+            isEditClaimMode = isEditRequest;
+            const modal = document.getElementById('register-modal');
+            const heading = document.getElementById('register-modal-heading');
+            const submitBtn = document.getElementById('reg-submit-btn');
+            const passwordLabel = document.getElementById('reg-password-label');
+            const passwordInput = document.getElementById('reg-password');
+            const passwordNotice = document.getElementById('reg-password-notice');
+            const gradeSelect = document.getElementById('reg-grade');
 
-                if (studentId === 'admin' && pwd === 'admin1234') {
-                    currentUser = { studentId: 'admin', isAdmin: true };
-                    localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
-                    closeModal('login-screen');
-                    showToast('관리자 계정으로 로그인되었습니다.', 'success');
-                    updateUserUI();
-                    return;
-                }
-
-                const savedUserStr = localStorage.getItem(`user_${studentId}`);
-                if (!savedUserStr) {
-                    showToast('등록되지 않은 학번입니다. 간편 가입을 이용해 주세요.', 'error');
-                    return;
-                }
-                const savedUser = JSON.parse(savedUserStr);
-                if (savedUser.password !== pwd) {
-                    showToast('비밀번호가 일치하지 않습니다.', 'error');
-                    return;
-                }
-
-                currentUser = savedUser;
-                localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
-                closeModal('login-screen');
-                showToast(`${currentUser.grade} ${currentUser.classNum}반 학생으로 로그인되었습니다.`, 'success');
-                updateUserUI();
-
-            } else if (mode === 'signup_step1') {
-                if (studentId.length !== 5 || isNaN(studentId)) {
-                    showToast('학번 5자리를 정확히 입력해 주세요. (예: 20105)', 'error');
-                    return;
-                }
-                if (!pwd || pwd.length < 4) {
-                    showToast('비밀번호를 4자리 이상 입력해 주세요.', 'error');
-                    return;
-                }
-
-                if (localStorage.getItem(`user_${studentId}`)) {
-                    document.getElementById('duplicate-signup-modal').classList.remove('hidden');
-                    return;
-                }
-
-                renderSubjectSelectionFields(studentId);
-
-            } else if (mode === 'signup_step2' || mode === 'edit_subjects') {
-                const gradeNum = studentId.charAt(0);
-                const grade = `${gradeNum}학년`;
-                const classNum = parseInt(studentId.substring(1, 3), 10);
-
-                const subjectsObj = {};
-                const selects = document.querySelectorAll('.dynamic-subject-select');
-                selects.forEach(sel => {
-                    subjectsObj[sel.dataset.subject] = sel.value;
-                });
-
-                currentUser = {
-                    studentId,
-                    password: pwd,
-                    grade,
-                    classNum,
-                    subjects: subjectsObj,
-                    isAdmin: false,
-                    isGuest: false
-                };
-
-                localStorage.setItem(`user_${studentId}`, JSON.stringify(currentUser));
-                localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
-
-                closeModal('login-screen');
-                showToast(mode === 'edit_subjects' ? '맞춤 수강 과목이 수정되었습니다.' : '회원가입이 완료되었습니다!', 'success');
-                updateUserUI();
-            }
-        }
-
-        function handleResetAndReRegister() {
-            closeModal('duplicate-signup-modal');
-            const studentId = document.getElementById('login-student-id').value.trim();
-            localStorage.removeItem(`user_${studentId}`);
-            showToast('기존 정보가 초기화되었습니다. 다시 가입절차를 진행해주세요.', 'info');
-            renderSubjectSelectionFields(studentId);
-        }
-
-        function renderSubjectSelectionFields(studentId) {
-            const gradeNum = studentId.charAt(0);
-            const grade = `${gradeNum}학년`;
-            const classNum = parseInt(studentId.substring(1, 3), 10);
-
-            const dynamicArea = document.getElementById('login-subject-dynamic-area');
-            const subjectStep = document.getElementById('subject-selection-step');
-            const submitBtn = document.getElementById('login-submit-btn');
-
-            dynamicArea.innerHTML = '';
-
-            const subjects = SUBJECTS_BY_GRADE[grade] || [];
-            const selectiveSubjects = subjects.filter(s => !s.isCommon);
-
-            if (selectiveSubjects.length === 0) {
-                dynamicArea.innerHTML = `<p class="text-xs text-slate-600">${grade}은 별도 선택 분반 과목이 없습니다. 바로 등록을 진행합니다.</p>`;
-            } else {
-                selectiveSubjects.forEach(sub => {
-                    const field = document.createElement('div');
-                    field.className = "flex flex-col gap-1 bg-white p-3 rounded-xl border border-blue-100";
-
-                    let optionsHtml = '';
-                    sub.groups.forEach(g => {
-                        optionsHtml += `<option value="${g}">${g}</option>`;
-                    });
-
-                    field.innerHTML = `
-                        <label class="text-xs font-bold text-slate-700">📖 ${sub.name}</label>
-                        <select data-subject="${sub.name}" class="dynamic-subject-select px-3 py-1.5 border border-slate-300 rounded-lg text-xs bg-slate-50 focus:outline-none focus:border-blue-500">
-                            ${optionsHtml}
-                        </select>
-                    `;
-                    dynamicArea.appendChild(field);
-                });
-            }
-
-            subjectStep.classList.remove('hidden');
-            submitBtn.textContent = "가입 완료하기";
-            submitBtn.dataset.mode = "signup_step2";
-        }
-
-        function openEditSubjectsModal() {
-            if (!currentUser || currentUser.isGuest || currentUser.isAdmin) return;
-
-            openLoginModal('signup');
-            document.getElementById('login-modal-title').textContent = "✏️ 내 맞춤 수강 과목 수정";
-            document.getElementById('login-modal-desc').textContent = "수강 중인 선택과목 분반을 다시 설정합니다.";
-
-            document.getElementById('login-student-id').value = currentUser.studentId;
-            document.getElementById('login-password').value = currentUser.password;
-
-            renderSubjectSelectionFields(currentUser.studentId);
-
-            if (currentUser.subjects) {
-                setTimeout(() => {
-                    const selects = document.querySelectorAll('.dynamic-subject-select');
-                    selects.forEach(sel => {
-                        const subName = sel.dataset.subject;
-                        if (currentUser.subjects[subName]) {
-                            sel.value = currentUser.subjects[subName];
-                        }
-                    });
-                }, 50);
-            }
-
-            const submitBtn = document.getElementById('login-submit-btn');
-            submitBtn.textContent = "과목 정보 저장하기";
-            submitBtn.dataset.mode = "edit_subjects";
-        }
-
-        // 수행평가 등록 / 수정 요청 기능
-        function openRegisterModal() {
-            isClaimMode = false;
-            activeClaimEventId = null;
-
-            document.getElementById('register-modal-heading').textContent = "📝 수행평가 일정 간편 등록";
-            document.getElementById('reg-submit-btn').textContent = "등록하기";
-
+            modal.classList.remove('hidden');
             document.getElementById('register-form').reset();
-
-            // 비밀번호 활성화 상태 복원
-            const pwdInput = document.getElementById('reg-password');
-            pwdInput.disabled = false;
-            pwdInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
-            document.getElementById('reg-password-notice').classList.add('hidden');
-
+            document.getElementById('target-checkbox-container').classList.add('hidden');
             document.getElementById('reg-subject').disabled = true;
             document.getElementById('reg-subject').innerHTML = '<option value="">과목을 먼저 선택하세요</option>';
-            document.getElementById('target-checkbox-container').classList.add('hidden');
 
-            document.getElementById('register-modal').classList.remove('hidden');
-        }
-
-        function openClaimModalFromDetail() {
-            if (!selectedEventId) return;
-
-            const item = eventsDB.find(e => e.id === selectedEventId);
-            if (!item) return;
-
-            closeModal('detail-modal');
-
-            isClaimMode = true;
-            activeClaimEventId = selectedEventId;
-
-            document.getElementById('register-modal-heading').textContent = "✏️ 수행평가 수정 요청";
-            document.getElementById('reg-submit-btn').textContent = "수정 요청 제출";
-
-            document.getElementById('reg-title').value = item.title;
-            document.getElementById('reg-date').value = item.date;
-            document.getElementById('reg-desc').value = item.description || '';
-
-            // 수정 요청 모달일 때는 비밀번호 칸 불활성화 및 안내 문구 표시
-            const pwdInput = document.getElementById('reg-password');
-            pwdInput.value = item.password || '****';
-            pwdInput.disabled = true;
-            pwdInput.classList.add('bg-slate-100', 'cursor-not-allowed');
-            document.getElementById('reg-password-notice').classList.remove('hidden');
-
-            // 과목 및 학년 추정
-            let foundGrade = "1학년";
-            for (const [grade, subjects] of Object.entries(SUBJECTS_BY_GRADE)) {
-                if (subjects.some(s => s.name === item.subject)) {
-                    foundGrade = grade;
-                    break;
-                }
+            if (currentUser && !currentUser.isAdmin) {
+                gradeSelect.value = currentUser.gradeStr;
+                gradeSelect.disabled = true;
+                onModalGradeChange();
+            } else {
+                gradeSelect.disabled = false;
             }
 
-            document.getElementById('reg-grade').value = foundGrade;
-            onModalGradeChange();
+            if (isEditRequest && eventObj) {
+                heading.innerHTML = `✏️ '${eventObj.title}' 수정 요청 작성`;
+                submitBtn.innerHTML = '수정 요청 전송';
+                submitBtn.className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5';
+                
+                // [요구사항 2 반영] 비밀번호 칸 불활성화 및 기존 작성된 비밀번호 자동 적용
+                passwordLabel.textContent = '작성자 비밀번호 (기존 등록된 비밀번호 적용됨)';
+                passwordInput.value = eventObj.password || '';
+                passwordInput.setAttribute('readonly', 'true');
+                passwordInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+                passwordInput.removeAttribute('required');
+                passwordNotice.classList.remove('hidden');
 
-            document.getElementById('reg-subject').value = item.subject;
-            onModalSubjectChange();
-
-            // 기존 등록된 반 복원 (쉼표 및 배열 파싱)
-            const targets = item.target.split(',').map(s => s.trim());
-            const checkboxes = document.querySelectorAll('.target-checkbox');
-            checkboxes.forEach(cb => {
-                if (targets.includes(cb.value) || item.target.includes(cb.value)) {
-                    cb.checked = true;
-                } else {
-                    cb.checked = false;
+                document.getElementById('reg-title').value = eventObj.title;
+                if (currentUser && currentUser.isAdmin) {
+                    gradeSelect.value = eventObj.target.includes('1학년') ? '1학년' : eventObj.target.includes('2학년') ? '2학년' : '3학년';
+                    onModalGradeChange();
                 }
-            });
+                document.getElementById('reg-subject').value = eventObj.subject;
+                onModalSubjectChange();
+                document.getElementById('reg-date').value = eventObj.date;
+                document.getElementById('reg-desc').value = eventObj.desc;
+                
+                // 체크박스 값 정확히 복원
+                setTimeout(() => {
+                    const checkboxes = document.querySelectorAll('input[name="target-checkbox"]');
+                    const targetValues = eventObj.target.split(',').map(s => s.trim());
+                    checkboxes.forEach(cb => {
+                        cb.checked = targetValues.includes(cb.value);
+                    });
+                }, 50);
 
-            document.getElementById('register-modal').classList.remove('hidden');
+                window.currentEditTargetEventId = eventObj.id;
+            } else {
+                heading.innerHTML = '📝 수행평가 일정 간편 등록';
+                submitBtn.innerHTML = '등록하기';
+                submitBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5';
+                
+                passwordLabel.textContent = '작성자 비밀번호 (삭제용) *';
+                passwordInput.value = '';
+                passwordInput.removeAttribute('readonly');
+                passwordInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
+                passwordInput.setAttribute('required', 'true');
+                passwordInput.placeholder = '비밀번호 4자리 이상';
+                passwordNotice.classList.add('hidden');
+
+                window.currentEditTargetEventId = null;
+            }
         }
 
         function onModalGradeChange() {
             const grade = document.getElementById('reg-grade').value;
             const subjectSelect = document.getElementById('reg-subject');
-            const targetContainer = document.getElementById('target-checkbox-container');
-
             subjectSelect.innerHTML = '<option value="">과목을 선택하세요</option>';
-            targetContainer.classList.add('hidden');
+            document.getElementById('target-checkbox-container').classList.add('hidden');
 
-            if (!grade || !SUBJECTS_BY_GRADE[grade]) {
+            if (grade && COURSE_DATA[grade]) {
+                subjectSelect.disabled = false;
+                Object.keys(COURSE_DATA[grade]).sort().forEach(sub => {
+                    const opt = document.createElement('option');
+                    opt.value = sub;
+                    opt.textContent = sub;
+                    subjectSelect.appendChild(opt);
+                });
+            } else {
                 subjectSelect.disabled = true;
-                return;
             }
-
-            subjectSelect.disabled = false;
-            SUBJECTS_BY_GRADE[grade].forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.name;
-                opt.textContent = s.name;
-                subjectSelect.appendChild(opt);
-            });
         }
 
         function onModalSubjectChange() {
             const grade = document.getElementById('reg-grade').value;
-            const subjectName = document.getElementById('reg-subject').value;
+            const subject = document.getElementById('reg-subject').value;
+            const container = document.getElementById('target-checkbox-container');
             const wrapper = document.getElementById('checkboxes-wrapper');
-            const targetContainer = document.getElementById('target-checkbox-container');
-
             wrapper.innerHTML = '';
-            if (!subjectName) {
-                targetContainer.classList.add('hidden');
+
+            if (!grade || !subject) {
+                container.classList.add('hidden');
                 return;
             }
 
-            const subjectObj = SUBJECTS_BY_GRADE[grade]?.find(s => s.name === subjectName);
-
+            container.classList.remove('hidden');
             let options = [];
 
-            if (subjectName === "일본어" && grade === "2학년") {
-                // 2학년 일본어: 1반부터 6반 선택 가능
-                for (let i = 1; i <= 6; i++) {
-                    options.push(`${grade} ${i}반`);
-                }
-            } else if (subjectObj && subjectObj.isCommon) {
-                // 학년별 공통과목: 1반부터 7반 선택 가능
+            // [요구사항 1 반영] 학년별 공통과목 포함 반별 선택 기능 (1~7반, 2학년 일본어는 1~6반)
+            if (grade === '1학년') {
                 for (let i = 1; i <= 7; i++) {
                     options.push(`${grade} ${i}반`);
                 }
-            } else if (subjectObj && subjectObj.groups) {
-                // 선택과목 그룹 반
-                options = subjectObj.groups;
-            } else {
-                // 기타 기본 1반~7반
+            } else if (grade === '2학년') {
+                if (subject === '일본어') {
+                    for (let i = 1; i <= 6; i++) {
+                        options.push(`${grade} ${i}반`);
+                    }
+                } else {
+                    for (let i = 1; i <= 7; i++) {
+                        options.push(`${grade} ${i}반`);
+                    }
+                }
+            } else if (grade === '3학년') {
                 for (let i = 1; i <= 7; i++) {
                     options.push(`${grade} ${i}반`);
                 }
             }
 
-            renderTargetCheckboxes(options);
-            targetContainer.classList.remove('hidden');
-        }
-
-        function renderTargetCheckboxes(options) {
-            const wrapper = document.getElementById('checkboxes-wrapper');
-            wrapper.innerHTML = '';
-
-            options.forEach((opt, idx) => {
+            options.forEach((optText, idx) => {
                 const label = document.createElement('label');
-                label.className = "flex items-center gap-1.5 bg-white border border-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer hover:border-blue-500 transition shadow-xs";
-                label.innerHTML = `
-                    <input type="checkbox" value="${opt}" class="target-checkbox accent-blue-600 rounded">
-                    <span>${opt}</span>
-                `;
+                label.className = 'flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold cursor-pointer hover:bg-blue-50';
+                label.innerHTML = `<input type="checkbox" name="target-checkbox" value="${optText}" ${idx === 0 ? 'checked' : ''} class="rounded text-blue-600"> <span>${optText}</span>`;
                 wrapper.appendChild(label);
             });
         }
@@ -1389,273 +1582,386 @@
             e.preventDefault();
 
             const title = document.getElementById('reg-title').value.trim();
+            const grade = document.getElementById('reg-grade').value;
             const subject = document.getElementById('reg-subject').value;
             const date = document.getElementById('reg-date').value;
             const password = document.getElementById('reg-password').value.trim();
-            const description = document.getElementById('reg-desc').value.trim();
+            const desc = document.getElementById('reg-desc').value.trim();
 
-            const selectedTargets = Array.from(document.querySelectorAll('.target-checkbox:checked')).map(cb => cb.value);
-
-            if (selectedTargets.length === 0) {
-                showToast('대상 반을 최소 1개 이상 선택해 주세요.', 'error');
+            const checkedTargets = document.querySelectorAll('input[name="target-checkbox"]:checked');
+            if (checkedTargets.length === 0) {
+                alert("⚠️ 대상 학급을 최소 1개 이상 선택해 주세요.");
                 return;
             }
 
-            const targetStr = selectedTargets.join(', ');
-            const color = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
+            let targetStrs = Array.from(checkedTargets).map(cb => cb.value).join(', ');
 
-            if (isClaimMode) {
-                // 수정 요청 처리 (Claim)
-                const payload = {
-                    action: 'addClaim',
-                    eventId: activeClaimEventId,
-                    studentId: currentUser ? currentUser.studentId : 'guest',
-                    title,
-                    subject,
-                    target: targetStr,
-                    date,
-                    description,
-                    color
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+            if (isEditClaimMode && window.currentEditTargetEventId) {
+                const claimData = {
+                    id: window.currentEditTargetEventId,
+                    title: title,
+                    subject: subject,
+                    target: targetStrs,
+                    date: date,
+                    desc: desc,
+                    password: password, 
+                    color: randomColor,
+                    createdAt: new Date().toISOString(),
+                    author: currentUser ? `${currentUser.studentId} 학생` : '익명',
+                    status: '접수됨',
+                    timestamp: new Date().toISOString()
                 };
 
-                try {
-                    showToast('수정 요청을 제출하는 중입니다...', 'info');
-                    const resp = await fetch(GAS_API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify(payload)
-                    });
-                    const res = await resp.json();
+                claimItemsDB.push(claimData);
+                localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
 
-                    if (res.status === 'success') {
-                        closeModal('register-modal');
-                        showToast('수정 요청이 접수되었습니다. 관리자 확인 후 반영됩니다.', 'success');
-                        await fetchDataFromGas();
-                    } else {
-                        showToast('제출 중 오류가 발생했습니다.', 'error');
-                    }
-                } catch (err) {
-                    showToast('서버 연결 실패로 전송할 수 없습니다.', 'error');
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'addClaim', report: claimData })
+                    }).catch(err => console.error("수정 요청 전송 통신 오류:", err));
                 }
 
+                closeModal('register-modal');
+                showToast('수정 요청이 정상적으로 접수되었습니다. 관리자 승인 후 반영됩니다.', 'success');
             } else {
-                // 새 일정 등록
-                if (!password) {
-                    showToast('비밀번호를 입력해 주세요.', 'error');
-                    return;
-                }
-
-                const newEvent = {
-                    action: 'addEvent',
-                    id: 'e_' + Date.now(),
-                    title,
-                    subject,
-                    target: targetStr,
-                    date,
-                    description,
-                    password,
-                    color,
-                    createdAt: new Date().toISOString()
+                const newEventId = 'ev_' + Date.now();
+                const eventData = {
+                    id: newEventId,
+                    title: title,
+                    subject: subject,
+                    target: targetStrs,
+                    date: date,
+                    desc: desc,
+                    password: password,
+                    color: randomColor
                 };
 
-                try {
-                    showToast('일정을 등록하는 중입니다...', 'info');
-                    const resp = await fetch(GAS_API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify(newEvent)
-                    });
-                    const res = await resp.json();
+                sampleEvents.push(eventData);
+                localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
 
-                    if (res.status === 'success') {
-                        closeModal('register-modal');
-                        showToast('새 수행평가 일정이 등록되었습니다.', 'success');
-                        await fetchDataFromGas();
-                    } else {
-                        showToast('등록 중 오류가 발생했습니다.', 'error');
-                    }
-                } catch (err) {
-                    eventsDB.unshift(newEvent);
-                    localStorage.setItem('school_schedule_cache', JSON.stringify(eventsDB));
-                    closeModal('register-modal');
-                    showToast('로컬에 저장되었습니다.', 'success');
-                    renderCalendar();
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'addEvent', event: eventData })
+                    }).catch(err => console.error("일정 등록 통신 오류:", err));
                 }
+
+                closeModal('register-modal');
+                renderMainView();
+                renderDDayWidget();
+                showToast('수행평가 일정이 성공적으로 등록되었습니다!', 'success');
             }
         }
 
-        // 상세 모달 및 삭제 기능
-        function openDetailModal(eventId) {
-            selectedEventId = eventId;
-            const item = eventsDB.find(e => e.id === eventId);
-            if (!item) return;
-
-            document.getElementById('detail-title').textContent = item.title;
-            document.getElementById('detail-subject-text').textContent = item.subject;
-            document.getElementById('detail-target-text').textContent = item.target;
-            document.getElementById('detail-date-text').textContent = item.date;
-            document.getElementById('detail-desc-text').textContent = item.description || '상세 내용이 없습니다.';
-
+        function openDetailModal(ev) {
+            activeEventForDetail = ev;
+            document.getElementById('detail-title').textContent = ev.title;
+            document.getElementById('detail-subject-text').textContent = ev.subject;
+            document.getElementById('detail-target-text').textContent = ev.target;
+            document.getElementById('detail-date-text').textContent = ev.date;
+            document.getElementById('detail-desc-text').textContent = ev.desc || '상세 내용이 없습니다.';
             document.getElementById('detail-modal').classList.remove('hidden');
         }
 
         function requestDeleteEvent() {
-            if (!selectedEventId) return;
-
-            closeModal('detail-modal');
-
-            openConfirmModal('수행평가 일정 삭제', '등록할 때 작성했던 비밀번호를 입력하세요.', async (password) => {
-                const item = eventsDB.find(e => e.id === selectedEventId);
-                if (!item) return false;
-
-                if (currentUser && currentUser.isAdmin) {
-                    // 관리자는 패스워드 무통과 가능
-                } else if (item.password && item.password !== password) {
-                    showToast('비밀번호가 올바르지 않습니다.', 'error');
+            if (!activeEventForDetail) return;
+            openConfirmModal("일정 삭제", "이 일정을 삭제하려면 작성 시 설정한 비밀번호를 입력하세요.", async (pwd) => {
+                if (pwd !== activeEventForDetail.password && currentUser && !currentUser.isAdmin) {
+                    alert("🔒 비밀번호가 일치하지 않습니다.");
                     return false;
                 }
 
-                try {
-                    showToast('일정을 삭제 중입니다...', 'info');
-                    const resp = await fetch(GAS_API_URL, {
+                sampleEvents = sampleEvents.filter(e => e.id !== activeEventForDetail.id);
+                localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
+
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify({ action: 'deleteEvent', id: selectedEventId, password })
-                    });
-                    const res = await resp.json();
-
-                    if (res.status === 'success') {
-                        showToast('수행평가 일정이 삭제되었습니다.', 'success');
-                        await fetchDataFromGas();
-                        return true;
-                    } else {
-                        showToast(res.message || '삭제 권한이 없거나 오류가 발생했습니다.', 'error');
-                        return false;
-                    }
-                } catch (err) {
-                    eventsDB = eventsDB.filter(e => e.id !== selectedEventId);
-                    localStorage.setItem('school_schedule_cache', JSON.stringify(eventsDB));
-                    showToast('로컬 데이터에서 삭제되었습니다.', 'success');
-                    renderCalendar();
-                    return true;
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'deleteEvent', id: activeEventForDetail.id })
+                    }).catch(err => console.error("일정 삭제 통신 오류:", err));
                 }
+
+                closeModal('detail-modal');
+                renderMainView();
+                renderDDayWidget();
+                showToast('일정이 삭제되었습니다.', 'success');
+                return true;
             });
         }
 
-        // 오류 신고 모달
+        function openClaimModalFromDetail() {
+            if (!activeEventForDetail) return;
+            closeModal('detail-modal');
+            openRegisterModal(true, activeEventForDetail);
+        }
+
         function openReportModal() {
-            const select = document.getElementById('report-event-id');
-            select.innerHTML = '<option value="">일반 시스템 / 전체 오류 신고</option>';
-
-            eventsDB.forEach(e => {
-                const opt = document.createElement('option');
-                opt.value = e.id;
-                opt.textContent = `[${e.subject}] ${e.title} (${e.date})`;
-                select.appendChild(opt);
-            });
-
-            document.getElementById('report-title').value = '';
-            document.getElementById('report-desc').value = '';
-
+            if (!checkDataLoadedOrWarn()) return;
             document.getElementById('report-modal').classList.remove('hidden');
+            if (currentUser && !currentUser.isAdmin) {
+                document.getElementById('report-author').value = `${currentUser.studentId} 학생`;
+            } else {
+                document.getElementById('report-author').value = '';
+            }
+            document.getElementById('report-content').value = '';
         }
 
-        async function handleReportSubmit(e) {
-            e.preventDefault();
+        async function submitReport() {
+            const author = document.getElementById('report-author').value.trim();
+            const content = document.getElementById('report-content').value.trim();
 
-            const eventId = document.getElementById('report-event-id').value;
-            const title = document.getElementById('report-title').value.trim();
-            const description = document.getElementById('report-desc').value.trim();
+            if (!content) {
+                alert("⚠️ 신고 내용을 작성해 주세요.");
+                return;
+            }
 
-            const payload = {
-                action: 'addReport',
+            const reportData = {
                 id: 'rep_' + Date.now(),
-                eventId,
-                studentId: currentUser ? currentUser.studentId : 'guest',
-                title,
-                description,
+                author: author || '익명',
+                content: content,
                 status: '접수됨',
-                createdAt: new Date().toISOString()
+                timestamp: new Date().toISOString()
             };
 
-            try {
-                showToast('신고 내용을 전송하는 중입니다...', 'info');
-                const resp = await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-                const res = await resp.json();
+            reportItemsDB.push(reportData);
+            localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
 
-                if (res.status === 'success') {
-                    closeModal('report-modal');
-                    showToast('오류 신고가 접수되었습니다. 감사합니다!', 'success');
-                    await fetchDataFromGas();
+            if (GAS_WEB_APP_URL) {
+                fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'addReport', report: reportData })
+                }).catch(err => console.error("오류 신고 전송 통신 오류:", err));
+            }
+
+            closeModal('report-modal');
+            showToast('오류 신고가 접수되었습니다. 감사합니다!', 'success');
+        }
+
+        function openAdminDashboard() {
+            if (!currentUser || !currentUser.isAdmin) {
+                alert("⚠️ 관리자 권한이 없습니다.");
+                return;
+            }
+            document.getElementById('admin-dashboard-modal').classList.remove('hidden');
+            switchAdminTab('reports');
+        }
+
+        function switchAdminTab(tab) {
+            currentAdminTab = tab;
+            const reportsBtn = document.getElementById('admin-tab-reports-btn');
+            const claimsBtn = document.getElementById('admin-tab-claims-btn');
+
+            document.getElementById('admin-report-count').textContent = reportItemsDB.length;
+            document.getElementById('admin-claim-count').textContent = claimItemsDB.length;
+
+            if (tab === 'reports') {
+                reportsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition";
+                claimsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition";
+            } else {
+                claimsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition";
+                reportsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition";
+            }
+            renderAdminList();
+        }
+
+        function renderAdminList() {
+            const container = document.getElementById('admin-list-container');
+            const statusFilter = document.getElementById('admin-filter-status').value;
+            container.innerHTML = '';
+
+            let items = currentAdminTab === 'reports' ? reportItemsDB : claimItemsDB;
+            let filtered = items.filter(item => {
+                if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs font-semibold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    관리 내역이 없습니다.
+                </div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2";
+
+                if (currentAdminTab === 'reports') {
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-black text-slate-800">👤 ${item.author}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${item.status === '접수됨' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">${item.status}</span>
+                                <span class="text-[10px] text-slate-400">${item.timestamp ? item.timestamp.substring(0, 10) : ''}</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-700 bg-white p-3 rounded-xl border border-slate-100">${item.content}</p>
+                        <div class="flex justify-end gap-2 pt-1">
+                            ${item.status === '접수됨' ? `<button onclick="updateReportStatus('${item.id}', '확인 완료')" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">확인 완료로 변경</button>` : ''}
+                            <button onclick="deleteAdminItem('${item.id}', 'report')" class="bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">삭제</button>
+                        </div>
+                    `;
                 } else {
-                    showToast('접수 중 오류가 발생했습니다.', 'error');
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-black text-slate-800">✏️ ${item.author} (수정 요청)</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${item.status === '접수됨' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">${item.status}</span>
+                                <span class="text-[10px] text-slate-400">${item.timestamp ? item.timestamp.substring(0, 10) : ''}</span>
+                            </div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 text-xs space-y-1">
+                            <div><strong>제목:</strong> ${item.title}</div>
+                            <div><strong>과목:</strong> ${item.subject} | <strong>대상:</strong> ${item.target}</div>
+                            <div><strong>날짜:</strong> ${item.date}</div>
+                            <div><strong>내용:</strong> ${item.desc || '없음'}</div>
+                        </div>
+                        <div class="flex justify-end gap-2 pt-1">
+                            ${item.status === '접수됨' ? `<button onclick="openClaimCompareModal('${item.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">🔍 비교 후 승인</button>` : ''}
+                            <button onclick="deleteAdminItem('${item.id}', 'claim')" class="bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">삭제</button>
+                        </div>
+                    `;
                 }
-            } catch (err) {
-                closeModal('report-modal');
-                showToast('오류 신고가 제출되었습니다.', 'success');
+                container.appendChild(card);
+            });
+        }
+
+        function openClaimCompareModal(claimId) {
+            const claim = claimItemsDB.find(c => c.id === claimId);
+            if (!claim) return;
+
+            const originalEvent = sampleEvents.find(e => e.id === claim.id);
+            const beforeContainer = document.getElementById('compare-before-content');
+            const afterContainer = document.getElementById('compare-after-content');
+
+            if (originalEvent) {
+                beforeContainer.innerHTML = `
+                    <div><strong>제목:</strong> ${originalEvent.title}</div>
+                    <div><strong>과목:</strong> ${originalEvent.subject}</div>
+                    <div><strong>대상:</strong> ${originalEvent.target}</div>
+                    <div><strong>날짜:</strong> ${originalEvent.date}</div>
+                    <div><strong>내용:</strong> ${originalEvent.desc || '없음'}</div>
+                `;
+            } else {
+                beforeContainer.innerHTML = `<div class="text-rose-600 font-bold">기존 일정을 찾을 수 없습니다 (신규 등록 성격).</div>`;
+            }
+
+            afterContainer.innerHTML = `
+                <div><strong>제목:</strong> ${claim.title}</div>
+                <div><strong>과목:</strong> ${claim.subject}</div>
+                <div><strong>대상:</strong> ${claim.target}</div>
+                <div><strong>날짜:</strong> ${claim.date}</div>
+                <div><strong>내용:</strong> ${claim.desc || '없음'}</div>
+            `;
+
+            document.getElementById('compare-approve-btn').onclick = () => approveClaim(claimId);
+            document.getElementById('claim-compare-modal').classList.remove('hidden');
+        }
+
+        async function approveClaim(claimId) {
+            const claim = claimItemsDB.find(c => c.id === claimId);
+            if (!claim) return;
+
+            const idx = sampleEvents.findIndex(e => e.id === claim.id);
+            if (idx !== -1) {
+                sampleEvents[idx] = {
+                    ...sampleEvents[idx],
+                    title: claim.title,
+                    subject: claim.subject,
+                    target: claim.target,
+                    date: claim.date,
+                    desc: claim.desc,
+                    password: claim.password || sampleEvents[idx].password
+                };
+            } else {
+                sampleEvents.push({
+                    id: claim.id,
+                    title: claim.title,
+                    subject: claim.subject,
+                    target: claim.target,
+                    date: claim.date,
+                    desc: claim.desc,
+                    password: claim.password,
+                    color: claim.color
+                });
+            }
+
+            claim.status = '승인됨';
+            localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
+            localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+
+            if (GAS_WEB_APP_URL) {
+                fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'approveClaim', claimId: claimId })
+                }).catch(err => console.error("승인 통신 오류:", err));
+            }
+
+            closeModal('claim-compare-modal');
+            closeModal('admin-dashboard-modal');
+            renderMainView();
+            renderDDayWidget();
+            showToast('수정 요청이 승인되어 캘린더에 반영되었습니다.', 'success');
+        }
+
+        async function updateReportStatus(reportId, newStatus) {
+            const rep = reportItemsDB.find(r => r.id === reportId);
+            if (rep) {
+                rep.status = newStatus;
+                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+                renderAdminList();
+                showToast('상태가 변경되었습니다.', 'success');
             }
         }
 
-        // 유틸리티 함수
+        async function deleteAdminItem(itemId, type) {
+            if (!confirm("정말 삭제하시겠습니까?")) return;
+            if (type === 'report') {
+                reportItemsDB = reportItemsDB.filter(r => r.id !== itemId);
+                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+            } else {
+                claimItemsDB = claimItemsDB.filter(c => c.id !== itemId);
+                localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+            }
+            renderAdminList();
+            showToast('항목이 삭제되었습니다.', 'info');
+        }
+
         function closeModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
         }
 
-        function openConfirmModal(title, msg, callback) {
+        function openConfirmModal(title, message, callback) {
             document.getElementById('confirm-modal-title').textContent = title;
-            document.getElementById('confirm-modal-msg').textContent = msg;
-            const input = document.getElementById('confirm-modal-input');
-            input.value = '';
+            document.getElementById('confirm-modal-msg').textContent = message;
+            document.getElementById('confirm-modal-input').value = '';
             document.getElementById('confirm-modal').classList.remove('hidden');
 
             const submitBtn = document.getElementById('confirm-modal-submit-btn');
-            const newSubmitBtn = submitBtn.cloneNode(true);
-            submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+            const newBtn = submitBtn.cloneNode(true);
+            submitBtn.parentNode.replaceChild(newBtn, submitBtn);
 
-            newSubmitBtn.addEventListener('click', async () => {
-                const pwd = input.value.trim();
+            newBtn.onclick = async () => {
+                const pwd = document.getElementById('confirm-modal-input').value.trim();
                 const success = await callback(pwd);
                 if (success) {
                     closeModal('confirm-modal');
                 }
-            });
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-
-            let bgClass = "bg-slate-800 text-white";
-            if (type === 'success') bgClass = "bg-emerald-600 text-white";
-            if (type === 'error') bgClass = "bg-rose-600 text-white";
-
-            toast.className = `${bgClass} px-4 py-3 rounded-xl shadow-xl text-xs font-bold transition transform translate-y-2 opacity-0 flex items-center justify-between gap-3 min-w-[200px]`;
-            toast.innerHTML = `<span>${escapeHtml(message)}</span><button onclick="this.parentElement.remove()" class="text-white opacity-70 hover:opacity-100">✕</button>`;
-
-            container.appendChild(toast);
-
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+            };
         }
     </script>
 </body>
