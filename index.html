@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
@@ -25,7 +27,7 @@
             
             <div class="flex justify-end gap-2">
                 <button onclick="closeModal('confirm-modal')" class="bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">취소</button>
-                <button id="confirm-modal-submit-btn" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition">삭제 완료</button>
+                <button id="confirm-modal-submit-btn" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5">삭제 완료</button>
             </div>
         </div>
     </div>
@@ -58,7 +60,7 @@
 
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="closeModal('login-screen')" class="w-1/3 bg-slate-400 hover:bg-slate-500 text-white font-bold py-3 rounded-xl text-sm transition">닫기</button>
-                    <button type="submit" id="login-submit-btn" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl shadow-lg shadow-blue-500/30 transition transform active:scale-95 text-sm">
+                    <button type="submit" id="login-submit-btn" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl shadow-lg shadow-blue-500/30 transition transform active:scale-95 text-sm flex items-center justify-center gap-2">
                         로그인
                     </button>
                 </div>
@@ -216,7 +218,7 @@
 
                 <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
                     <button type="button" onclick="closeModal('register-modal')" class="bg-slate-400 hover:bg-slate-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition">취소</button>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition">등록하기</button>
+                    <button type="submit" id="reg-submit-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5">등록하기</button>
                 </div>
             </form>
         </div>
@@ -261,14 +263,14 @@
 
             <div class="flex justify-end gap-2">
                 <button onclick="closeModal('report-modal')" class="bg-slate-400 hover:bg-slate-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition">취소</button>
-                <button onclick="submitReport()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition">신고 전송</button>
+                <button onclick="submitReport()" id="report-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5">신고 전송</button>
             </div>
         </div>
     </div>
 
     <script>
         const ADMIN_MASTER_PASSWORD = "9999";
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbws6aZ-juC9gFtz2OM7NF5pRnKIjrxFrYkoTYXViG6cJE_yOsnAylc7M9H8DNxjrD_k/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxN434FyABlrNkNpwO078SUP14Fxd9fh1_FFnECgFsrZyqI1bpRBn27UlyEBmi9OYiK/exec';
 
         const COURSE_DATA = {
             "1학년": {
@@ -278,14 +280,14 @@
             },
             "2학년": {
                 "미적분1": [], "화법과 언어": [], "영어2": [], "체육": [], "미술창작": [], "음악연주와창작": [], "일본어": [], "중국어": [],
-                "독서토론과 글쓰기": ["A", "C"],
-                "물질과 에너지": ["C"],
-                "사회와 문화": ["A1", "A2", "C"],
-                "세계문화와 영어": ["A"],
-                "세계시민과 지리": ["A", "C"],
-                "세포와 물질대사": ["A", "C"],
-                "역사로 탐구하는 현대세계": ["C"],
-                "윤리문제탐구": ["A", "C"]
+                "독서토론과 글쓰기": ["A", "B", "C"],
+                "물질과 에너지": ["B", "C"],
+                "사회와 문화": ["A1", "A2", "B", "C"],
+                "세계문화와 영어": ["A", "B"],
+                "세계시민과 지리": ["A", "B", "C"],
+                "세포와 물질대사": ["A", "B", "C"],
+                "역사로 탐구하는 현대세계": ["B", "C"],
+                "윤리문제탐구": ["A", "B", "C"]
             },
             "3학년": {
                 "과학과제연구": ["D", "J"],
@@ -356,7 +358,7 @@
             { id: "e1_1", title: "공통국어 독후감 발표", subject: "공통국어2", target: "1학년 전체", date: "2026-09-03", desc: "지정 도서 읽고 PPT 5장 이내 발표", password: "1234", color: "#3b82f6" },
             { id: "e1_3", title: "다항식 연산 문제풀이 수행", subject: "공통수학2", target: "1학년 전체", date: "2026-09-05", desc: "서술형 문제 5문항 풀이", password: "1234", color: "#10b981" },
             { id: "e2_1", title: "도함수의 활용 문제 풀이", subject: "미적분1", target: "2학년 전체", date: "2026-09-02", desc: "접선의 방정식 서술형 평가", password: "1234", color: "#3b82f6" },
-            { id: "e2_13", title: "인문학 서적 비평문 작성", subject: "독서토론과 글쓰기", target: "2학년 A1반", date: "2026-09-03", desc: "마이클 샌델 저서 비평 수행평가", password: "1234", color: "#6366f1" },
+            { id: "e2_13", title: "인문학 서적 비평문 작성", subject: "독서토론과 글쓰기", target: "2학년 A반", date: "2026-09-03", desc: "마이클 샌델 저서 비평 수행평가", password: "1234", color: "#6366f1" },
             { id: "e3_15", title: "응급처치 및 심폐소생술 실기", subject: "보건 / 운동과 건강", target: "3학년 G반, 3학년 K반", date: "2026-09-02", desc: "AED 사용법 및 CPR 실습", password: "1234", color: "#ef4444" }
         ];
 
@@ -430,13 +432,13 @@
             if (mode === 'signup') {
                 titleEl.textContent = '신규 학생 간편 가입';
                 descEl.textContent = '학번 5자리를 입력하여 수강 과목을 설정하세요.';
-                submitBtn.textContent = '가입 및 맞춤 설정 완료';
+                submitBtn.innerHTML = '가입 및 맞춤 설정 완료';
                 stepContainer.classList.remove('hidden');
                 triggerSubjectSelectionBuild();
             } else {
                 titleEl.textContent = '맞춤 로그인';
                 descEl.textContent = '학번과 비밀번호를 입력해주세요.';
-                submitBtn.textContent = '로그인';
+                submitBtn.innerHTML = '로그인';
                 stepContainer.classList.add('hidden');
             }
         }
@@ -505,7 +507,7 @@
                         // A반 선택
                         let htmlA = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
                             <label class="block font-bold text-xs text-blue-800">🎯 A반 선택 과목</label>
-                            <select name="login-slot-course" data-slot="A" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
+                            <select name="login-slot-course" data-slot="A" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
                                 <option value="">수강 과목 미선택</option>
                                 <option value="독서토론과 글쓰기:A반">독서토론과 글쓰기</option>
                                 <option value="사회와 문화:A1반">사회와 문화 (A1)</option>
@@ -516,10 +518,25 @@
                                 <option value="윤리문제탐구:A반">윤리문제탐구</option>
                             </select></div>`;
 
+                        // B반 선택
+                        let htmlB = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
+                            <label class="block font-bold text-xs text-blue-800">🎯 B반 선택 과목</label>
+                            <select name="login-slot-course" data-slot="B" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
+                                <option value="">수강 과목 미선택</option>
+                                <option value="독서토론과 글쓰기:B반">독서토론과 글쓰기</option>
+                                <option value="물질과 에너지:B반">물질과 에너지</option>
+                                <option value="사회와 문화:B반">사회와 문화</option>
+                                <option value="세계문화와 영어:B반">세계문화와 영어</option>
+                                <option value="세계시민과 지리:B반">세계시민과 지리</option>
+                                <option value="세포와 물질대사:B반">세포와 물질대사</option>
+                                <option value="역사로 탐구하는 현대세계:B반">역사로 탐구하는 현대세계</option>
+                                <option value="윤리문제탐구:B반">윤리문제탐구</option>
+                            </select></div>`;
+
                         // C반 선택
                         let htmlC = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
                             <label class="block font-bold text-xs text-blue-800">🎯 C반 선택 과목</label>
-                            <select name="login-slot-course" data-slot="C" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
+                            <select name="login-slot-course" data-slot="C" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
                                 <option value="">수강 과목 미선택</option>
                                 <option value="독서토론과 글쓰기:C반">독서토론과 글쓰기</option>
                                 <option value="물질과 에너지:C반">물질과 에너지</option>
@@ -530,7 +547,7 @@
                                 <option value="윤리문제탐구:C반">윤리문제탐구</option>
                             </select></div>`;
 
-                        dynamicArea.innerHTML = html + htmlA + htmlC;
+                        dynamicArea.innerHTML = html + htmlA + htmlB + htmlC;
 
                     } else if (gradeStr === '3학년') {
                         let html = `<div class="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-blue-200 space-y-2">
@@ -540,7 +557,7 @@
                         ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'].forEach(block => {
                             html += `<div>
                                 <label class="block font-bold text-[11px] text-slate-600 mb-1">${block} 블록 선택</label>
-                                <select name="login-grade3-block" data-block="${block}" class="w-full px-2 py-1.5 border rounded text-xs bg-slate-50">
+                                <select name="login-grade3-block" data-block="${block}" onchange="validateGrade3Duplicate(this)" class="w-full px-2 py-1.5 border rounded text-xs bg-slate-50">
                                     <option value="">선택 안함</option>`;
                             
                             Object.keys(GRADE_3_BLOCK_MAP).forEach(sub => {
@@ -557,15 +574,58 @@
             }
         }
 
+        function validateGrade2Duplicate(changedSelect) {
+            const selectedVal = changedSelect.value;
+            if (!selectedVal) return;
+            const subjectName = selectedVal.split(':')[0];
+
+            const allSelects = document.querySelectorAll('select[name="login-slot-course"]');
+            for (let sel of allSelects) {
+                if (sel !== changedSelect && sel.value) {
+                    const otherSubjectName = sel.value.split(':')[0];
+                    if (otherSubjectName === subjectName) {
+                        alert(`오류: 동일한 과목("${subjectName}")을 다른 분반에서 중복으로 선택할 수 없습니다.`);
+                        showToast(`동일 과목 중복 선택 불가: ${subjectName}`, 'error');
+                        changedSelect.value = "";
+                        return;
+                    }
+                }
+            }
+        }
+
+        function validateGrade3Duplicate(changedSelect) {
+            const selectedVal = changedSelect.value;
+            if (!selectedVal) return;
+            const subjectName = selectedVal.split(':')[0];
+
+            const allSelects = document.querySelectorAll('select[name="login-grade3-block"]');
+            for (let sel of allSelects) {
+                if (sel !== changedSelect && sel.value) {
+                    const otherSubjectName = sel.value.split(':')[0];
+                    if (otherSubjectName === subjectName) {
+                        alert(`오류: 동일한 과목("${subjectName}")을 다른 분반에서 중복으로 선택할 수 없습니다.`);
+                        showToast(`동일 과목 중복 선택 불가: ${subjectName}`, 'error');
+                        changedSelect.value = "";
+                        return;
+                    }
+                }
+            }
+        }
+
         async function handleLoginSubmit(e) {
             e.preventDefault();
             const studentId = document.getElementById('login-student-id').value.trim();
             const password = document.getElementById('login-password').value.trim();
+            const submitBtn = document.getElementById('login-submit-btn');
 
             if (studentId.length < 4) {
                 showToast('올바른 학번 5자리를 입력해주세요.', 'error');
                 return;
             }
+
+            const originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
 
             const gradeNum = studentId.charAt(0);
             let gradeStr = gradeNum === '1' ? '1학년' : gradeNum === '2' ? '2학년' : gradeNum === '3' ? '3학년' : '';
@@ -576,10 +636,14 @@
             if (currentModalMode === 'login') {
                 if (!existingUser) {
                     showToast('등록되지 않은 학번입니다. 먼저 [간편 가입]을 진행해주세요.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
                     return;
                 }
                 if (existingUser.password !== password) {
                     showToast('비밀번호가 일치하지 않습니다!', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
                     return;
                 }
                 currentUser = existingUser;
@@ -615,12 +679,16 @@
                 registeredUsersDB[studentId] = currentUser;
 
                 if (GAS_WEB_APP_URL) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'registerUser', user: currentUser })
-                    });
+                    try {
+                        await fetch(GAS_WEB_APP_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'registerUser', user: currentUser })
+                        });
+                    } catch (err) {
+                        console.error("회원 정보 저장 오류:", err);
+                    }
                 }
             }
 
@@ -628,6 +696,9 @@
             closeModal('login-screen');
             applyUserSession();
             showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
         }
 
         function applyUserSession() {
@@ -712,9 +783,6 @@
             let eventsToDisplay = sampleEvents;
             if (currentUser && currentUser.enrolledCourses) {
                 eventsToDisplay = sampleEvents.filter(e => {
-                    if (!e.target.includes(currentUser.gradeStr) && !e.target.includes("전체")) return false;
-                    if (e.target.includes("전체")) return true;
-
                     return currentUser.enrolledCourses.some(courseStr => {
                         const [cSub, cTarget] = courseStr.split(':');
                         if (cSub !== e.subject) return false;
@@ -941,6 +1009,11 @@
                 return;
             }
 
+            const submitBtn = document.getElementById('reg-submit-btn');
+            const originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 등록 중...`;
+
             const newEvent = {
                 id: 'evt_' + Date.now(),
                 title: document.getElementById('reg-title').value.trim(),
@@ -973,6 +1046,9 @@
             closeModal('register-modal');
             renderCalendar();
             renderDDayWidget();
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
         }
 
         function requestDeleteEvent() {
@@ -982,7 +1058,13 @@
 
             document.getElementById('confirm-modal-submit-btn').onclick = async () => {
                 const inputPw = document.getElementById('confirm-modal-input').value.trim();
+                const confirmBtn = document.getElementById('confirm-modal-submit-btn');
+                
                 if (inputPw === activeEventForDetail.password || inputPw === ADMIN_MASTER_PASSWORD) {
+                    const originalBtnHtml = confirmBtn.innerHTML;
+                    confirmBtn.disabled = true;
+                    confirmBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 삭제 중...`;
+
                     const eventId = activeEventForDetail.id;
                     sampleEvents = sampleEvents.filter(e => e.id !== eventId);
 
@@ -1006,6 +1088,9 @@
                     closeModal('detail-modal');
                     renderCalendar();
                     renderDDayWidget();
+
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = originalBtnHtml;
                 } else {
                     showToast("비밀번호가 일치하지 않습니다!", "error");
                 }
@@ -1015,25 +1100,37 @@
         async function submitReport() {
             const author = document.getElementById('report-author').value.trim();
             const content = document.getElementById('report-content').value.trim();
+            const reportBtn = document.getElementById('report-submit-btn');
 
             if (!content) {
                 showToast('오류 내용을 입력해주세요!', 'error');
                 return;
             }
 
+            const originalBtnHtml = reportBtn.innerHTML;
+            reportBtn.disabled = true;
+            reportBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 전송 중...`;
+
             if (GAS_WEB_APP_URL) {
-                fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'submitReport', report: { author, content } })
-                });
+                try {
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'submitReport', report: { author, content } })
+                    });
+                } catch (err) {
+                    console.error("오류 신고 전송 실패:", err);
+                }
             }
 
             showToast('관리자에게 오류 신고가 접수되었습니다. 감사합니다!', 'success');
             closeModal('report-modal');
             document.getElementById('report-author').value = '';
             document.getElementById('report-content').value = '';
+
+            reportBtn.disabled = false;
+            reportBtn.innerHTML = originalBtnHtml;
         }
     </script>
 </body>
