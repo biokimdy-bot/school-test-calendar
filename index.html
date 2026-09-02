@@ -1930,6 +1930,8 @@ function openClaimModalFromDetail() {
             localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
 
             const existingIdx = sampleEvents.findIndex(ev => ev.id === claimItem.id);
+            const isUpdate = existingIdx >= 0;
+            
             const updatedEvent = {
                 id: claimItem.id,
                 title: claimItem.title,
@@ -1941,7 +1943,7 @@ function openClaimModalFromDetail() {
                 color: claimItem.color || '#3b82f6'
             };
 
-            if (existingIdx >= 0) {
+            if (isUpdate) {
                 sampleEvents[existingIdx] = updatedEvent;
             } else {
                 sampleEvents.push(updatedEvent);
@@ -1959,12 +1961,15 @@ function openClaimModalFromDetail() {
                     body: JSON.stringify({ action: 'updateAdminStatus', type: 'claims', id: claimItem.id, status: '승인됨' })
                 }).catch(err => console.error("수정 요청 상태 업데이트 통신 오류:", err));
 
-                // 2. 실제 반영된 일정 수정/추가 통신 (필요시)
+                // 2. 실제 반영된 일정 수정/추가 통신 (기존 여부에 따라 action 분기)
                 fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'addEvent', event: updatedEvent })
+                    body: JSON.stringify({ 
+                        action: isUpdate ? 'updateEvent' : 'addEvent', 
+                        event: updatedEvent 
+                    })
                 }).catch(err => console.error("일정 반영 통신 오류:", err));
             }
 
