@@ -42,20 +42,8 @@
             <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1">학번 5자리 *</label>
-                    <input type="text" id="login-student-id" required maxlength="5" placeholder="예: 21105" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-blue-500">
-                </div>
-
-                <div id="class-selection-container" class="hidden">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">학급(반) 선택 *</label>
-                    <select id="login-class-num" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:border-blue-500">
-                        <option value="1">1반</option>
-                        <option value="2">2반</option>
-                        <option value="3">3반</option>
-                        <option value="4">4반</option>
-                        <option value="5">5반</option>
-                        <option value="6">6반</option>
-                        <option value="7">7반</option>
-                    </select>
+                    <input type="text" id="login-student-id" required maxlength="5" placeholder="예: 20105" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-blue-500">
+                    <p class="text-[10px] text-slate-400 mt-1">※ 학번 가운데 자리가 반으로 자동 인식됩니다 (예: 20105 → 2학년 1반)</p>
                 </div>
 
                 <div>
@@ -280,7 +268,7 @@
 
     <script>
         const ADMIN_MASTER_PASSWORD = "9999";
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbznoj2K4wX7DiE-QtSb9nmoAcMzVh8LW761yOnE4KReGn0qf1z8xXMnNpW0QSaq18R0/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx_pxd9eRF1bPlKfsllyBbw4EjFYrJGPt4DIVbeaoZ4GiWAlmU7u4sO3Irp2xsnGf9K/exec';
 
         const COURSE_DATA = {
             "1학년": {
@@ -290,14 +278,14 @@
             },
             "2학년": {
                 "미적분1": [], "화법과 언어": [], "영어2": [], "체육": [], "미술창작": [], "음악연주와창작": [], "일본어": [], "중국어": [],
-                "독서토론과 글쓰기": ["A1", "A2", "B"],
-                "물리학": ["B"],
-                "물질과 에너지": ["B"],
-                "사회와 문화": ["A1", "A2", "B"],
-                "세계문화와 영어": ["A1", "A2", "B"],
-                "세계시민과 지리": ["A1", "A2"],
-                "세포와 물질대사": ["A1", "A2", "B"],
-                "윤리문제탐구": ["A1", "A2", "B"]
+                "독서토론과 글쓰기": ["A", "C"],
+                "물질과 에너지": ["C"],
+                "사회와 문화": ["A1", "A2", "C"],
+                "세계문화와 영어": ["A"],
+                "세계시민과 지리": ["A", "C"],
+                "세포와 물질대사": ["A", "C"],
+                "역사로 탐구하는 현대세계": ["C"],
+                "윤리문제탐구": ["A", "C"]
             },
             "3학년": {
                 "과학과제연구": ["D", "J"],
@@ -357,6 +345,7 @@
             "세계문제와 미래사회": ["I", "J"],
             "윤리와 사상": ["I", "J"],
             "동아시아사": ["M"],
+  end
             "심화수학": ["M"],
             "현대문학감상": ["J", "M"],
             "물리학Ⅱ": ["K"],
@@ -373,7 +362,7 @@
         ];
 
         let registeredUsersDB = {
-            "20101": { studentId: "20101", gradeStr: "2학년", classNum: "1", password: "1111", enrolledCourses: ["미적분1:전체", "화법과 언어:전체", "영어2:전체", "체육:전체", "일본어:전체", "미술창작:전체", "독서토론과 글쓰기:A1반", "물리학:B반"] }
+            "20101": { studentId: "20101", gradeStr: "2학년", classNum: "1", password: "1111", enrolledCourses: ["미적분1:전체", "화법과 언어:전체", "영어2:전체", "체육:전체", "일본어:전체", "미술창작:전체", "독서토론과 글쓰기:A반", "사회와 문화:C반"] }
         };
 
         let currentDate = new Date(2026, 8, 1);
@@ -432,7 +421,6 @@
             const titleEl = document.getElementById('login-modal-title');
             const descEl = document.getElementById('login-modal-desc');
             const submitBtn = document.getElementById('login-submit-btn');
-            const classContainer = document.getElementById('class-selection-container');
             const stepContainer = document.getElementById('subject-selection-step');
 
             screen.classList.remove('hidden');
@@ -442,16 +430,14 @@
 
             if (mode === 'signup') {
                 titleEl.textContent = '신규 학생 간편 가입';
-                descEl.textContent = '학번 5자리를 입력하여 학급과 수강 과목을 설정하세요.';
+                descEl.textContent = '학번 5자리를 입력하여 수강 과목을 설정하세요.';
                 submitBtn.textContent = '가입 및 맞춤 설정 완료';
-                classContainer.classList.remove('hidden');
                 stepContainer.classList.remove('hidden');
                 triggerSubjectSelectionBuild();
             } else {
                 titleEl.textContent = '맞춤 로그인';
                 descEl.textContent = '학번과 비밀번호를 입력해주세요.';
                 submitBtn.textContent = '로그인';
-                classContainer.classList.add('hidden');
                 stepContainer.classList.add('hidden');
             }
         }
@@ -463,18 +449,10 @@
                     triggerSubjectSelectionBuild();
                 }
             });
-
-            const classNumSelect = document.getElementById('login-class-num');
-            classNumSelect.addEventListener('change', () => {
-                if (currentModalMode === 'signup') {
-                    triggerSubjectSelectionBuild();
-                }
-            });
         }
 
         function triggerSubjectSelectionBuild() {
             const val = document.getElementById('login-student-id').value.trim();
-            const classNum = document.getElementById('login-class-num').value;
             const stepContainer = document.getElementById('subject-selection-step');
             const dynamicArea = document.getElementById('login-subject-dynamic-area');
             
@@ -482,6 +460,7 @@
             if (val.length >= 5) {
                 const gradeNum = val.charAt(0);
                 let gradeStr = gradeNum === '1' ? '1학년' : gradeNum === '2' ? '2학년' : gradeNum === '3' ? '3학년' : '';
+                let classNum = String(parseInt(val.substring(1, 3), 10)) || "1";
 
                 if (gradeStr && COURSE_DATA[gradeStr]) {
                     stepContainer.classList.remove('hidden');
@@ -508,7 +487,7 @@
                     } else if (gradeStr === '2학년') {
                         let langSub = parseInt(classNum) === 7 ? "중국어" : "일본어";
                         let html = `<div class="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-blue-200 space-y-2">
-                            <p class="text-blue-700">📌 2학년 공통 과목 및 제2외국어 (자동 수강)</p>
+                            <p class="text-blue-700">📌 2학년 공통 과목 및 제2외국어 (${classNum}반 기준 자동수강: ${langSub})</p>
                             <div class="flex flex-wrap gap-2">`;
                         const commonSubjects2 = ["미적분1", "화법과 언어", "영어2", "체육", langSub];
                         commonSubjects2.forEach(sub => {
@@ -524,28 +503,35 @@
                             </div>
                         </div>`;
 
-                        const slots = {
-                            "A1/A2반 선택": ["독서토론과 글쓰기", "사회와 문화", "세계문화와 영어", "세계시민과 지리", "세포와 물질대사", "윤리문제탐구"],
-                            "B반 선택": ["독서토론과 글쓰기", "물리학", "물질과 에너지", "사회와 문화", "세계문화와 영어", "세포와 물질대사", "윤리문제탐구"]
-                        };
+                        // A반 선택
+                        let htmlA = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
+                            <label class="block font-bold text-xs text-blue-800">🎯 A반 선택 과목</label>
+                            <select name="login-slot-course" data-slot="A" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
+                                <option value="">수강 과목 미선택</option>
+                                <option value="독서토론과 글쓰기:A반">독서토론과 글쓰기</option>
+                                <option value="사회와 문화:A1반">사회와 문화 (A1)</option>
+                                <option value="사회와 문화:A2반">사회와 문화 (A2)</option>
+                                <option value="세계문화와 영어:A반">세계문화와 영어</option>
+                                <option value="세계시민과 지리:A반">세계시민과 지리</option>
+                                <option value="세포와 물질대사:A반">세포와 물질대사</option>
+                                <option value="윤리문제탐구:A반">윤리문제탐구</option>
+                            </select></div>`;
 
-                        Object.keys(slots).forEach((slotName, idx) => {
-                            let slotLetter = idx === 0 ? "A1 또는 A2" : "B";
-                            html += `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
-                                <label class="block font-bold text-xs text-blue-800">🎯 ${slotName}</label>
-                                <select name="login-slot-course" data-slot="${idx === 0 ? 'A' : 'B'}" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
-                                    <option value="">수강 과목 미선택</option>`;
-                            slots[slotName].forEach(sub => {
-                                if (idx === 0) {
-                                    html += `<option value="${sub}:A1반">${sub} (A1반)</option>`;
-                                    html += `<option value="${sub}:A2반">${sub} (A2반)</option>`;
-                                } else {
-                                    html += `<option value="${sub}:B반">${sub} (B반)</option>`;
-                                }
-                            });
-                            html += `</select></div>`;
-                        });
-                        dynamicArea.innerHTML = html;
+                        // C반 선택
+                        let htmlC = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
+                            <label class="block font-bold text-xs text-blue-800">🎯 C반 선택 과목</label>
+                            <select name="login-slot-course" data-slot="C" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
+                                <option value="">수강 과목 미선택</option>
+                                <option value="독서토론과 글쓰기:C반">독서토론과 글쓰기</option>
+                                <option value="물질과 에너지:C반">물질과 에너지</option>
+                                <option value="사회와 문화:C반">사회와 문화</option>
+                                <option value="세계시민과 지리:C반">세계시민과 지리</option>
+                                <option value="세포와 물질대사:C반">세포와 물질대사</option>
+                                <option value="역사로 탐구하는 현대세계:C반">역사로 탐구하는 현대세계</option>
+                                <option value="윤리문제탐구:C반">윤리문제탐구</option>
+                            </select></div>`;
+
+                        dynamicArea.innerHTML = html + htmlA + htmlC;
 
                     } else if (gradeStr === '3학년') {
                         let html = `<div class="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-blue-200 space-y-2">
@@ -576,12 +562,15 @@
             e.preventDefault();
             const studentId = document.getElementById('login-student-id').value.trim();
             const password = document.getElementById('login-password').value.trim();
-            const classNum = document.getElementById('login-class-num').value;
 
             if (studentId.length < 4) {
                 showToast('올바른 학번 5자리를 입력해주세요.', 'error');
                 return;
             }
+
+            const gradeNum = studentId.charAt(0);
+            let gradeStr = gradeNum === '1' ? '1학년' : gradeNum === '2' ? '2학년' : gradeNum === '3' ? '3학년' : '';
+            let classNum = String(parseInt(studentId.substring(1, 3), 10)) || "1";
 
             let existingUser = registeredUsersDB[studentId];
 
@@ -596,9 +585,6 @@
                 }
                 currentUser = existingUser;
             } else {
-                const gradeNum = studentId.charAt(0);
-                let gradeStr = gradeNum === '1' ? '1학년' : gradeNum === '2' ? '2학년' : gradeNum === '3' ? '3학년' : '';
-
                 let collectedCourses = [];
                 if (gradeStr === '1학년') {
                     ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학"].forEach(s => collectedCourses.push(`${s}:전체`));
@@ -723,7 +709,23 @@
             const today = new Date(2026, 8, 1);
             today.setHours(0,0,0,0);
 
-            const upcomingEvents = sampleEvents.filter(e => {
+            // 로그인된 경우 사용자가 선택한 과목만 필터링
+            let eventsToDisplay = sampleEvents;
+            if (currentUser && currentUser.enrolledCourses) {
+                eventsToDisplay = sampleEvents.filter(e => {
+                    if (!e.target.includes(currentUser.gradeStr) && !e.target.includes("전체")) return false;
+                    if (e.target.includes("전체")) return true;
+
+                    return currentUser.enrolledCourses.some(courseStr => {
+                        const [cSub, cTarget] = courseStr.split(':');
+                        if (cSub !== e.subject) return false;
+                        if (cTarget === '전체') return true;
+                        return e.target.includes(cTarget);
+                    });
+                });
+            }
+
+            const upcomingEvents = eventsToDisplay.filter(e => {
                 const eventDate = new Date(e.date);
                 eventDate.setHours(0,0,0,0);
                 const diffDays = Math.ceil((eventDate - today) / (1000 * 60 * 60 * 24));
