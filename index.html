@@ -105,7 +105,6 @@
                     <button onclick="logout()" class="text-rose-500 hover:underline text-[11px] ml-1">로그아웃</button>
                 </div>
                 
-                <!-- 2번 수정 반영: 로딩 중 빨간 표시 상태에서 버튼 클릭 시 안내 메시지 표출 -->
                 <div onclick="handleDisabledButtonClick(event)" class="inline-block">
                     <button id="login-open-btn" onclick="openLoginModal('login')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
                         🔐 로그인
@@ -158,7 +157,6 @@
                     </select>
                 </div>
 
-                <!-- 3번 수정 반영: 과목 필터 선택 시 정상적으로 과목별 필터링이 작동하도록 연결 -->
                 <div class="flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                     <label class="text-xs font-bold text-slate-600">과목:</label>
                     <select id="filter-subject" onchange="handleSubjectFilterChange()" class="bg-transparent text-sm font-semibold focus:outline-none max-w-[180px]">
@@ -290,7 +288,6 @@
             <div class="flex justify-between items-center pt-2 border-t border-slate-100 gap-2">
                 <div class="flex gap-2">
                     <button onclick="requestDeleteEvent()" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-2 rounded-lg text-xs transition">🗑️ 일정 삭제</button>
-                    <!-- 4번 수정 반영: 다른 사용자가 일정이 잘못된 것을 발견했을 때 신청할 수 있는 수정 요청 버튼 추가 -->
                     <button onclick="openClaimModalFromDetail()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-3 py-2 rounded-lg text-xs transition">✏️ 수정 요청</button>
                 </div>
                 <button onclick="closeModal('detail-modal')" class="bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold px-3 py-2 rounded-lg text-xs transition">닫기</button>
@@ -298,11 +295,11 @@
         </div>
     </div>
 
-    <!-- 3 & 4번 수정 반영: 오류 신고 및 Claim(수정/변경 요청) 통합 모달 -->
+    <!-- 오류 신고 및 수정 요청 통합 모달 -->
     <div id="report-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <h3 id="report-modal-heading" class="text-xl font-black text-amber-600 mb-3 pb-2 border-b border-slate-100">⚠️ 시스템 오류 신고 / 수정 요청 (Claim)</h3>
-            <p id="report-modal-desc" class="text-xs text-slate-500 mb-4">입력 오류, 일정 중복 또는 수행평가 일정 변경 요청 사항을 작성해 주세요. 제출 시 "Claim" 시트에 정리됩니다.</p>
+            <h3 id="report-modal-heading" class="text-xl font-black text-amber-600 mb-3 pb-2 border-b border-slate-100">⚠️ 시스템 오류 신고 / 수행평가 일정 수정 요청</h3>
+            <p id="report-modal-desc" class="text-xs text-slate-500 mb-4">입력 오류, 일정 중복 또는 수행평가 일정 변경 요청 사항을 작성해 주세요.</p>
             
             <div class="space-y-3 mb-6">
                 <div>
@@ -317,7 +314,7 @@
 
             <div class="flex justify-end gap-2">
                 <button onclick="closeModal('report-modal')" class="bg-slate-400 hover:bg-slate-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition">취소</button>
-                <button onclick="submitReportOrClaim()" id="report-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5">제출하기 (Claim 시트 저장)</button>
+                <button onclick="submitReportOrClaim()" id="report-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5">제출</button>
             </div>
         </div>
     </div>
@@ -458,7 +455,6 @@
             });
         }
 
-        // 2번 수정 반영: 데이터 로딩 중 빨간 표시 상태에서 버튼 클릭 시 안내 메시지 표출
         function handleDisabledButtonClick(event) {
             if (!isDataLoaded) {
                 showToast('데이터 로딩 중입니다.', 'error');
@@ -1108,7 +1104,6 @@
             renderDDayWidget();
         }
 
-        // 3번 수정 반영: 과목 필터 선택 시 메인 뷰와 위젯 필터링 연동
         function handleSubjectFilterChange() {
             renderMainView();
             renderDDayWidget();
@@ -1119,7 +1114,6 @@
             const selectedClass = document.getElementById('filter-class').value;
             const selectedSubject = document.getElementById('filter-subject').value;
 
-            // 3번 수정 반영: 과목 선택 필터(selectedSubject)가 'all'이 아닐 때 일치하는 과목만 통과시키도록 수정
             if (selectedSubject !== 'all' && e.subject !== selectedSubject) {
                 return false;
             }
@@ -1410,18 +1404,22 @@
             document.getElementById('report-modal').classList.remove('hidden');
         }
 
-        // 4번 수정 반영: 상세 모달에서 [수정 요청] 버튼을 누를 때 Claim 모달 열기
+        // 1번 및 2번 수정 반영: 로그인 확인 및 수정 요청 모달 UI 정리
         function openClaimModalFromDetail() {
+            if (!currentUser) {
+                alert("먼저 로그인해 주세요.");
+                return;
+            }
             if (!activeEventForDetail) return;
             if (!checkDataLoadedOrWarn()) return;
             
             closeModal('detail-modal');
             reportModalMode = 'claim';
-            document.getElementById('report-modal-heading').textContent = "✏️ 수행평가 일정 수정 요청 (Claim)";
-            document.getElementById('report-modal-desc').textContent = `[${activeEventForDetail.subject}] "${activeEventForDetail.title}" (일자: ${activeEventForDetail.date}) 일정에 대한 변경/수정 요청 사항을 작성해주세요. 제출 시 "Claim" 시트에 정리됩니다.`;
+            document.getElementById('report-modal-heading').textContent = "✏️ 수행평가 일정 수정 요청";
+            document.getElementById('report-modal-desc').textContent = `[${activeEventForDetail.subject}] "${activeEventForDetail.title}" (일자: ${activeEventForDetail.date}) 일정에 대한 변경/수정 요청 사항을 작성해주세요.`;
             document.getElementById('report-author').value = currentUser ? `${currentUser.studentId} 학생` : '';
             document.getElementById('report-content').value = `[수정 요청 대상 일정]\n- 과목: ${activeEventForDetail.subject}\n- 제목: ${activeEventForDetail.title}\n- 기존 날짜: ${activeEventForDetail.date}\n- 요청 사유 및 변경 사항: `;
-            document.getElementById('report-submit-btn').textContent = "Claim 시트로 제출";
+            document.getElementById('report-submit-btn').textContent = "제출";
             document.getElementById('report-modal').classList.remove('hidden');
         }
 
@@ -1550,7 +1548,7 @@
             submitBtn.innerHTML = originalBtnHtml;
         }
 
-        // 4번 수정 반영: Claim 시트 또는 Reports 시트로 전송 처리
+        // 2번 및 3번 수정 반영: 제출 완료 안내 메시지 간소화 ("제출하였습니다" 및 "제출 완료 되었습니다.")
         async function submitReportOrClaim() {
             const author = document.getElementById('report-author').value.trim();
             const content = document.getElementById('report-content').value.trim();
@@ -1566,7 +1564,6 @@
             submitBtn.innerHTML = "전송 중...";
 
             const actionType = reportModalMode === 'claim' ? 'addClaim' : 'addReport';
-            const targetSheetName = reportModalMode === 'claim' ? 'Claim' : 'Reports';
 
             const payload = {
                 action: actionType,
@@ -1586,12 +1583,12 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    showToast(`성공적으로 "${targetSheetName}" 시트에 접수되었습니다!`, "success");
+                    showToast("제출 완료 되었습니다.", "success");
                 } catch (err) {
                     showToast("전송 실패: " + err.message, "error");
                 }
             } else {
-                showToast(`[오프라인] "${targetSheetName}" 시트 접수 데이터가 기록되었습니다.`, "success");
+                showToast("제출하였습니다.", "success");
             }
 
             submitBtn.disabled = false;
@@ -1605,7 +1602,6 @@
 
             document.getElementById('confirm-modal-input').value = '';
             
-            // 1번 수정 반영: 상세 모달을 닫고 확인 모달을 열어 레이블 겹침 및 입력 불가 문제 원천 차단
             closeModal('detail-modal');
             document.getElementById('confirm-modal').classList.remove('hidden');
 
