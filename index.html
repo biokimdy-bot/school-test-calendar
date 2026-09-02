@@ -58,9 +58,9 @@
 
             <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
                 <div id="login-id-field">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">학번 5자리 (또는 교사 마스터 암호) *</label>
-                    <input type="text" id="login-student-id" maxlength="5" placeholder="예: 20105 또는 마스터 암호" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-blue-500">
-                    <p class="text-[10px] text-slate-400 mt-1">※ 교사 마스터 비밀번호(9999) 입력 시 관리자 패널 이용이 가능합니다.</p>
+                    <!-- 3번 수정 반영: 마스터 암호 언급 삭제 -->
+                    <label class="block text-xs font-bold text-slate-600 mb-1">학번 5자리 *</label>
+                    <input type="text" id="login-student-id" maxlength="5" placeholder="예: 20105" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-blue-500">
                 </div>
 
                 <div id="login-pw-field">
@@ -83,7 +83,7 @@
         </div>
     </div>
 
-    <!-- 1번 신규 추가: 관리자 전용 대시보드 (Reports & Claims 승인/반려/삭제 관리 패널) -->
+    <!-- 관리자 전용 대시보드 (Reports & Claims 승인/반려/삭제 관리 패널) -->
     <div id="admin-dashboard-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[90] p-4 hidden">
         <div class="bg-white rounded-3xl w-full max-w-4xl p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center pb-4 border-b border-slate-200 mb-4">
@@ -94,7 +94,11 @@
                         <p class="text-xs text-slate-500">학생 오류 신고(Reports) 및 수정 요청(Claim) 내역 관리</p>
                     </div>
                 </div>
-                <button onclick="closeModal('admin-dashboard-modal')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition">닫기 ✕</button>
+                <div class="flex items-center gap-2">
+                    <!-- 2번 수정 반영: 관리자 패널 새로고침 버튼 추가 -->
+                    <button onclick="refreshAdminData()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1">🔄 새로고침</button>
+                    <button onclick="closeModal('admin-dashboard-modal')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition">닫기 ✕</button>
+                </div>
             </div>
 
             <!-- 탭 전환 -->
@@ -127,7 +131,6 @@
                 <div id="user-badge" class="hidden items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 text-xs font-bold text-blue-700">
                     <span id="badge-info-text">🎓 2학년 학생</span>
                     <button id="edit-subject-btn" onclick="openEditSubjectsModal()" class="text-emerald-600 hover:underline text-[11px] font-extrabold ml-1">✏️ 과목 수정</button>
-                    <!-- 1번 관리자 패널 진입 버튼 (조건부 표시) -->
                     <button id="admin-panel-open-btn" onclick="openAdminDashboard()" class="hidden text-amber-600 hover:underline text-[11px] font-extrabold ml-1">🛠️ 관리자 패널</button>
                     <button onclick="logout()" class="text-rose-500 hover:underline text-[11px] ml-1">로그아웃</button>
                 </div>
@@ -348,7 +351,7 @@
 
     <script>
         const ADMIN_MASTER_PASSWORD = "9999";
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwJGPNxWaPSvLeMjvp_oX-Zjj3fLofjUaVVuT6hRJku6YnNoFn-MmEZj1r7VgDmY5IS/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwhRn9XEcJplPnINMuzYe4KOJGmHTj7zdKN1oPHE95LMM-R4pLCat2uJduW866Fd2x-/exec';
 
         const COURSE_DATA = {
             "1학년": {
@@ -434,7 +437,6 @@
 
         let sampleEvents = [];
         let registeredUsersDB = {};
-        // 1번 수정 반영: reports 및 claims 상태 관리 변수 추가
         let reportItemsDB = [];
         let claimItemsDB = [];
         let currentAdminTab = 'reports';
@@ -488,19 +490,18 @@
 
         function handleDisabledButtonClick(event) {
             if (!isDataLoaded) {
+                // 1번 수정 반영: 중복 토스트를 제거하고 단일 토스트만 출력하도록 정돈됨
                 showToast('데이터 로딩 중입니다.', 'error');
                 event.stopPropagation();
             }
         }
 
-        // 2번 수정 반영: localStorage 로컬 캐싱 최적화 적용 (앱 로드 시 캐시 먼저 로딩하여 체감 속도 향상)
         window.onload = function() {
             const savedUser = localStorage.getItem('school_schedule_user');
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
             }
 
-            // localStorage 캐시 데이터 우선 로드
             const cachedEvents = localStorage.getItem('school_schedule_events_cache');
             const cachedUsers = localStorage.getItem('school_schedule_users_cache');
             const cachedReports = localStorage.getItem('school_schedule_reports_cache');
@@ -545,7 +546,6 @@
                     localStorage.setItem('school_schedule_users_cache', JSON.stringify(registeredUsersDB));
                 }
 
-                // reports 및 claims 데이터 연동 시도 (서버 지원 시)
                 try {
                     const reportRes = await fetch(`${GAS_WEB_APP_URL}?action=getReports`);
                     const reportJson = await reportRes.json();
@@ -572,7 +572,6 @@
                 console.error("데이터 로드 실패:", err);
                 syncBadge.innerHTML = '🟡';
                 syncBadge.title = '오프라인 모드 (캐시된 데이터 사용 중)';
-                // 캐시가 있으면 오프라인에서도 작동 유지
                 if (sampleEvents.length > 0) {
                     isDataLoaded = true;
                     setInteractiveButtonsState(true);
@@ -665,7 +664,7 @@
                 triggerSubjectSelectionBuildForEdit();
             } else {
                 titleEl.textContent = '맞춤 로그인';
-                descEl.textContent = '학번(또는 교사 마스터 암호)과 비밀번호를 입력해주세요.';
+                descEl.textContent = '학번과 비밀번호를 입력해주세요.';
                 submitBtn.innerHTML = '로그인';
                 stepContainer.classList.add('hidden');
             }
@@ -893,7 +892,6 @@
             const studentId = document.getElementById('login-student-id').value.trim();
             const password = document.getElementById('login-password').value.trim();
 
-            // 1번 수정 반영: 관리자 마스터 비밀번호로 로그인 인증 지원
             if (studentId === ADMIN_MASTER_PASSWORD || password === ADMIN_MASTER_PASSWORD || studentId === "admin") {
                 if (password === ADMIN_MASTER_PASSWORD || studentId === ADMIN_MASTER_PASSWORD) {
                     currentUser = {
@@ -1518,7 +1516,6 @@
             document.getElementById('report-modal').classList.remove('hidden');
         }
 
-        // 1번 신규 추가: 관리자 대시보드 오픈 및 탭 전환 함수
         function openAdminDashboard() {
             if (!currentUser || !currentUser.isAdmin) {
                 alert("관리자 권한이 필요합니다.");
@@ -1526,6 +1523,15 @@
             }
             document.getElementById('admin-dashboard-modal').classList.remove('hidden');
             renderAdminDashboardList();
+        }
+
+        // 2번 수정 반영: 관리자 패널 새로고침 기능 정의
+        function refreshAdminData() {
+            showToast('데이터를 새로고침하는 중...', 'info');
+            fetchDataFromGas().then(() => {
+                renderAdminDashboardList();
+                showToast('새로고침이 완료되었습니다.', 'success');
+            });
         }
 
         function switchAdminTab(tab) {
@@ -1559,9 +1565,16 @@
             targetList.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = "bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col gap-2";
+                
+                // 4번 수정 반영: 구글 시트에서 승인/반려/삭제 시 상태가 시각적으로 표시되도록 반영
+                let statusBadge = item.status ? (item.status === '승인완료' ? '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">🟢 승인완료</span>' : '<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">🟠 반려됨</span>') : '<span class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded">⚪ 처리대기중</span>';
+
                 card.innerHTML = `
                     <div class="flex justify-between items-center text-xs">
-                        <span class="font-bold text-slate-700">👤 신고자/요청자: ${item.author || '익명'}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-700">👤 신고자/요청자: ${item.author || '익명'}</span>
+                            ${statusBadge}
+                        </div>
                         <span class="text-slate-400 text-[11px]">${item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</span>
                     </div>
                     <p class="text-xs text-slate-800 whitespace-pre-wrap bg-white p-3 rounded-xl border border-slate-100">${item.content}</p>
@@ -1575,21 +1588,40 @@
             });
         }
 
-        function handleAdminAction(type, id, action) {
+        async function handleAdminAction(type, id, action) {
             let list = type === 'reports' ? reportItemsDB : claimItemsDB;
-            if (action === 'delete' || action === 'approve') {
-                list = list.filter(item => item.id !== id);
-                if (type === 'reports') {
-                    reportItemsDB = list;
-                    localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
-                } else {
-                    claimItemsDB = list;
-                    localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
-                }
-                showToast(action === 'approve' ? '요청이 승인 및 처리되었습니다.' : '항목이 삭제되었습니다.', 'success');
-            } else {
+            let targetItem = list.find(item => item.id === id);
+
+            if (action === 'approve') {
+                if (targetItem) targetItem.status = '승인완료';
+                showToast('요청이 승인 및 처리되었습니다.', 'success');
+            } else if (action === 'reject') {
+                if (targetItem) targetItem.status = '반려됨';
                 showToast('반려 처리되었습니다.', 'info');
+            } else if (action === 'delete') {
+                list = list.filter(item => item.id !== id);
+                showToast('항목이 삭제되었습니다.', 'success');
             }
+
+            if (type === 'reports') {
+                reportItemsDB = list;
+                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+            } else {
+                claimItemsDB = list;
+                localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+            }
+
+            if (GAS_WEB_APP_URL && targetItem) {
+                try {
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'updateAdminStatus', type: type, id: id, status: targetItem ? targetItem.status : 'deleted' })
+                    });
+                } catch (e) { console.error(e); }
+            }
+
             renderAdminDashboardList();
         }
 
@@ -1736,6 +1768,7 @@
                 id: (reportModalMode === 'claim' ? 'clm_' : 'rep_') + Date.now(),
                 author: author || '익명',
                 content: content,
+                status: '처리대기중',
                 timestamp: new Date().toISOString()
             };
 
