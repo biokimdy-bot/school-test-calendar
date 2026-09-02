@@ -84,7 +84,7 @@
             <div class="flex flex-wrap items-center gap-3">
                 <div id="user-badge" class="hidden items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 text-xs font-bold text-blue-700">
                     <span id="badge-info-text">🎓 2학년 학생</span>
-                    <button onclick="openEditSubjectsModal()" class="text-emerald-600 hover:underline text-[11px] font-extrabold ml-1">✏️ 과목 수정</button>
+                    <button id="edit-subject-btn" onclick="openEditSubjectsModal()" class="text-emerald-600 hover:underline text-[11px] font-extrabold ml-1">✏️ 과목 수정</button>
                     <button onclick="logout()" class="text-rose-500 hover:underline text-[11px] ml-1">로그아웃</button>
                 </div>
                 
@@ -96,11 +96,11 @@
                     ✨ 간편 가입
                 </button>
 
-                <button onclick="openRegisterModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
+                <button id="register-open-btn" onclick="openRegisterModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
                     ➕ 수행평가 등록
                 </button>
 
-                <button onclick="openReportModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg shadow text-sm" title="오류 신고">
+                <button id="report-open-btn" onclick="openReportModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg shadow text-sm" title="오류 신고">
                     ⚠️ 오류신고
                 </button>
             </div>
@@ -159,7 +159,7 @@
             </div>
         </div>
 
-        <!-- D-Day 임박 수행평가 위젯 대시보드 (접기/펼치기 가능) -->
+        <!-- D-Day 임박 수행평가 위젯 대시보드 -->
         <div class="mb-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-4 rounded-2xl border border-blue-200 shadow-sm transition-all duration-300">
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
@@ -377,26 +377,17 @@
             "중국문화 / 진로": ["L"]
         };
 
-        let sampleEvents = [
-            { id: "e1_1", title: "공통국어 독후감 발표", subject: "공통국어2", target: "1학년 전체", date: "2026-09-03", desc: "지정 도서 읽고 PPT 5장 이내 발표", password: "1234", color: "#3b82f6" },
-            { id: "e1_3", title: "다항식 연산 문제풀이 수행", subject: "공통수학2", target: "1학년 전체", date: "2026-09-05", desc: "서술형 문제 5문항 풀이", password: "1234", color: "#10b981" },
-            { id: "e2_1", title: "도함수의 활용 문제 풀이", subject: "미적분1", target: "2학년 전체", date: "2026-09-02", desc: "접선의 방정식 서술형 평가", password: "1234", color: "#3b82f6" },
-            { id: "e2_13", title: "인문학 서적 비평문 작성", subject: "독서토론과 글쓰기", target: "2학년 A반", date: "2026-09-03", desc: "마이클 샌델 저서 비평 수행평가", password: "1234", color: "#6366f1" },
-            { id: "e3_15", title: "응급처치 및 심폐소생술 실기", subject: "보건 / 운동과 건강", target: "3학년 G반, 3학년 K반", date: "2026-09-02", desc: "AED 사용법 및 CPR 실습", password: "1234", color: "#ef4444" }
-        ];
-
-        let registeredUsersDB = {
-            "20101": { studentId: "20101", gradeStr: "2학년", classNum: "1", password: "1111", enrolledCourses: ["미적분1:전체", "화법과 언어:전체", "영어2:전체", "체육:전체", "일본어:전체", "미술창작:전체", "독서토론과 글쓰기:A반", "사회와 문화:C반"] }
-        };
+        let sampleEvents = [];
+        let registeredUsersDB = {};
 
         let currentDate = new Date(2026, 8, 1);
         let activeEventForDetail = null;
         let currentUser = null; 
-        let currentModalMode = 'login'; // 'login', 'signup', 또는 'edit'
-        let currentViewMode = 'calendar'; // 'calendar' 또는 'list'
+        let currentModalMode = 'login';
+        let currentViewMode = 'calendar';
         let isDDayWidgetExpanded = true;
+        let isDataLoaded = false; // [수정3] 데이터 로드 완료 여부 상태 플래그
 
-        // 시스템 오늘 날짜 계산 (YYYY-MM-DD 형식 문자열)
         function getTodayDateString() {
             const today = new Date();
             const year = today.getFullYear();
@@ -420,11 +411,29 @@
             }, 3000);
         }
 
+        // [수정3] 빨간 표시일 때 작동 버튼 활성화/비활성화 처리 함수
+        function setInteractiveButtonsState(enabled) {
+            const btnIds = ['login-open-btn', 'signup-open-btn', 'register-open-btn', 'report-open-btn', 'edit-subject-btn'];
+            btnIds.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.disabled = !enabled;
+                    if (!enabled) {
+                        btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+            });
+        }
+
         window.onload = function() {
             const savedUser = localStorage.getItem('school_schedule_user');
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
             }
+            // 시작 시 버튼 비활성화 (🔴 로딩 중 상태)
+            setInteractiveButtonsState(false);
             fetchDataFromGas();
             setupLoginInputListener();
         };
@@ -434,12 +443,13 @@
             if (!GAS_WEB_APP_URL) {
                 syncBadge.innerHTML = '🔴';
                 syncBadge.title = '구글 시트 연동 안됨 (URL 미설정)';
+                setInteractiveButtonsState(false);
                 return;
             }
             try {
                 const res = await fetch(`${GAS_WEB_APP_URL}?action=getEvents`);
                 const json = await res.json();
-                if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
+                if (json.status === "success" && Array.isArray(json.data)) {
                     sampleEvents = json.data;
                 }
 
@@ -451,10 +461,15 @@
 
                 syncBadge.innerHTML = '🟢';
                 syncBadge.title = '구글 시트 라이브 연동 완료';
+                isDataLoaded = true;
+                setInteractiveButtonsState(true); // 🟢 성공 시 모든 버튼 활성화
             } catch (err) {
                 console.error("데이터 로드 실패:", err);
                 syncBadge.innerHTML = '🔴';
                 syncBadge.title = '구글 시트 연동 오류 발생';
+                isDataLoaded = false;
+                setInteractiveButtonsState(false); // 🔴 실패 시 클릭 막기
+                showToast('데이터를 불러오는 중이거나 연동 오류가 발생했습니다.', 'error');
             } finally {
                 applyUserSession();
             }
@@ -495,7 +510,18 @@
             }
         }
 
+        // [수정3] 빨간 표시일 때 모달 접근 및 액션 차단 검증
+        function checkDataLoadedOrWarn() {
+            if (!isDataLoaded) {
+                showToast('데이터를 불러오는 중입니다.', 'error');
+                return false;
+            }
+            return true;
+        }
+
         function openLoginModal(mode) {
+            if (!checkDataLoadedOrWarn()) return;
+
             currentModalMode = mode;
             const screen = document.getElementById('login-screen');
             const titleEl = document.getElementById('login-modal-title');
@@ -572,6 +598,9 @@
                 if (gradeStr && COURSE_DATA[gradeStr]) {
                     stepContainer.classList.remove('hidden');
 
+                    // 기존 사용자가 가입할 때 선택했던 수강과목 목록 불러오기 [수정1]
+                    const existingCourses = (currentUser && currentUser.enrolledCourses) ? currentUser.enrolledCourses : [];
+
                     if (gradeStr === '1학년') {
                         let html = `<div class="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-blue-200 space-y-2">
                             <p class="text-blue-700">📌 1학년 공통 과목 (자동 수강)</p>
@@ -582,11 +611,12 @@
                         });
                         html += `</div></div>`;
 
+                        const isMusicSelected = existingCourses.includes("음악:전체");
                         html += `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-2">
-                            <label class="block font-bold text-xs text-blue-800">🎨 예술 과목 선택 (택 1)</label>
+                            <label class="block font-bold text-xs text-blue-800">🎨 예술 과목 선택 (택 1) *</label>
                             <div class="flex gap-4">
-                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music" value="미술:전체" checked class="text-blue-600"> 미술</label>
-                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music" value="음악:전체" class="text-blue-600"> 음악</label>
+                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music" value="미술:전체" ${!isMusicSelected ? 'checked' : ''} class="text-blue-600"> 미술</label>
+                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music" value="음악:전체" ${isMusicSelected ? 'checked' : ''} class="text-blue-600"> 음악</label>
                             </div>
                         </div>`;
                         dynamicArea.innerHTML = html;
@@ -602,70 +632,90 @@
                         });
                         html += `</div></div>`;
 
+                        const isMusic2Selected = existingCourses.includes("음악연주와창작:전체");
                         html += `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-2">
-                            <label class="block font-bold text-xs text-blue-800">🎨 미술창작 / 음악연주와창작 선택 (택 1)</label>
+                            <label class="block font-bold text-xs text-blue-800">🎨 미술창작 / 음악연주와창작 선택 (택 1) *</label>
                             <div class="flex gap-4">
-                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music-2" value="미술창작:전체" checked class="text-blue-600"> 미술창작</label>
-                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music-2" value="음악연주와창작:전체" class="text-blue-600"> 음악연주와창작</label>
+                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music-2" value="미술창작:전체" ${!isMusic2Selected ? 'checked' : ''} class="text-blue-600"> 미술창작</label>
+                                <label class="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"><input type="radio" name="login-art-music-2" value="음악연주와창작:전체" ${isMusic2Selected ? 'checked' : ''} class="text-blue-600"> 음악연주와창작</label>
                             </div>
                         </div>`;
 
+                        // [수정1] 2학년 슬롯별 선택과목 기존값 자동 맵핑 함수
+                        const getSelectedForSlot = (slotLetter) => {
+                            const found = existingCourses.find(c => c.endsWith(`:${slotLetter}반`) || c.endsWith(`:${slotLetter}1반`) || c.endsWith(`:${slotLetter}2반`));
+                            return found || "";
+                        };
+
+                        const selectedA = getSelectedForSlot("A");
+                        const selectedB = getSelectedForSlot("B");
+                        const selectedC = getSelectedForSlot("C");
+
                         let htmlA = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
-                            <label class="block font-bold text-xs text-blue-800">🎯 A반 선택 과목</label>
+                            <label class="block font-bold text-xs text-blue-800">🎯 A반 선택 과목 *</label>
                             <select name="login-slot-course" data-slot="A" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
                                 <option value="">수강 과목 미선택</option>
-                                <option value="독서토론과 글쓰기:A반">독서토론과 글쓰기</option>
-                                <option value="사회와 문화:A1반">사회와 문화 (A1)</option>
-                                <option value="사회와 문화:A2반">사회와 문화 (A2)</option>
-                                <option value="세계문화와 영어:A반">세계문화와 영어</option>
-                                <option value="세계시민과 지리:A반">세계시민과 지리</option>
-                                <option value="세포와 물질대사:A반">세포와 물질대사</option>
-                                <option value="윤리문제탐구:A반">윤리문제탐구</option>
+                                <option value="독서토론과 글쓰기:A반" ${selectedA === "독서토론과 글쓰기:A반" ? "selected" : ""}>독서토론과 글쓰기</option>
+                                <option value="사회와 문화:A1반" ${selectedA === "사회와 문화:A1반" ? "selected" : ""}>사회와 문화 (A1)</option>
+                                <option value="사회와 문화:A2반" ${selectedA === "사회와 문화:A2반" ? "selected" : ""}>사회와 문화 (A2)</option>
+                                <option value="세계문화와 영어:A반" ${selectedA === "세계문화와 영어:A반" ? "selected" : ""}>세계문화와 영어</option>
+                                <option value="세계시민과 지리:A반" ${selectedA === "세계시민과 지리:A반" ? "selected" : ""}>세계시민과 지리</option>
+                                <option value="세포와 물질대사:A반" ${selectedA === "세포와 물질대사:A반" ? "selected" : ""}>세포와 물질대사</option>
+                                <option value="윤리문제탐구:A반" ${selectedA === "윤리문제탐구:A반" ? "selected" : ""}>윤리문제탐구</option>
                             </select></div>`;
 
                         let htmlB = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
-                            <label class="block font-bold text-xs text-blue-800">🎯 B반 선택 과목</label>
+                            <label class="block font-bold text-xs text-blue-800">🎯 B반 선택 과목 *</label>
                             <select name="login-slot-course" data-slot="B" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
                                 <option value="">수강 과목 미선택</option>
-                                <option value="독서토론과 글쓰기:B반">독서토론과 글쓰기</option>
-                                <option value="물질과 에너지:B반">물질과 에너지</option>
-                                <option value="사회와 문화:B반">사회와 문화</option>
-                                <option value="세계문화와 영어:B반">세계문화와 영어</option>
-                                <option value="세계시민과 지리:B반">세계시민과 지리</option>
-                                <option value="세포와 물질대사:B반">세포와 물질대사</option>
-                                <option value="역사로 탐구하는 현대세계:B반">역사로 탐구하는 현대세계</option>
-                                <option value="윤리문제탐구:B반">윤리문제탐구</option>
+                                <option value="독서토론과 글쓰기:B반" ${selectedB === "독서토론과 글쓰기:B반" ? "selected" : ""}>독서토론과 글쓰기</option>
+                                <option value="물질과 에너지:B반" ${selectedB === "물질과 에너지:B반" ? "selected" : ""}>물질과 에너지</option>
+                                <option value="사회와 문화:B반" ${selectedB === "사회와 문화:B반" ? "selected" : ""}>사회와 문화</option>
+                                <option value="세계문화와 영어:B반" ${selectedB === "세계문화와 영어:B반" ? "selected" : ""}>세계문화와 영어</option>
+                                <option value="세계시민과 지리:B반" ${selectedB === "세계시민과 지리:B반" ? "selected" : ""}>세계시민과 지리</option>
+                                <option value="세포와 물질대사:B반" ${selectedB === "세포와 물질대사:B반" ? "selected" : ""}>세포와 물질대사</option>
+                                <option value="역사로 탐구하는 현대세계:B반" ${selectedB === "역사로 탐구하는 현대세계:B반" ? "selected" : ""}>역사로 탐구하는 현대세계</option>
+                                <option value="윤리문제탐구:B반" ${selectedB === "윤리문제탐구:B반" ? "selected" : ""}>윤리문제탐구</option>
                             </select></div>`;
 
                         let htmlC = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
-                            <label class="block font-bold text-xs text-blue-800">🎯 C반 선택 과목</label>
+                            <label class="block font-bold text-xs text-blue-800">🎯 C반 선택 과목 *</label>
                             <select name="login-slot-course" data-slot="C" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
                                 <option value="">수강 과목 미선택</option>
-                                <option value="독서토론과 글쓰기:C반">독서토론과 글쓰기</option>
-                                <option value="물질과 에너지:C반">물질과 에너지</option>
-                                <option value="사회와 문화:C반">사회와 문화</option>
-                                <option value="세계시민과 지리:C반">세계시민과 지리</option>
-                                <option value="세포와 물질대사:C반">세포와 물질대사</option>
-                                <option value="역사로 탐구하는 현대세계:C반">역사로 탐구하는 현대세계</option>
-                                <option value="윤리문제탐구:C반">윤리문제탐구</option>
+                                <option value="독서토론과 글쓰기:C반" ${selectedC === "독서토론과 글쓰기:C반" ? "selected" : ""}>독서토론과 글쓰기</option>
+                                <option value="물질과 에너지:C반" ${selectedC === "물질과 에너지:C반" ? "selected" : ""}>물질과 에너지</option>
+                                <option value="사회와 문화:C반" ${selectedC === "사회와 문화:C반" ? "selected" : ""}>사회와 문화</option>
+                                <option value="세계시민과 지리:C반" ${selectedC === "세계시민과 지리:C반" ? "selected" : ""}>세계시민과 지리</option>
+                                <option value="세포와 물질대사:C반" ${selectedC === "세포와 물질대사:C반" ? "selected" : ""}>세포와 물질대사</option>
+                                <option value="역사로 탐구하는 현대세계:C반" ${selectedC === "역사로 탐구하는 현대세계:C반" ? "selected" : ""}>역사로 탐구하는 현대세계</option>
+                                <option value="윤리문제탐구:C반" ${selectedC === "윤리문제탐구:C반" ? "selected" : ""}>윤리문제탐구</option>
                             </select></div>`;
 
                         dynamicArea.innerHTML = html + htmlA + htmlB + htmlC;
 
                     } else if (gradeStr === '3학년') {
+                        // [수정1] 3학년 블록별 기존값 자동 맵핑 함수
+                        const getSelectedForBlock = (blockLetter) => {
+                            const found = existingCourses.find(c => c.endsWith(`:${blockLetter}반`));
+                            return found || "";
+                        };
+
                         let html = `<div class="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-blue-200 space-y-2">
                             <p class="text-blue-700">📌 3학년 블록별 선택 과목 (D ~ M)</p>
                             <div class="grid grid-cols-2 gap-2">`;
                         
                         ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'].forEach(block => {
+                            const currentVal = getSelectedForBlock(block);
                             html += `<div>
-                                <label class="block font-bold text-[11px] text-slate-600 mb-1">${block} 블록 선택</label>
+                                <label class="block font-bold text-[11px] text-slate-600 mb-1">${block} 블록 선택 *</label>
                                 <select name="login-grade3-block" data-block="${block}" onchange="validateGrade3Duplicate(this)" class="w-full px-2 py-1.5 border rounded text-xs bg-slate-50">
                                     <option value="">선택 안함</option>`;
                             
                             Object.keys(GRADE_3_BLOCK_MAP).forEach(sub => {
                                 if (GRADE_3_BLOCK_MAP[sub].includes(block)) {
-                                    html += `<option value="${sub}:${block}반">${sub} (${block}반)</option>`;
+                                    const optionVal = `${sub}:${block}반`;
+                                    const isSel = (currentVal === optionVal) ? "selected" : "";
+                                    html += `<option value="${optionVal}" ${isSel}>${sub} (${block}반)</option>`;
                                 }
                             });
                             html += `</select></div>`;
@@ -715,19 +765,49 @@
 
         async function handleLoginSubmit(e) {
             e.preventDefault();
+
+            // [수정2] 미선택(빈값) 방지 유효성 검사 함수
+            const validateSelectionFilled = (gradeStr) => {
+                if (gradeStr === '2학년') {
+                    const slotSelects = document.querySelectorAll('select[name="login-slot-course"]');
+                    for (let sel of slotSelects) {
+                        if (!sel.value) {
+                            alert("⚠️ 수강 과목을 선택해 주세요.");
+                            sel.focus();
+                            return false;
+                        }
+                    }
+                } else if (gradeStr === '3학년') {
+                    const blockSelects = document.querySelectorAll('select[name="login-grade3-block"]');
+                    for (let sel of blockSelects) {
+                        if (!sel.value) {
+                            alert("⚠️ 수강 과목을 선택해 주세요.");
+                            sel.focus();
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            };
+
             const submitBtn = document.getElementById('login-submit-btn');
             const originalBtnHtml = submitBtn.innerHTML;
-
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
 
             try {
                 if (currentModalMode === 'edit') {
                     let studentId = currentUser.studentId;
                     let gradeStr = currentUser.gradeStr;
                     let classNum = currentUser.classNum;
-                    let collectedCourses = [];
 
+                    // [수정2] 과목 수정 시 미선택 여부 검증
+                    if (!validateSelectionFilled(gradeStr)) {
+                        return;
+                    }
+
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
+
+                    let collectedCourses = [];
                     if (gradeStr === '1학년') {
                         ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학"].forEach(s => collectedCourses.push(`${s}:전체`));
                         const artMusicRadio = document.querySelector('input[name="login-art-music"]:checked');
@@ -791,6 +871,14 @@
                     }
                     currentUser = existingUser;
                 } else {
+                    // [수정2] 회원가입 시 미선택 여부 검증
+                    if (!validateSelectionFilled(gradeStr)) {
+                        return;
+                    }
+
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
+
                     let collectedCourses = [];
                     if (gradeStr === '1학년') {
                         ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학"].forEach(s => collectedCourses.push(`${s}:전체`));
@@ -1034,12 +1122,10 @@
             const lastDate = new Date(year, month + 1, 0).getDate();
             const prevLastDate = new Date(year, month, 0).getDate();
 
-            // 이전 달 날짜 칸 생성
             for (let i = firstDayIndex; i > 0; i--) {
                 grid.appendChild(createDayCell(prevLastDate - i + 1, true, null, null));
             }
 
-            // 현재 달 날짜 칸 및 수행평가 이벤트 렌더링
             for (let day = 1; day <= lastDate; day++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
@@ -1052,7 +1138,6 @@
                 grid.appendChild(createDayCell(day, false, filteredEvents, dateStr, isToday));
             }
 
-            // 다음 달 빈 칸 채우기
             const totalCells = grid.children.length - 7;
             for (let i = 1; i <= 42 - totalCells; i++) {
                 grid.appendChild(createDayCell(i, true, null, null));
@@ -1070,7 +1155,6 @@
 
             const todayStr = getTodayDateString();
 
-            // 현재 월에 해당하고 필터링에 맞는 일정들 정렬
             let monthlyEvents = sampleEvents.filter(e => {
                 const eventDate = new Date(e.date);
                 return eventDate.getFullYear() === year && eventDate.getMonth() === month && isEventMatchingFilter(e);
@@ -1132,7 +1216,6 @@
         function createDayCell(dayNum, isOtherMonth, events, dateStr, isToday = false) {
             const cell = document.createElement('div');
             
-            // 오늘 날짜 음영 및 테두리 강조 스타일링
             let todayClasses = isToday 
                 ? 'bg-blue-50/80 border-2 border-blue-500 shadow-md ring-2 ring-blue-200' 
                 : 'bg-white border-slate-200';
@@ -1177,6 +1260,8 @@
         }
 
         function openRegisterModal() {
+            if (!checkDataLoadedOrWarn()) return;
+
             document.getElementById('register-modal').classList.remove('hidden');
             document.getElementById('reg-date').value = getTodayDateString();
             document.getElementById('register-form').reset();
@@ -1195,6 +1280,8 @@
         }
 
         function openReportModal() {
+            if (!checkDataLoadedOrWarn()) return;
+
             document.getElementById('report-modal').classList.remove('hidden');
         }
 
@@ -1272,6 +1359,9 @@
 
         async function handleRegisterSubmit(e) {
             e.preventDefault();
+
+            if (!checkDataLoadedOrWarn()) return;
+
             const checkedBoxes = document.querySelectorAll('input[name="target-class"]:checked');
             if (checkedBoxes.length === 0) {
                 alert('⚠️ 대상 학급 및 분반을 최소 1개 이상 선택해 주세요.');
@@ -1322,6 +1412,8 @@
 
         function requestDeleteEvent() {
             if (!activeEventForDetail) return;
+            if (!checkDataLoadedOrWarn()) return;
+
             document.getElementById('confirm-modal-input').value = '';
             document.getElementById('confirm-modal').classList.remove('hidden');
 
@@ -1367,6 +1459,8 @@
         }
 
         async function submitReport() {
+            if (!checkDataLoadedOrWarn()) return;
+
             const author = document.getElementById('report-author').value.trim();
             const content = document.getElementById('report-content').value.trim();
             const reportBtn = document.getElementById('report-submit-btn');
