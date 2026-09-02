@@ -373,7 +373,7 @@
 
     <script>
         const ADMIN_MASTER_PASSWORD = "9999";
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxeeunLDnAgXQil_NxuaK_up2BWYnufQRWwvQFERv4wKV2CC2XSC_rdLtqBb9kl4Ryk/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbype7xvs3wxyVX-xx3mZ58LTscbUXtL0JwgA8D-HxcPz9eXXZQXvqFK0adipwyyYvD-/exec';
 
         const COURSE_DATA = {
             "1학년": {
@@ -1127,195 +1127,171 @@
                     badgeText.textContent = `🛠️ 관리자(교사)`;
                     if (adminPanelBtn) adminPanelBtn.classList.remove('hidden');
                 } else {
-                    badgeText.textContent = `🎓 ${currentUser.studentId} 학생 (${currentUser.enrolledCourses ? currentUser.enrolledCourses.length : 0}개 과목)`;
+                    badgeText.textContent = `🎓 ${currentUser.gradeStr} ${currentUser.classNum}반 (${currentUser.studentId})`;
                     if (adminPanelBtn) adminPanelBtn.classList.add('hidden');
-                    document.getElementById('filter-grade').value = currentUser.gradeStr;
-                    document.getElementById('filter-class').value = currentUser.classNum;
                 }
             }
-
-            updateFilterSubjects();
             renderMainView();
-            renderDDayWidget();
         }
 
         function logout() {
-            localStorage.removeItem('school_schedule_user');
             currentUser = null;
-            document.getElementById('user-badge').classList.add('hidden');
-            document.getElementById('user-badge').classList.remove('flex');
-            document.getElementById('login-open-btn').classList.remove('hidden');
-            document.getElementById('signup-open-btn').classList.remove('hidden');
-            document.getElementById('filter-grade').value = 'all';
-            document.getElementById('filter-class').value = 'all';
-            updateFilterSubjects();
-            renderMainView();
-            renderDDayWidget();
+            localStorage.removeItem('school_schedule_user');
+            applyUserSession();
             showToast('로그아웃되었습니다.', 'info');
         }
 
-        function updateFilterSubjects() {
-            const filterGrade = document.getElementById('filter-grade').value;
-            const subjectSelect = document.getElementById('filter-subject');
-            const currentSelectedSubject = subjectSelect.value;
-            let availableSubjects = new Set();
-            
-            let filteredEventsForSubject = sampleEvents.filter(e => {
-                if (filterGrade !== 'all' && !e.target.includes(filterGrade)) return false;
-                const selectedClass = document.getElementById('filter-class').value;
-                if (selectedClass !== 'all') {
-                    const classPattern = `${selectedClass}반`;
-                    const isNumericClassEvent = /\d+반/.test(e.target);
-                    if (!e.target.includes('전체') && !e.target.includes(classPattern) && isNumericClassEvent) return false;
-                }
-                return true;
-            });
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
 
-            filteredEventsForSubject.forEach(e => availableSubjects.add(e.subject));
-
-            if (availableSubjects.size === 0) {
-                if (currentUser && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
-                    currentUser.enrolledCourses.forEach(item => availableSubjects.add(item.split(':')[0]));
-                } else {
-                    if (filterGrade === 'all') {
-                        Object.values(COURSE_DATA).forEach(obj => Object.keys(obj).forEach(sub => availableSubjects.add(sub)));
-                    } else if (COURSE_DATA[filterGrade]) {
-                        Object.keys(COURSE_DATA[filterGrade]).forEach(sub => availableSubjects.add(sub));
-                    }
-                }
-            }
-
-            subjectSelect.innerHTML = '<option value="all">전체 과목</option>';
-            Array.from(availableSubjects).sort().forEach(sub => {
-                const opt = document.createElement('option');
-                opt.value = sub;
-                opt.textContent = sub;
-                subjectSelect.appendChild(opt);
-            });
-
-            if (availableSubjects.has(currentSelectedSubject)) {
-                subjectSelect.value = currentSelectedSubject;
-            } else {
-                subjectSelect.value = 'all';
-            }
+        function changeMonth(diff) {
+            currentDate.setMonth(currentDate.getMonth() + diff);
+            renderMainView();
         }
 
         function handleFilterChange() {
-            updateFilterSubjects();
             renderMainView();
-            renderDDayWidget();
         }
 
         function handleClassFilterChange() {
-            updateFilterSubjects();
             renderMainView();
-            renderDDayWidget();
         }
 
         function handleSubjectFilterChange() {
             renderMainView();
-            renderDDayWidget();
-        }
-
-        function isEventMatchingFilter(e) {
-            const selectedGrade = document.getElementById('filter-grade').value;
-            const selectedClass = document.getElementById('filter-class').value;
-            const selectedSubject = document.getElementById('filter-subject').value;
-
-            if (selectedSubject !== 'all' && e.subject !== selectedSubject) {
-                return false;
-            }
-
-            if (selectedGrade !== 'all' && !e.target.includes(selectedGrade)) {
-                return false;
-            }
-
-            if (selectedClass !== 'all') {
-                const classPattern = `${selectedClass}반`;
-                const isNumericClassEvent = /\d+반/.test(e.target);
-
-                if (!e.target.includes('전체') && !e.target.includes(classPattern) && isNumericClassEvent) {
-                    return false;
-                }
-            }
-
-            if (currentUser && !currentUser.isAdmin && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
-                let isMatchUserCourse = false;
-                currentUser.enrolledCourses.forEach(courseStr => {
-                    let parts = courseStr.split(':');
-                    let subName = parts[0];
-                    let targetInfo = parts[1];
-                    if (e.subject === subName) {
-                        if (targetInfo === '전체' || e.target.includes(targetInfo)) {
-                            isMatchUserCourse = true;
-                        }
-                    }
-                });
-                if (!isMatchUserCourse) return false;
-            }
-
-            return true;
         }
 
         function renderMainView() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            document.getElementById('current-month-year').textContent = `${year}년 ${month + 1}월`;
+
+            updateSubjectFilterOptions();
+
             if (currentViewMode === 'calendar') {
-                renderCalendar();
+                renderCalendarGrid(year, month);
             } else {
-                renderListView();
+                renderListView(year, month);
             }
+            renderDDayWidget();
         }
 
-        function renderCalendar() {
+        function updateSubjectFilterOptions() {
+            const subjectSelect = document.getElementById('filter-subject');
+            const currentSelected = subjectSelect.value;
+            const filterGrade = document.getElementById('filter-grade').value;
+
+            let availableSubjects = new Set();
+            sampleEvents.forEach(ev => {
+                if (filterGrade === 'all' || ev.target.includes(filterGrade)) {
+                    availableSubjects.add(ev.subject);
+                }
+            });
+
+            let html = '<option value="all">전체 과목</option>';
+            Array.from(availableSubjects).sort().forEach(sub => {
+                const sel = (sub === currentSelected) ? 'selected' : '';
+                html += `<option value="${sub}" ${sel}>${sub}</option>`;
+            });
+            subjectSelect.innerHTML = html;
+        }
+
+        function filterEvents() {
+            const filterGrade = document.getElementById('filter-grade').value;
+            const filterClass = document.getElementById('filter-class').value;
+            const filterSubject = document.getElementById('filter-subject').value;
+
+            return sampleEvents.filter(ev => {
+                if (filterGrade !== 'all' && !ev.target.includes(filterGrade)) return false;
+                if (filterClass !== 'all') {
+                    let matchClass = false;
+                    if (ev.target.includes('전체')) matchClass = true;
+                    else if (ev.target.includes(`${filterClass}반`) || ev.target.includes(` ${filterClass}반`)) matchClass = true;
+                    if (!matchClass) return false;
+                }
+                if (filterSubject !== 'all' && ev.subject !== filterSubject) return false;
+
+                if (currentUser && !currentUser.isAdmin) {
+                    let userMatch = false;
+                    const gradeMatch = ev.target.includes(currentUser.gradeStr) || ev.target.includes('전체');
+                    if (gradeMatch) {
+                        if (ev.target.includes('전체')) {
+                            userMatch = true;
+                        } else {
+                            let matchFound = false;
+                            currentUser.enrolledCourses.forEach(c => {
+                                const [cSub, cTarget] = c.split(':');
+                                if (ev.subject === cSub) {
+                                    if (cTarget === '전체' || ev.target.includes(cTarget)) {
+                                        matchFound = true;
+                                    }
+                                }
+                            });
+                            userMatch = matchFound;
+                        }
+                    }
+                    if (!userMatch) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function renderCalendarGrid(year, month) {
             const grid = document.getElementById('calendar-grid');
             grid.innerHTML = '';
 
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-
-            document.getElementById('current-month-year').textContent = `${year}년 ${month + 1}월`;
-
-            const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
-            daysOfWeek.forEach((day, index) => {
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+            dayNames.forEach((d, idx) => {
                 const header = document.createElement('div');
-                header.className = `text-center font-bold text-xs py-2 rounded-lg ${index === 0 ? 'text-rose-500 bg-rose-50/50' : index === 6 ? 'text-blue-500 bg-blue-50/50' : 'text-slate-600 bg-slate-100'}`;
-                header.textContent = day;
+                header.className = `text-center font-black text-xs py-2 ${idx === 0 ? 'text-rose-500' : idx === 6 ? 'text-blue-500' : 'text-slate-600'}`;
+                header.textContent = d;
                 grid.appendChild(header);
             });
 
             const firstDayIndex = new Date(year, month, 1).getDay();
             const lastDay = new Date(year, month + 1, 0).getDate();
+            const todayStr = getTodayDateString();
 
             for (let i = 0; i < firstDayIndex; i++) {
                 const emptyCell = document.createElement('div');
-                emptyCell.className = 'bg-slate-50/40 rounded-xl min-h-[100px] border border-dashed border-slate-200 opacity-40';
+                emptyCell.className = "bg-slate-100/50 rounded-2xl min-h-[110px]";
                 grid.appendChild(emptyCell);
             }
 
-            for (let day = 1; day <= lastDay; day++) {
-                const cell = document.createElement('div');
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const isToday = dateStr === getTodayDateString();
+            const filtered = filterEvents();
 
-                cell.className = `bg-white rounded-xl min-h-[100px] p-2 border ${isToday ? 'border-blue-600 ring-4 ring-blue-100 bg-blue-50/30' : 'border-slate-200'} flex flex-col gap-1 transition hover:shadow-md`;
+            for (let d = 1; d <= lastDay; d++) {
+                const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const cell = document.createElement('div');
+                const dayOfWeek = new Date(year, month, d).getDay();
                 
+                let cellBg = "bg-white";
+                if (cellDateStr === todayStr) cellBg = "bg-blue-50/40 ring-2 ring-blue-500";
+
+                cell.className = `${cellBg} border border-slate-200 rounded-2xl p-2 min-h-[110px] flex flex-col transition hover:shadow-md relative overflow-hidden`;
+
                 const dayHeader = document.createElement('div');
-                dayHeader.className = 'flex justify-between items-center text-xs font-bold';
-                dayHeader.innerHTML = `<span class="${isToday ? 'bg-blue-600 text-white px-2 py-0.5 rounded-full shadow' : 'text-slate-700'}">${day}</span>${isToday ? '<span class="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded animate-pulse">오늘</span>' : ''}`;
+                dayHeader.className = `text-xs font-black mb-1 flex justify-between items-center ${dayOfWeek === 0 ? 'text-rose-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-slate-700'}`;
+                dayHeader.innerHTML = `<span>${d}일</span>`;
                 cell.appendChild(dayHeader);
 
                 const eventsContainer = document.createElement('div');
-                eventsContainer.className = 'flex flex-col gap-1 overflow-y-auto max-h-[80px] scrollbar-none';
+                eventsContainer.className = "flex-1 space-y-1 overflow-y-auto max-h-[90px] scrollbar-none";
 
-                const dayEvents = sampleEvents.filter(e => e.date === dateStr && isEventMatchingFilter(e));
+                const dayEvents = filtered.filter(ev => ev.date === cellDateStr);
                 dayEvents.forEach(ev => {
-                    const pill = document.createElement('button');
-                    pill.onclick = () => openDetailModal(ev);
-                    const isTodayEvent = ev.date === getTodayDateString();
-                    pill.className = `text-left text-[10px] font-bold px-2 py-1 rounded-lg text-white truncate shadow-sm transition transform hover:scale-[1.02] active:scale-95 flex items-center justify-between ${isTodayEvent ? 'ring-2 ring-yellow-300 font-black' : ''}`;
-                    pill.style.backgroundColor = ev.color || '#3b82f6';
-                    pill.title = `[${ev.subject}] ${ev.title} (${ev.target})`;
-                    pill.innerHTML = `<span>[${ev.subject}] ${ev.title}</span>${isTodayEvent ? '<span class="bg-yellow-300 text-slate-900 text-[8px] px-1 rounded ml-1 shrink-0">D-0</span>' : ''}`;
-                    eventsContainer.appendChild(pill);
+                    const badge = document.createElement('div');
+                    badge.className = "text-[10px] font-bold px-1.5 py-0.5 rounded-lg truncate text-white shadow-sm cursor-pointer transition transform hover:scale-[1.02]";
+                    badge.style.backgroundColor = ev.color || '#3b82f6';
+                    badge.textContent = `[${ev.subject}] ${ev.title}`;
+                    badge.title = `${ev.subject}: ${ev.title} (${ev.target})`;
+                    badge.onclick = (e) => {
+                        e.stopPropagation();
+                        openDetailModal(ev);
+                    };
+                    eventsContainer.appendChild(badge);
                 });
 
                 cell.appendChild(eventsContainer);
@@ -1323,57 +1299,44 @@
             }
         }
 
-        function renderListView() {
+        function renderListView(year, month) {
             const container = document.getElementById('list-view-container');
             container.innerHTML = '';
 
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            document.getElementById('current-month-year').textContent = `${year}년 ${month + 1}월`;
+            const filtered = filterEvents().sort((a, b) => new Date(a.date) - new Date(b.date));
+            const monthFiltered = filtered.filter(ev => {
+                const d = new Date(ev.date);
+                return d.getFullYear() === year && d.getMonth() === month;
+            });
 
-            const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
-            const monthEvents = sampleEvents.filter(e => e.date && e.date.startsWith(monthPrefix) && isEventMatchingFilter(e));
-            monthEvents.sort((a, b) => a.date.localeCompare(b.date));
-
-            if (monthEvents.length === 0) {
-                container.innerHTML = `<div class="text-center py-12 text-slate-400 text-sm font-semibold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                    해당 월에 등록된 수행평가 일정이 없습니다.
-                </div>`;
+            if (monthFiltered.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs font-bold bg-slate-50 rounded-2xl border border-slate-200">해당 월에 등록된 수행평가 일정이 없습니다.</div>`;
                 return;
             }
 
-            monthEvents.forEach(ev => {
+            monthFiltered.forEach(ev => {
                 const card = document.createElement('div');
-                card.onclick = () => openDetailModal(ev);
-                const isTodayEvent = ev.date === getTodayDateString();
-                
-                card.className = `bg-white p-4 rounded-xl border ${isTodayEvent ? 'border-blue-500 ring-2 ring-blue-100 bg-blue-50/10' : 'border-slate-200'} shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:border-blue-300 hover:shadow-md transition cursor-pointer`;
+                card.className = "bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:shadow-md transition";
                 
                 card.innerHTML = `
                     <div class="flex items-start gap-3">
-                        <div class="px-3 py-2 rounded-xl text-white font-black text-xs text-center shrink-0" style="background-color: ${ev.color || '#3b82f6'}">
-                            ${ev.date.substring(5)}
-                        </div>
+                        <div class="w-3 h-3 rounded-full mt-1 shrink-0" style="background-color: ${ev.color || '#3b82f6'};"></div>
                         <div>
-                            <div class="flex items-center gap-2 flex-wrap">
-                                ${isTodayEvent ? '<span class="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">🔥 오늘 수행평가</span>' : ''}
-                                <span class="bg-slate-100 text-slate-700 font-bold text-[11px] px-2 py-0.5 rounded">${ev.subject}</span>
-                                <span class="text-xs font-black text-slate-800">${ev.title}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">${ev.subject}</span>
+                                <span class="text-xs font-bold text-slate-500">🎯 ${ev.target}</span>
+                                <span class="text-xs font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">📅 ${ev.date}</span>
                             </div>
-                            <p class="text-xs text-slate-500 mt-1">${ev.desc || '상세 내용 없음'}</p>
+                            <h4 class="text-sm font-black text-slate-800 mt-1">${ev.title}</h4>
+                            <p class="text-xs text-slate-500 mt-0.5">${ev.desc || '상세 내용 없음'}</p>
                         </div>
                     </div>
-                    <div class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg shrink-0">
-                        🎯 ${ev.target}
-                    </div>
+                    <button onclick='openDetailModal(${JSON.stringify(ev)})' class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl text-xs transition shrink-0">
+                        상세보기 🔍
+                    </button>
                 `;
                 container.appendChild(card);
             });
-        }
-
-        function changeMonth(direction) {
-            currentDate.setMonth(currentDate.getMonth() + direction);
-            renderMainView();
         }
 
         function renderDDayWidget() {
@@ -1381,211 +1344,170 @@
             const countBadge = document.getElementById('dday-count-badge');
             container.innerHTML = '';
 
-            const todayStr = getTodayDateString();
-            const todayDateObj = new Date(todayStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
-            const upcomingEvents = sampleEvents.filter(e => {
-                if (!e.date || !isEventMatchingFilter(e)) return false;
-                const evDateObj = new Date(e.date);
-                const diffTime = evDateObj - todayDateObj;
+            const filtered = filterEvents();
+            const upcoming = filtered.map(ev => {
+                const evDate = new Date(ev.date);
+                evDate.setHours(0, 0, 0, 0);
+                const diffTime = evDate - today;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                return diffDays >= 0 && diffDays <= 14;
-            }).map(e => {
-                const evDateObj = new Date(e.date);
-                const diffTime = evDateObj - todayDateObj;
-                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-                return { ...e, diffDays };
-            }).sort((a, b) => a.diffDays - b.diffDays);
+                return { ...ev, diffDays };
+            }).filter(ev => ev.diffDays >= 0 && ev.diffDays <= 7).sort((a, b) => a.diffDays - b.diffDays);
 
-            countBadge.textContent = `${upcomingEvents.length}건`;
+            countBadge.textContent = `${upcoming.length}건`;
 
-            if (upcomingEvents.length === 0) {
-                container.innerHTML = `<div class="text-xs text-slate-400 font-medium py-1 px-2">14일 이내 임박한 수행평가 일정이 없습니다.</div>`;
+            if (upcoming.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-500 py-1 px-2 font-bold">임박한 수행평가 일정이 없습니다.</div>`;
                 return;
             }
 
-            upcomingEvents.forEach(ev => {
-                const badgeText = ev.diffDays === 0 ? 'D-Day' : `D-${ev.diffDays}`;
+            upcoming.forEach(ev => {
                 const card = document.createElement('div');
+                card.className = "bg-white p-3 rounded-xl border border-blue-100 shadow-sm min-w-[220px] max-w-[260px] flex flex-col justify-between shrink-0 cursor-pointer hover:border-blue-300 transition";
                 card.onclick = () => openDetailModal(ev);
-                card.className = 'bg-white p-3 rounded-xl border border-blue-100 shadow-sm min-w-[220px] max-w-[260px] shrink-0 cursor-pointer hover:border-blue-400 transition flex flex-col justify-between';
-                
+
+                let dDayText = ev.diffDays === 0 ? "🔥 D-Day" : `D-${ev.diffDays}`;
+                let dDayColor = ev.diffDays === 0 ? "bg-rose-500 text-white" : "bg-blue-600 text-white";
+
                 card.innerHTML = `
-                    <div class="flex justify-between items-start gap-1 mb-1">
-                        <span class="bg-blue-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full">${badgeText}</span>
-                        <span class="text-[10px] font-bold text-slate-400">${ev.date}</span>
-                    </div>
                     <div>
-                        <div class="text-xs font-black text-slate-800 truncate">${ev.title}</div>
-                        <div class="text-[11px] text-slate-500 truncate">${ev.subject} (${ev.target})</div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] font-black px-1.5 py-0.5 rounded-md ${dDayColor}">${dDayText}</span>
+                            <span class="text-[10px] font-bold text-slate-400">${ev.date}</span>
+                        </div>
+                        <span class="text-[10px] font-extrabold text-blue-600">${ev.subject}</span>
+                        <h4 class="text-xs font-black text-slate-800 truncate">${ev.title}</h4>
                     </div>
+                    <div class="text-[10px] text-slate-500 mt-2 truncate">🎯 ${ev.target}</div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function openRegisterModal(isEditRequest = false, eventObj = null) {
+        function openRegisterModal(isEditMode = false) {
             if (!checkDataLoadedOrWarn()) return;
 
-            isEditClaimMode = isEditRequest;
+            isEditClaimMode = isEditMode;
             const modal = document.getElementById('register-modal');
             const heading = document.getElementById('register-modal-heading');
             const submitBtn = document.getElementById('reg-submit-btn');
-            const passwordLabel = document.getElementById('reg-password-label');
-            const passwordInput = document.getElementById('reg-password');
-            const passwordNotice = document.getElementById('reg-password-notice');
             const gradeSelect = document.getElementById('reg-grade');
+            const subjectSelect = document.getElementById('reg-subject');
+            const targetContainer = document.getElementById('target-checkbox-container');
+            const passwordNotice = document.getElementById('reg-password-notice');
+            const passwordFieldContainer = document.getElementById('reg-password-field-container');
 
             modal.classList.remove('hidden');
-            document.getElementById('register-form').reset();
-            document.getElementById('target-checkbox-container').classList.add('hidden');
-            document.getElementById('reg-subject').disabled = true;
-            document.getElementById('reg-subject').innerHTML = '<option value="">과목을 먼저 선택하세요</option>';
 
-            if (currentUser && !currentUser.isAdmin) {
-                gradeSelect.value = currentUser.gradeStr;
+            if (isEditMode && activeEventForDetail) {
+                heading.textContent = '✏️ 수행평가 수정 요청 작성';
+                submitBtn.textContent = '수정 요청 전송';
+                submitBtn.className = "bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5";
+
+                document.getElementById('reg-title').value = activeEventForDetail.title + " (수정요청)";
+                
+                gradeSelect.value = activeEventForDetail.target.includes('1학년') ? '1학년' : activeEventForDetail.target.includes('2학년') ? '2학년' : '3학년';
                 gradeSelect.disabled = true;
                 onModalGradeChange();
-            } else {
-                gradeSelect.disabled = false;
-            }
 
-            if (isEditRequest && eventObj) {
-                heading.innerHTML = `✏️ '${eventObj.title}' 수정 요청 작성`;
-                submitBtn.innerHTML = '수정 요청 전송';
-                submitBtn.className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5';
-                
-                passwordLabel.textContent = '작성자 비밀번호 (기존 등록된 비밀번호 적용됨)';
-                passwordInput.value = eventObj.password || '';
-                passwordInput.setAttribute('readonly', 'true');
-                passwordInput.classList.add('bg-slate-100', 'cursor-not-allowed');
-                passwordInput.removeAttribute('required');
-                passwordNotice.classList.remove('hidden');
-
-                document.getElementById('reg-title').value = eventObj.title;
-                if (currentUser && currentUser.isAdmin) {
-                    gradeSelect.value = eventObj.target.includes('1학년') ? '1학년' : eventObj.target.includes('2학년') ? '2학년' : '3학년';
-                    onModalGradeChange();
-                }
-                document.getElementById('reg-subject').value = eventObj.subject;
+                subjectSelect.value = activeEventForDetail.subject;
+                subjectSelect.disabled = true;
                 onModalSubjectChange();
-                document.getElementById('reg-date').value = eventObj.date;
-                document.getElementById('reg-desc').value = eventObj.desc;
-                
-                setTimeout(() => {
-                    const checkboxes = document.querySelectorAll('input[name="target-checkbox"]');
-                    const targetValues = eventObj.target.split(',').map(s => s.trim());
-                    checkboxes.forEach(cb => {
-                        cb.checked = targetValues.includes(cb.value);
-                    });
-                    checkSelectAllStatus();
-                }, 50);
 
-                window.currentEditTargetEventId = eventObj.id;
+                document.getElementById('reg-date').value = activeEventForDetail.date;
+                document.getElementById('reg-desc').value = activeEventForDetail.desc;
+                document.getElementById('reg-password').value = activeEventForDetail.password || "1234";
+                document.getElementById('reg-password').disabled = true;
+                passwordNotice.classList.remove('hidden');
             } else {
-                heading.innerHTML = '📝 수행평가 일정 간편 등록';
-                submitBtn.innerHTML = '등록하기';
-                submitBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5';
-                
-                passwordLabel.textContent = '작성자 비밀번호 (삭제용) *';
-                passwordInput.value = '';
-                passwordInput.removeAttribute('readonly');
-                passwordInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
-                passwordInput.setAttribute('required', 'true');
-                passwordInput.placeholder = '비밀번호 4자리 이상';
-                passwordNotice.classList.add('hidden');
+                heading.textContent = '📝 수행평가 일정 간편 등록';
+                submitBtn.textContent = '등록하기';
+                submitBtn.className = "bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5";
 
-                window.currentEditTargetEventId = null;
+                document.getElementById('register-form').reset();
+                gradeSelect.disabled = false;
+                subjectSelect.disabled = true;
+                subjectSelect.innerHTML = '<option value="">과목을 먼저 선택하세요</option>';
+                targetContainer.classList.add('hidden');
+                document.getElementById('reg-password').disabled = false;
+                passwordNotice.classList.add('hidden');
             }
         }
 
         function onModalGradeChange() {
-            const grade = document.getElementById('reg-grade').value;
+            const gradeVal = document.getElementById('reg-grade').value;
             const subjectSelect = document.getElementById('reg-subject');
-            subjectSelect.innerHTML = '<option value="">과목을 선택하세요</option>';
-            document.getElementById('target-checkbox-container').classList.add('hidden');
+            const targetContainer = document.getElementById('target-checkbox-container');
 
-            if (grade && COURSE_DATA[grade]) {
-                subjectSelect.disabled = false;
-                Object.keys(COURSE_DATA[grade]).sort().forEach(sub => {
+            subjectSelect.innerHTML = '<option value="">과목을 선택하세요</option>';
+            targetContainer.classList.add('hidden');
+
+            if (!gradeVal) {
+                subjectSelect.disabled = true;
+                return;
+            }
+
+            subjectSelect.disabled = false;
+            const subjects = COURSE_DATA[gradeVal];
+            if (subjects) {
+                Object.keys(subjects).sort().forEach(sub => {
                     const opt = document.createElement('option');
                     opt.value = sub;
                     opt.textContent = sub;
                     subjectSelect.appendChild(opt);
                 });
-            } else {
-                subjectSelect.disabled = true;
             }
         }
 
         function onModalSubjectChange() {
-            const grade = document.getElementById('reg-grade').value;
-            const subject = document.getElementById('reg-subject').value;
-            const container = document.getElementById('target-checkbox-container');
-            const wrapper = document.getElementById('checkboxes-wrapper');
-            wrapper.innerHTML = '';
+            const gradeVal = document.getElementById('reg-grade').value;
+            const subjectVal = document.getElementById('reg-subject').value;
+            const targetContainer = document.getElementById('target-checkbox-container');
+            const checkboxesWrapper = document.getElementById('checkboxes-wrapper');
 
-            if (!grade || !subject) {
-                container.classList.add('hidden');
+            checkboxesWrapper.innerHTML = '';
+            if (!subjectVal) {
+                targetContainer.classList.add('hidden');
                 return;
             }
 
-            container.classList.remove('hidden');
-            let options = [];
+            targetContainer.classList.remove('hidden');
 
-            const subjectBlocks = COURSE_DATA[grade] && COURSE_DATA[grade][subject];
-            if (subjectBlocks && subjectBlocks.length > 0) {
-                subjectBlocks.forEach(b => {
-                    options.push(`${grade} ${b}반`);
-                });
-            } else {
-                if (grade === '1학년') {
-                    for (let i = 1; i <= 7; i++) {
-                        options.push(`${grade} ${i}반`);
-                    }
-                } else if (grade === '2학년') {
-                    if (subject === '일본어') {
-                        for (let i = 1; i <= 6; i++) {
-                            options.push(`${grade} ${i}반`);
+            let options = [];
+            if (gradeVal === '1학년') {
+                options = ["1학년 전체"];
+            } else if (gradeVal === '2학년') {
+                const blocks = COURSE_DATA['2학년'][subjectVal];
+                if (!blocks || blocks.length === 0) {
+                    options = ["2학년 전체"];
+                } else {
+                    blocks.forEach(b => {
+                        if (b === "A1" || b === "A2") {
+                            options.push(`2학년 ${b}반`);
+                        } else {
+                            options.push(`2학년 ${b}반`);
                         }
-                    } else {
-                        for (let i = 1; i <= 7; i++) {
-                            options.push(`${grade} ${i}반`);
-                        }
-                    }
-                } else if (grade === '3학년') {
-                    for (let i = 1; i <= 7; i++) {
-                        options.push(`${grade} ${i}반`);
-                    }
+                    });
+                }
+            } else if (gradeVal === '3학년') {
+                const blocks = GRADE_3_BLOCK_MAP[subjectVal];
+                if (!blocks || blocks.length === 0) {
+                    options = ["3학년 전체"];
+                } else {
+                    blocks.forEach(b => {
+                        options.push(`3학년 ${b}반`);
+                    });
                 }
             }
 
-            const selectAllLabel = document.createElement('label');
-            selectAllLabel.className = 'flex items-center gap-1.5 bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-300 text-xs font-black cursor-pointer hover:bg-blue-200 w-full mb-1';
-            selectAllLabel.innerHTML = `<input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAllTargets(this)" class="rounded text-blue-600"> <span>전체 선택</span>`;
-            wrapper.appendChild(selectAllLabel);
-
-            options.forEach((optText, idx) => {
+            options.forEach(optText => {
                 const label = document.createElement('label');
-                label.className = 'flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold cursor-pointer hover:bg-blue-50';
-                label.innerHTML = `<input type="checkbox" name="target-checkbox" value="${optText}" onchange="checkSelectAllStatus()" class="rounded text-blue-600"> <span>${optText}</span>`;
-                wrapper.appendChild(label);
+                label.className = "flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer shadow-sm";
+                label.innerHTML = `<input type="checkbox" name="reg-target-class" value="${optText}" checked class="rounded text-blue-600"> <span>${optText}</span>`;
+                checkboxesWrapper.appendChild(label);
             });
-        }
-
-        function toggleSelectAllTargets(master) {
-            const checkboxes = document.querySelectorAll('input[name="target-checkbox"]');
-            checkboxes.forEach(cb => {
-                cb.checked = master.checked;
-            });
-        }
-
-        function checkSelectAllStatus() {
-            const checkboxes = document.querySelectorAll('input[name="target-checkbox"]');
-            const master = document.getElementById('select-all-checkbox');
-            if (!master) return;
-            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            master.checked = allChecked;
         }
 
         async function handleRegisterSubmit(e) {
@@ -1595,37 +1517,34 @@
             const grade = document.getElementById('reg-grade').value;
             const subject = document.getElementById('reg-subject').value;
             const date = document.getElementById('reg-date').value;
-            const password = document.getElementById('reg-password').value.trim();
             const desc = document.getElementById('reg-desc').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
 
-            const checkedTargets = document.querySelectorAll('input[name="target-checkbox"]:checked');
+            const checkedTargets = document.querySelectorAll('input[name="reg-target-class"]:checked');
             if (checkedTargets.length === 0) {
-                alert("⚠️ 대상 학급을 최소 1개 이상 선택해 주세요.");
+                alert("⚠️ 대상 학급을 하나 이상 선택해 주세요.");
                 return;
             }
 
             let targetStrs = Array.from(checkedTargets).map(cb => cb.value).join(', ');
 
-            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-            const randomColor = colors[Math.floor(Math.random() * colors.length)];
-
-            if (isEditClaimMode && window.currentEditTargetEventId) {
-                const claimData = {
-                    id: window.currentEditTargetEventId,
+            if (isEditClaimMode) {
+                const claimItem = {
+                    id: activeEventForDetail.id,
                     title: title,
                     subject: subject,
                     target: targetStrs,
                     date: date,
                     desc: desc,
-                    password: password, 
-                    color: randomColor,
-                    createdAt: new Date().toISOString(),
-                    author: currentUser ? `${currentUser.studentId} 학생` : '익명',
+                    password: password || activeEventForDetail.password,
+                    color: activeEventForDetail.color || '#3b82f6',
+                    createdAt: activeEventForDetail.createdAt || new Date().toISOString(),
+                    author: currentUser ? currentUser.studentId : '익명 학생',
                     status: '접수됨',
                     timestamp: new Date().toISOString()
                 };
 
-                claimItemsDB.push(claimData);
+                claimItemsDB.push(claimItem);
                 localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
 
                 if (GAS_WEB_APP_URL) {
@@ -1633,40 +1552,43 @@
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'addClaim', report: claimData })
-                    }).catch(err => console.error("수정 요청 전송 통신 오류:", err));
+                        body: JSON.stringify({ action: 'addClaim', report: claimItem })
+                    }).catch(err => console.error("수정 요청 통신 오류:", err));
                 }
 
                 closeModal('register-modal');
-                showToast('수정 요청이 정상적으로 접수되었습니다. 관리자 승인 후 반영됩니다.', 'success');
+                closeModal('detail-modal');
+                showToast('수정 요청이 관리자에게 전송되었습니다.', 'success');
             } else {
-                const newEventId = 'ev_' + Date.now();
-                const eventData = {
-                    id: newEventId,
-                    title: title,
-                    subject: subject,
+                const newId = 'e_' + Math.random().toString(36).substr(2, 9);
+                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+                const newEvent = {
+                    id: newId,
+                    title,
+                    subject,
                     target: targetStrs,
-                    date: date,
-                    desc: desc,
-                    password: password,
+                    date,
+                    desc,
+                    password,
                     color: randomColor
                 };
 
-                sampleEvents.push(eventData);
+                sampleEvents.push(newEvent);
 
                 if (GAS_WEB_APP_URL) {
                     fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'addEvent', event: eventData })
+                        body: JSON.stringify({ action: 'addEvent', event: newEvent })
                     }).catch(err => console.error("일정 등록 통신 오류:", err));
                 }
 
                 closeModal('register-modal');
                 renderMainView();
-                renderDDayWidget();
-                showToast('수행평가 일정이 성공적으로 등록되었습니다!', 'success');
+                showToast('새로운 수행평가 일정이 성공적으로 등록되었습니다.', 'success');
             }
         }
 
@@ -1676,78 +1598,87 @@
             document.getElementById('detail-subject-text').textContent = ev.subject;
             document.getElementById('detail-target-text').textContent = ev.target;
             document.getElementById('detail-date-text').textContent = ev.date;
-            document.getElementById('detail-desc-text').textContent = ev.desc || '상세 내용이 없습니다.';
+            document.getElementById('detail-desc-text').textContent = ev.desc || '상세 내용 없음';
+
             document.getElementById('detail-modal').classList.remove('hidden');
         }
 
         function requestDeleteEvent() {
-            if (!activeEventForDetail) return;
-            openConfirmModal("일정 삭제", "이 일정을 삭제하려면 작성 시 설정한 비밀번호를 입력하세요.", async (pwd) => {
-                if (pwd !== activeEventForDetail.password && currentUser && !currentUser.isAdmin) {
+            const modal = document.getElementById('confirm-modal');
+            const titleEl = document.getElementById('confirm-modal-title');
+            const msgEl = document.getElementById('confirm-modal-msg');
+            const inputEl = document.getElementById('confirm-modal-input');
+            const submitBtn = document.getElementById('confirm-modal-submit-btn');
+
+            titleEl.textContent = '일정 삭제 확인';
+            msgEl.textContent = '등록 시 설정한 작성 비밀번호를 입력해주세요.';
+            inputEl.value = '';
+            submitBtn.textContent = '삭제 완료';
+            submitBtn.className = "bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5";
+
+            submitBtn.onclick = function() {
+                const pwd = inputEl.value.trim();
+                if (currentUser && currentUser.isAdmin) {
+                    executeDeleteEventConfirmed();
+                    return;
+                }
+                if (pwd !== activeEventForDetail.password) {
                     alert("🔒 비밀번호가 일치하지 않습니다.");
-                    return false;
+                    return;
                 }
+                executeDeleteEventConfirmed();
+            };
 
-                sampleEvents = sampleEvents.filter(e => e.id !== activeEventForDetail.id);
+            modal.classList.remove('hidden');
+        }
 
-                if (GAS_WEB_APP_URL) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'deleteEvent', id: activeEventForDetail.id })
-                    }).catch(err => console.error("일정 삭제 통신 오류:", err));
-                }
+        function executeDeleteEventConfirmed() {
+            sampleEvents = sampleEvents.filter(ev => ev.id !== activeEventForDetail.id);
 
-                closeModal('detail-modal');
-                renderMainView();
-                renderDDayWidget();
-                showToast('일정이 삭제되었습니다.', 'success');
-                return true;
-            });
+            if (GAS_WEB_APP_URL) {
+                fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'deleteEvent', id: activeEventForDetail.id })
+                }).catch(err => console.error("일정 삭제 통신 오류:", err));
+            }
+
+            closeModal('confirm-modal');
+            closeModal('detail-modal');
+            renderMainView();
+            showToast('수행평가 일정이 삭제되었습니다.', 'success');
         }
 
         function openClaimModalFromDetail() {
-            if (!currentUser) {
-                showToast('로그인을 해야만 수정 요청을 할 수 있습니다.', 'error');
-                closeModal('detail-modal');
-                openLoginModal('login');
-                return;
-            }
-            if (!activeEventForDetail) return;
-            closeModal('detail-modal');
-            openRegisterModal(true, activeEventForDetail);
+            openRegisterModal(true);
         }
 
         function openReportModal() {
             if (!checkDataLoadedOrWarn()) return;
-            document.getElementById('report-modal').classList.remove('hidden');
-            if (currentUser && !currentUser.isAdmin) {
-                document.getElementById('report-author').value = `${currentUser.studentId} 학생`;
-            } else {
-                document.getElementById('report-author').value = '';
-            }
+            document.getElementById('report-author').value = currentUser ? `${currentUser.studentId}` : '';
             document.getElementById('report-content').value = '';
+            document.getElementById('report-modal').classList.remove('hidden');
         }
 
         async function submitReport() {
-            const author = document.getElementById('report-author').value.trim();
+            const author = document.getElementById('report-author').value.trim() || '익명';
             const content = document.getElementById('report-content').value.trim();
 
             if (!content) {
-                alert("⚠️ 신고 내용을 작성해 주세요.");
+                alert("⚠️ 신고 내용을 입력해 주세요.");
                 return;
             }
 
-            const reportData = {
-                id: 'rep_' + Date.now(),
-                author: author || '익명',
-                content: content,
+            const reportItem = {
+                id: 'r_' + Math.random().toString(36).substr(2, 9),
+                author,
+                content,
                 status: '접수됨',
                 timestamp: new Date().toISOString()
             };
 
-            reportItemsDB.push(reportData);
+            reportItemsDB.push(reportItem);
             localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
 
             if (GAS_WEB_APP_URL) {
@@ -1755,12 +1686,12 @@
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'addReport', report: reportData })
-                }).catch(err => console.error("오류 신고 전송 통신 오류:", err));
+                    body: JSON.stringify({ action: 'addReport', report: reportItem })
+                }).catch(err => console.error("오류 신고 통신 오류:", err));
             }
 
             closeModal('report-modal');
-            showToast('오류 신고가 접수되었습니다. 감사합니다!', 'success');
+            showToast('오류 신고가 관리자에게 접수되었습니다.', 'success');
         }
 
         function openAdminDashboard() {
@@ -1772,15 +1703,15 @@
             switchAdminTab('reports');
         }
 
-        function switchAdminTab(tab) {
-            currentAdminTab = tab;
+        function switchAdminTab(tabName) {
+            currentAdminTab = tabName;
             const reportsBtn = document.getElementById('admin-tab-reports-btn');
             const claimsBtn = document.getElementById('admin-tab-claims-btn');
 
             document.getElementById('admin-report-count').textContent = reportItemsDB.length;
             document.getElementById('admin-claim-count').textContent = claimItemsDB.length;
 
-            if (tab === 'reports') {
+            if (tabName === 'reports') {
                 reportsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition";
                 claimsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition";
             } else {
@@ -1792,59 +1723,55 @@
 
         function renderAdminList() {
             const container = document.getElementById('admin-list-container');
-            const statusFilter = document.getElementById('admin-filter-status').value;
+            const filterStatus = document.getElementById('admin-filter-status').value;
             container.innerHTML = '';
 
-            let items = currentAdminTab === 'reports' ? reportItemsDB : claimItemsDB;
-            let filtered = items.filter(item => {
-                if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+            const items = currentAdminTab === 'reports' ? reportItemsDB : claimItemsDB;
+            const filtered = items.filter(item => {
+                if (filterStatus !== 'all' && (item.status || '접수됨') !== filterStatus) return false;
                 return true;
             });
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs font-semibold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                    관리 내역이 없습니다.
-                </div>`;
+                container.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs font-bold bg-slate-50 rounded-2xl border border-slate-200">관리 내역이 없습니다.</div>`;
                 return;
             }
 
             filtered.forEach(item => {
                 const card = document.createElement('div');
-                card.className = "bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2";
+                card.className = "bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm";
+                
+                let statusBadgeColor = "bg-amber-100 text-amber-800 border-amber-200";
+                if (item.status === '확인 완료' || item.status === '승인됨') statusBadgeColor = "bg-emerald-100 text-emerald-800 border-emerald-200";
 
                 if (currentAdminTab === 'reports') {
                     card.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs font-black text-slate-800">👤 ${item.author}</span>
+                        <div class="space-y-1 flex-1">
                             <div class="flex items-center gap-2">
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${item.status === '접수됨' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">${item.status}</span>
-                                <span class="text-[10px] text-slate-400">${item.timestamp ? item.timestamp.substring(0, 10) : ''}</span>
+                                <span class="text-xs font-bold text-slate-500">👤 ${item.author}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusBadgeColor}">${item.status || '접수됨'}</span>
                             </div>
+                            <p class="text-xs text-slate-800 font-semibold">${item.content}</p>
+                            <span class="text-[10px] text-slate-400">${new Date(item.timestamp).toLocaleString()}</span>
                         </div>
-                        <p class="text-xs text-slate-700 bg-white p-3 rounded-xl border border-slate-100">${item.content}</p>
-                        <div class="flex justify-end gap-2 pt-1">
-                            ${item.status === '접수됨' ? `<button onclick="updateReportStatus('${item.id}', '확인 완료')" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">확인 완료로 변경</button>` : ''}
-                            <button onclick="deleteAdminItem('${item.id}', 'report')" class="bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">삭제</button>
+                        <div class="flex items-center gap-2 shrink-0">
+                            ${item.status !== '확인 완료' ? `<button onclick="updateReportStatus('${item.id}', '확인 완료')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">확인 완료</button>` : ''}
                         </div>
                     `;
                 } else {
                     card.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs font-black text-slate-800">✏️ ${item.author} (수정 요청)</span>
+                        <div class="space-y-1 flex-1">
                             <div class="flex items-center gap-2">
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${item.status === '접수됨' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">${item.status}</span>
-                                <span class="text-[10px] text-slate-400">${item.timestamp ? item.timestamp.substring(0, 10) : ''}</span>
+                                <span class="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">${item.subject}</span>
+                                <span class="text-xs font-bold text-slate-500">🎯 ${item.target}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusBadgeColor}">${item.status || '접수됨'}</span>
                             </div>
+                            <h4 class="text-sm font-black text-slate-800">${item.title}</h4>
+                            <p class="text-xs text-slate-500">변경일자: ${item.date} | ${item.desc || ''}</p>
+                            <span class="text-[10px] text-slate-400">요청자: ${item.author} (${new Date(item.timestamp).toLocaleString()})</span>
                         </div>
-                        <div class="bg-white p-3 rounded-xl border border-slate-100 text-xs space-y-1">
-                            <div><strong>제목:</strong> ${item.title}</div>
-                            <div><strong>과목:</strong> ${item.subject} | <strong>대상:</strong> ${item.target}</div>
-                            <div><strong>날짜:</strong> ${item.date}</div>
-                            <div><strong>내용:</strong> ${item.desc || '없음'}</div>
-                        </div>
-                        <div class="flex justify-end gap-2 pt-1">
-                            ${item.status === '접수됨' ? `<button onclick="openClaimCompareModal('${item.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">🔍 비교 후 승인</button>` : ''}
-                            <button onclick="deleteAdminItem('${item.id}', 'claim')" class="bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">삭제</button>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button onclick='openClaimCompareModal(${JSON.stringify(item)})' class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">비교 및 승인</button>
                         </div>
                     `;
                 }
@@ -1852,166 +1779,99 @@
             });
         }
 
-        function openClaimCompareModal(claimId) {
-            const claim = claimItemsDB.find(c => c.id === claimId);
-            if (!claim) return;
+        async function updateReportStatus(id, newStatus) {
+            const item = reportItemsDB.find(r => r.id === id);
+            if (item) {
+                item.status = newStatus;
+                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+                renderAdminList();
+                showToast('오류 신고 상태가 변경되었습니다.', 'success');
 
-            const originalEvent = sampleEvents.find(e => e.id === claim.id);
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'updateAdminStatus', type: 'reports', id: id, status: newStatus })
+                    }).catch(err => console.error("오류 신고 상태 업데이트 통신 오류:", err));
+                }
+            }
+        }
+
+        function openClaimCompareModal(claimItem) {
             const beforeContainer = document.getElementById('compare-before-content');
             const afterContainer = document.getElementById('compare-after-content');
+            const approveBtn = document.getElementById('compare-approve-btn');
 
-            if (originalEvent) {
-                beforeContainer.innerHTML = `
-                    <div><strong>제목:</strong> ${originalEvent.title}</div>
-                    <div><strong>과목:</strong> ${originalEvent.subject}</div>
-                    <div><strong>대상:</strong> ${originalEvent.target}</div>
-                    <div><strong>날짜:</strong> ${originalEvent.date}</div>
-                    <div><strong>내용:</strong> ${originalEvent.desc || '없음'}</div>
-                `;
-            } else {
-                beforeContainer.innerHTML = `<div class="text-rose-600 font-bold">기존 일정을 찾을 수 없습니다 (신규 등록 성격).</div>`;
-            }
+            const originalEvent = sampleEvents.find(ev => ev.id === claimItem.id) || {
+                title: '기존 일정 없음', subject: '-', target: '-', date: '-', desc: '-'
+            };
 
-            afterContainer.innerHTML = `
-                <div><strong>제목:</strong> ${claim.title}</div>
-                <div><strong>과목:</strong> ${claim.subject}</div>
-                <div><strong>대상:</strong> ${claim.target}</div>
-                <div><strong>날짜:</strong> ${claim.date}</div>
-                <div><strong>내용:</strong> ${claim.desc || '없음'}</div>
+            beforeContainer.innerHTML = `
+                <p><strong>제목:</strong> ${originalEvent.title}</p>
+                <p><strong>과목:</strong> ${originalEvent.subject}</p>
+                <p><strong>대상:</strong> ${originalEvent.target}</p>
+                <p><strong>날짜:</strong> ${originalEvent.date}</p>
+                <p><strong>설명:</strong> ${originalEvent.desc || '-'}</p>
             `;
 
-            const approveBtn = document.getElementById('compare-approve-btn');
-            approveBtn.onclick = () => approveClaimAndReflect(claim.id);
+            afterContainer.innerHTML = `
+                <p><strong>제목:</strong> ${claimItem.title}</p>
+                <p><strong>과목:</strong> ${claimItem.subject}</p>
+                <p><strong>대상:</strong> ${claimItem.target}</p>
+                <p><strong>날짜:</strong> ${claimItem.date}</p>
+                <p><strong>설명:</strong> ${claimItem.desc || '-'}</p>
+            `;
+
+            approveBtn.onclick = function() {
+                approveClaim(claimItem);
+            };
 
             document.getElementById('claim-compare-modal').classList.remove('hidden');
         }
 
-        async function approveClaimAndReflect(claimId) {
-            const claim = claimItemsDB.find(c => c.id === claimId);
-            if (!claim) return;
-
-            claim.status = '승인됨';
+        async function approveClaim(claimItem) {
+            claimItem.status = '승인됨';
             localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
 
-            let evIndex = sampleEvents.findIndex(e => e.id === claim.id);
-            if (evIndex !== -1) {
-                sampleEvents[evIndex] = {
-                    id: claim.id,
-                    title: claim.title,
-                    subject: claim.subject,
-                    target: claim.target,
-                    date: claim.date,
-                    desc: claim.desc,
-                    password: claim.password || sampleEvents[evIndex].password,
-                    color: sampleEvents[evIndex].color
+            const existingIdx = sampleEvents.findIndex(ev => ev.id === claimItem.id);
+            if (existingIdx >= 0) {
+                sampleEvents[existingIdx] = {
+                    id: claimItem.id,
+                    title: claimItem.title,
+                    subject: claimItem.subject,
+                    target: claimItem.target,
+                    date: claimItem.date,
+                    desc: claimItem.desc,
+                    password: claimItem.password,
+                    color: claimItem.color
                 };
             } else {
                 sampleEvents.push({
-                    id: claim.id,
-                    title: claim.title,
-                    subject: claim.subject,
-                    target: claim.target,
-                    date: claim.date,
-                    desc: claim.desc,
-                    password: claim.password,
-                    color: claim.color || '#3b82f6'
+                    id: claimItem.id,
+                    title: claimItem.title,
+                    subject: claimItem.subject,
+                    target: claimItem.target,
+                    date: claimItem.date,
+                    desc: claimItem.desc,
+                    password: claimItem.password,
+                    color: claimItem.color
                 });
             }
 
             if (GAS_WEB_APP_URL) {
-                try {
-                    await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'updateClaimStatus', id: claimId, status: '승인됨' })
-                    });
-                    await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'addEvent', event: sampleEvents.find(e => e.id === claim.id) })
-                    });
-                } catch (err) {
-                    console.error("수정 요청 승인 반영 통신 오류:", err);
-                }
+                fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'updateAdminStatus', type: 'claims', id: claimItem.id, status: '승인됨' })
+                }).catch(err => console.error("수정 요청 승인 통신 오류:", err));
             }
 
             closeModal('claim-compare-modal');
-            closeModal('admin-dashboard-modal');
-            renderMainView();
-            renderDDayWidget();
-            showToast('수정 요청이 승인되어 Events 및 Claims 시트에 정상 반영되었습니다.', 'success');
-        }
-
-        async function updateReportStatus(id, newStatus) {
-            let item = reportItemsDB.find(r => r.id === id);
-            if (item) {
-                item.status = newStatus;
-                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
-                if (GAS_WEB_APP_URL) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'updateReportStatus', id: id, status: newStatus })
-                    }).catch(err => {});
-                }
-                renderAdminList();
-                showToast('상태가 변경되었습니다.', 'success');
-            }
-        }
-
-        async function deleteAdminItem(id, type) {
-            if (!confirm("정말 삭제하시겠습니까?")) return;
-            if (type === 'report') {
-                reportItemsDB = reportItemsDB.filter(r => r.id !== id);
-                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
-                if (GAS_WEB_APP_URL) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'deleteReport', id: id })
-                    }).catch(err => {});
-                }
-            } else {
-                claimItemsDB = claimItemsDB.filter(c => c.id !== id);
-                localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
-                if (GAS_WEB_APP_URL) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'deleteClaim', id: id })
-                    }).catch(err => {});
-                }
-            }
             renderAdminList();
-            showToast('항목이 삭제되었습니다.', 'info');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-        }
-
-        function openConfirmModal(title, msg, callback) {
-            document.getElementById('confirm-modal-title').textContent = title;
-            document.getElementById('confirm-modal-msg').textContent = msg;
-            document.getElementById('confirm-modal-input').value = '';
-            document.getElementById('confirm-modal').classList.remove('hidden');
-
-            const submitBtn = document.getElementById('confirm-modal-submit-btn');
-            const newBtn = submitBtn.cloneNode(true);
-            submitBtn.parentNode.replaceChild(newBtn, submitBtn);
-
-            newBtn.onclick = async () => {
-                const pwd = document.getElementById('confirm-modal-input').value;
-                const success = await callback(pwd);
-                if (success !== false) {
-                    closeModal('confirm-modal');
-                }
-            };
+            renderMainView();
+            showToast('수정 요청이 승인되어 기존 일정에 반영되었습니다.', 'success');
         }
     </script>
 </body>
