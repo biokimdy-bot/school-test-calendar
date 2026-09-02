@@ -568,7 +568,6 @@
     }
     return ev;
 });
-                    });
                     // 수행평가 최신 정보를 로컬 스토리지에 캐시 저장
                     localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
                 }
@@ -1925,13 +1924,14 @@ function openClaimModalFromDetail() {
             document.getElementById('claim-compare-modal').classList.remove('hidden');
         }
 
-        async function approveClaim(claimItem) {
+        async function approveClaim(claimId) {
+            const claimItem = claimItemsDB.find(c => c.id === claimId);
+            if (!claimItem) return;
+
             claimItem.status = '승인됨';
             localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
 
             const existingIdx = sampleEvents.findIndex(ev => ev.id === claimItem.id);
-            const isUpdate = existingIdx >= 0;
-            
             const updatedEvent = {
                 id: claimItem.id,
                 title: claimItem.title,
@@ -1943,40 +1943,34 @@ function openClaimModalFromDetail() {
                 color: claimItem.color || '#3b82f6'
             };
 
-            if (isUpdate) {
+            if (existingIdx >= 0) {
                 sampleEvents[existingIdx] = updatedEvent;
             } else {
                 sampleEvents.push(updatedEvent);
             }
 
-            // 로컬 스토리지 이벤트 캐시 갱신
             localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
 
             if (GAS_WEB_APP_URL) {
-                // 1. 관리자 승인 상태 업데이트 통신
+                fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'addEvent', event: updatedEvent })
+                }).catch(err => console.error("수정 승인 이벤트 저장 통신 오류:", err));
+
                 fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'updateAdminStatus', type: 'claims', id: claimItem.id, status: '승인됨' })
                 }).catch(err => console.error("수정 요청 상태 업데이트 통신 오류:", err));
-
-                // 2. 실제 반영된 일정 수정/추가 통신 (기존 여부에 따라 action 분기)
-                fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        action: isUpdate ? 'updateEvent' : 'addEvent', 
-                        event: updatedEvent 
-                    })
-                }).catch(err => console.error("일정 반영 통신 오류:", err));
             }
 
             closeModal('claim-compare-modal');
-            closeModal('admin-dashboard-modal');
+            renderAdminList();
             renderMainView();
-            showToast('수정 요청이 승인되어 일정에 반영되었습니다.', 'success');
+            showToast('수정 요청이 승인되어 일정표에 반영되었습니다.', 'success');
         }
     </script>
 </body>
