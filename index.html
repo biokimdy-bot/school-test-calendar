@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>우리 학교 수행평가 일정표 LIVE (구글 시트 연동)</title>
+    <title>명지여고 수행평가 일정표</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -32,23 +32,23 @@
         </div>
     </div>
 
-    <!-- 로그인 오버레이 모달 -->
+    <!-- 로그인/회원가입/과목수정 오버레이 모달 -->
     <div id="login-screen" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
         <div class="bg-white rounded-3xl w-full max-w-xl p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
             <div class="text-center mb-6">
                 <span id="login-modal-icon" class="text-3xl">📚</span>
-                <h2 id="login-modal-title" class="text-2xl font-black text-blue-600 mt-2">수행평가 일정표 로그인</h2>
+                <h2 id="login-modal-title" class="text-2xl font-black text-blue-600 mt-2">명지여고 수행평가 로그인</h2>
                 <p id="login-modal-desc" class="text-xs text-slate-500 mt-1">학번과 비밀번호를 입력하세요.</p>
             </div>
 
             <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
-                <div>
+                <div id="login-id-field">
                     <label class="block text-xs font-bold text-slate-600 mb-1">학번 5자리 *</label>
                     <input type="text" id="login-student-id" required maxlength="5" placeholder="예: 20105" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-blue-500">
                     <p class="text-[10px] text-slate-400 mt-1">※ 학번 가운데 자리가 반으로 자동 인식됩니다 (예: 20105 → 2학년 1반)</p>
                 </div>
 
-                <div>
+                <div id="login-pw-field">
                     <label class="block text-xs font-bold text-slate-600 mb-1">비밀번호 *</label>
                     <input type="password" id="login-password" required placeholder="비밀번호 4자리" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-blue-500">
                 </div>
@@ -73,9 +73,9 @@
         <header class="flex flex-col md:flex-row justify-between items-center border-b-2 border-blue-500 pb-5 mb-6 gap-4">
             <div>
                 <h1 class="text-2xl font-black text-blue-600 flex items-center gap-2">
-                    📅 우리 학교 수행평가 일정표 LIVE
-                    <span id="gas-sync-badge" class="text-[10px] bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200 font-bold flex items-center gap-1">
-                        🟢 라이브 연동 중
+                    📅 명지여고 수행평가 일정표
+                    <span id="gas-sync-badge" class="text-lg" title="데이터 연동 상태">
+                        🔴
                     </span>
                 </h1>
                 <p id="user-welcome-text" class="text-xs text-slate-500 mt-1">고교학점제 선택과목 및 학급별 맞춤 일정 관리 시스템</p>
@@ -84,7 +84,8 @@
             <div class="flex flex-wrap items-center gap-3">
                 <div id="user-badge" class="hidden items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 text-xs font-bold text-blue-700">
                     <span id="badge-info-text">🎓 2학년 학생</span>
-                    <button onclick="logout()" class="text-rose-500 hover:underline text-[11px] ml-2">로그아웃</button>
+                    <button onclick="openEditSubjectsModal()" class="text-emerald-600 hover:underline text-[11px] font-extrabold ml-1">✏️ 과목 수정</button>
+                    <button onclick="logout()" class="text-rose-500 hover:underline text-[11px] ml-1">로그아웃</button>
                 </div>
                 
                 <button id="login-open-btn" onclick="openLoginModal('login')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
@@ -270,7 +271,7 @@
 
     <script>
         const ADMIN_MASTER_PASSWORD = "9999";
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxN434FyABlrNkNpwO078SUP14Fxd9fh1_FFnECgFsrZyqI1bpRBn27UlyEBmi9OYiK/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyh4sbJtiJ-KAktTU6lR0nBYIcvQ4mfThsTGct1-7dT2s3VohAjZdazvCWfQ_IJAYuB/exec';
 
         const COURSE_DATA = {
             "1학년": {
@@ -369,7 +370,7 @@
         let currentDate = new Date(2026, 8, 1);
         let activeEventForDetail = null;
         let currentUser = null; 
-        let currentModalMode = 'login'; // 'login' 또는 'signup'
+        let currentModalMode = 'login'; // 'login', 'signup', 또는 'edit'
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
@@ -396,7 +397,12 @@
         };
 
         async function fetchDataFromGas() {
-            if (!GAS_WEB_APP_URL) return;
+            const syncBadge = document.getElementById('gas-sync-badge');
+            if (!GAS_WEB_APP_URL) {
+                syncBadge.innerHTML = '🔴';
+                syncBadge.title = '구글 시트 연동 안됨 (URL 미설정)';
+                return;
+            }
             try {
                 const res = await fetch(`${GAS_WEB_APP_URL}?action=getEvents`);
                 const json = await res.json();
@@ -409,8 +415,14 @@
                 if (userJson.status === "success" && userJson.data) {
                     registeredUsersDB = { ...registeredUsersDB, ...userJson.data };
                 }
+
+                // 연동 성공 시 초록색 체크 표시
+                syncBadge.innerHTML = '🟢';
+                syncBadge.title = '구글 시트 라이브 연동 완료';
             } catch (err) {
                 console.error("데이터 로드 실패:", err);
+                syncBadge.innerHTML = '🔴';
+                syncBadge.title = '구글 시트 연동 오류 발생';
             } finally {
                 applyUserSession();
             }
@@ -423,8 +435,13 @@
             const descEl = document.getElementById('login-modal-desc');
             const submitBtn = document.getElementById('login-submit-btn');
             const stepContainer = document.getElementById('subject-selection-step');
+            const idField = document.getElementById('login-id-field');
+            const pwField = document.getElementById('login-pw-field');
 
             screen.classList.remove('hidden');
+            idField.classList.remove('hidden');
+            pwField.classList.remove('hidden');
+
             document.getElementById('login-student-id').value = '';
             document.getElementById('login-password').value = '';
             document.getElementById('login-subject-dynamic-area').innerHTML = '';
@@ -435,12 +452,25 @@
                 submitBtn.innerHTML = '가입 및 맞춤 설정 완료';
                 stepContainer.classList.remove('hidden');
                 triggerSubjectSelectionBuild();
+            } else if (mode === 'edit') {
+                titleEl.textContent = '선택 과목 정보 수정';
+                descEl.textContent = `${currentUser.studentId} 학생의 맞춤 수강 과목을 재설정합니다.`;
+                submitBtn.innerHTML = '수강 과목 수정 완료';
+                idField.classList.add('hidden');
+                pwField.classList.add('hidden');
+                stepContainer.classList.remove('hidden');
+                triggerSubjectSelectionBuildForEdit();
             } else {
                 titleEl.textContent = '맞춤 로그인';
                 descEl.textContent = '학번과 비밀번호를 입력해주세요.';
                 submitBtn.innerHTML = '로그인';
                 stepContainer.classList.add('hidden');
             }
+        }
+
+        function openEditSubjectsModal() {
+            if (!currentUser) return;
+            openLoginModal('edit');
         }
 
         function setupLoginInputListener() {
@@ -452,16 +482,25 @@
             });
         }
 
+        function triggerSubjectSelectionBuildForEdit() {
+            if (!currentUser) return;
+            buildSubjectSelectionUI(currentUser.studentId);
+        }
+
         function triggerSubjectSelectionBuild() {
             const val = document.getElementById('login-student-id').value.trim();
+            buildSubjectSelectionUI(val);
+        }
+
+        function buildSubjectSelectionUI(studentIdVal) {
             const stepContainer = document.getElementById('subject-selection-step');
             const dynamicArea = document.getElementById('login-subject-dynamic-area');
             
             dynamicArea.innerHTML = '';
-            if (val.length >= 5) {
-                const gradeNum = val.charAt(0);
+            if (studentIdVal && studentIdVal.length >= 5) {
+                const gradeNum = studentIdVal.charAt(0);
                 let gradeStr = gradeNum === '1' ? '1학년' : gradeNum === '2' ? '2학년' : gradeNum === '3' ? '3학년' : '';
-                let classNum = String(parseInt(val.substring(1, 3), 10)) || "1";
+                let classNum = String(parseInt(studentIdVal.substring(1, 3), 10)) || "1";
 
                 if (gradeStr && COURSE_DATA[gradeStr]) {
                     stepContainer.classList.remove('hidden');
@@ -504,7 +543,6 @@
                             </div>
                         </div>`;
 
-                        // A반 선택
                         let htmlA = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
                             <label class="block font-bold text-xs text-blue-800">🎯 A반 선택 과목</label>
                             <select name="login-slot-course" data-slot="A" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
@@ -518,7 +556,6 @@
                                 <option value="윤리문제탐구:A반">윤리문제탐구</option>
                             </select></div>`;
 
-                        // B반 선택
                         let htmlB = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
                             <label class="block font-bold text-xs text-blue-800">🎯 B반 선택 과목</label>
                             <select name="login-slot-course" data-slot="B" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
@@ -533,7 +570,6 @@
                                 <option value="윤리문제탐구:B반">윤리문제탐구</option>
                             </select></div>`;
 
-                        // C반 선택
                         let htmlC = `<div class="bg-white p-3 rounded-xl border border-blue-200 space-y-1">
                             <label class="block font-bold text-xs text-blue-800">🎯 C반 선택 과목</label>
                             <select name="login-slot-course" data-slot="C" onchange="validateGrade2Duplicate(this)" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 focus:outline-none">
@@ -614,16 +650,65 @@
 
         async function handleLoginSubmit(e) {
             e.preventDefault();
+            const submitBtn = document.getElementById('login-submit-btn');
+            const originalBtnHtml = submitBtn.innerHTML;
+
+            if (currentModalMode === 'edit') {
+                let studentId = currentUser.studentId;
+                let gradeStr = currentUser.gradeStr;
+                let classNum = currentUser.classNum;
+                let collectedCourses = [];
+
+                if (gradeStr === '1학년') {
+                    ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학"].forEach(s => collectedCourses.push(`${s}:전체`));
+                    const artMusicRadio = document.querySelector('input[name="login-art-music"]:checked');
+                    if (artMusicRadio) collectedCourses.push(artMusicRadio.value);
+                } else if (gradeStr === '2학년') {
+                    let langSub = parseInt(classNum) === 7 ? "중국어" : "일본어";
+                    [ "미적분1", "화법과 언어", "영어2", "체육", langSub ].forEach(s => collectedCourses.push(`${s}:전체`));
+                    const artMusicRadio2 = document.querySelector('input[name="login-art-music-2"]:checked');
+                    if (artMusicRadio2) collectedCourses.push(artMusicRadio2.value);
+
+                    document.querySelectorAll('select[name="login-slot-course"]').forEach(sel => {
+                        if (sel.value) collectedCourses.push(sel.value);
+                    });
+                } else if (gradeStr === '3학년') {
+                    document.querySelectorAll('select[name="login-grade3-block"]').forEach(sel => {
+                        if (sel.value) collectedCourses.push(sel.value);
+                    });
+                }
+
+                currentUser.enrolledCourses = collectedCourses;
+                registeredUsersDB[studentId] = currentUser;
+
+                if (GAS_WEB_APP_URL) {
+                    try {
+                        await fetch(GAS_WEB_APP_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'registerUser', user: currentUser })
+                        });
+                    } catch (err) {
+                        console.error("수강 과목 수정 저장 오류:", err);
+                    }
+                }
+
+                localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+                closeModal('login-screen');
+                applyUserSession();
+                showToast('수강 과목이 정상적으로 수정되었습니다.', 'success');
+                return;
+            }
+
             const studentId = document.getElementById('login-student-id').value.trim();
             const password = document.getElementById('login-password').value.trim();
-            const submitBtn = document.getElementById('login-submit-btn');
 
-            if (studentId.length < 4) {
+            if (studentId.length < 5) {
                 showToast('올바른 학번 5자리를 입력해주세요.', 'error');
                 return;
             }
 
-            const originalBtnHtml = submitBtn.innerHTML;
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
 
@@ -713,9 +798,10 @@
                 signupOpenBtn.classList.remove('hidden');
             } else {
                 badge.classList.remove('hidden');
+                badge.classList.add('flex');
                 loginOpenBtn.classList.add('hidden');
                 signupOpenBtn.classList.add('hidden');
-                badgeText.textContent = `🎓 ${currentUser.studentId} 학생 (${currentUser.enrolledCourses.length}개 과목)`;
+                badgeText.textContent = `🎓 ${currentUser.studentId} 학생 (${currentUser.enrolledCourses ? currentUser.enrolledCourses.length : 0}개 과목)`;
                 
                 document.getElementById('filter-grade').value = currentUser.gradeStr;
                 document.getElementById('filter-class').value = currentUser.classNum;
@@ -730,6 +816,7 @@
             localStorage.removeItem('school_schedule_user');
             currentUser = null;
             document.getElementById('user-badge').classList.add('hidden');
+            document.getElementById('user-badge').classList.remove('flex');
             document.getElementById('login-open-btn').classList.remove('hidden');
             document.getElementById('signup-open-btn').classList.remove('hidden');
             document.getElementById('filter-grade').value = 'all';
@@ -770,36 +857,60 @@
             renderDDayWidget();
         }
 
+        function isEventMatchingFilter(e) {
+            const selectedGrade = document.getElementById('filter-grade').value;
+            const selectedClass = document.getElementById('filter-class').value;
+            const selectedSubject = document.getElementById('filter-subject').value;
+
+            // 과목 필터링
+            if (selectedSubject !== 'all' && e.subject !== selectedSubject) {
+                return false;
+            }
+
+            // 학년 필터링
+            if (selectedGrade !== 'all' && !e.target.includes(selectedGrade)) {
+                return false;
+            }
+
+            // 반 필터링
+            if (selectedClass !== 'all') {
+                const classPattern = `${selectedClass}반`;
+                if (!e.target.includes('전체') && !e.target.includes(classPattern)) {
+                    return false;
+                }
+            }
+
+            // 로그인 한 경우 맞춤 과목 필터링 적용
+            if (currentUser && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
+                const matchesUserCourse = currentUser.enrolledCourses.some(courseStr => {
+                    const [cSub, cTarget] = courseStr.split(':');
+                    if (cSub !== e.subject) return false;
+                    if (cTarget === '전체' || e.target.includes('전체')) return true;
+                    return e.target.includes(cTarget);
+                });
+                if (!matchesUserCourse) return false;
+            }
+
+            return true;
+        }
+
         function renderDDayWidget() {
             const widgetContainer = document.getElementById('dday-widget-container');
             const countBadge = document.getElementById('dday-count-badge');
             if (!widgetContainer) return;
 
             widgetContainer.innerHTML = '';
-            const today = new Date(2026, 8, 1);
+            const today = new Date();
             today.setHours(0,0,0,0);
 
-            // 로그인된 경우 사용자가 선택한 과목만 필터링
-            let eventsToDisplay = sampleEvents;
-            if (currentUser && currentUser.enrolledCourses) {
-                eventsToDisplay = sampleEvents.filter(e => {
-                    return currentUser.enrolledCourses.some(courseStr => {
-                        const [cSub, cTarget] = courseStr.split(':');
-                        if (cSub !== e.subject) return false;
-                        if (cTarget === '전체') return true;
-                        return e.target.includes(cTarget);
-                    });
-                });
-            }
+            let eventsToDisplay = sampleEvents.filter(isEventMatchingFilter);
 
             const upcomingEvents = eventsToDisplay.filter(e => {
-                const eventDate = new Date(e.date);
-                eventDate.setHours(0,0,0,0);
+                const eventDate = new Date(e.date + 'T00:00:00');
                 const diffDays = Math.ceil((eventDate - today) / (1000 * 60 * 60 * 24));
                 return diffDays >= 0;
             }).map(e => {
-                const eventDate = new Date(e.date);
-                eventDate.setHours(0,0,0,0);
+                const eventDate = new Date(e.date + 'T00:00:00');
                 return { ...e, diffDays: Math.ceil((eventDate - today) / (1000 * 60 * 60 * 24)) };
             }).sort((a, b) => a.diffDays - b.diffDays);
 
@@ -857,16 +968,25 @@
             const lastDate = new Date(year, month + 1, 0).getDate();
             const prevLastDate = new Date(year, month, 0).getDate();
 
+            // 이전 달 날짜 칸 생성
             for (let i = firstDayIndex; i > 0; i--) {
                 grid.appendChild(createDayCell(prevLastDate - i + 1, true, null));
             }
 
+            // 현재 달 날짜 칸 및 수행평가 이벤트 렌더링
             for (let day = 1; day <= lastDate; day++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const filteredEvents = sampleEvents.filter(e => e.date === dateStr);
+                
+                // 날짜 포맷 일치 및 조건 필터링
+                const filteredEvents = sampleEvents.filter(e => {
+                    const eventDateFormatted = e.date.length === 10 ? e.date : new Date(e.date).toISOString().substring(0, 10);
+                    return eventDateFormatted === dateStr && isEventMatchingFilter(e);
+                });
+                
                 grid.appendChild(createDayCell(day, false, filteredEvents, dateStr));
             }
 
+            // 다음 달 빈 칸 채우기
             const totalCells = grid.children.length - 7;
             for (let i = 1; i <= 42 - totalCells; i++) {
                 grid.appendChild(createDayCell(i, true, null));
@@ -886,7 +1006,7 @@
                 const listContainer = document.createElement('div');
                 listContainer.className = 'flex-1 overflow-y-auto space-y-1';
 
-                events.slice(0, 3).forEach(e => {
+                events.forEach(e => {
                     const badge = document.createElement('div');
                     badge.className = 'text-[11px] font-bold text-white px-1.5 py-1 rounded truncate cursor-pointer shadow-sm hover:opacity-90 transition';
                     badge.style.backgroundColor = e.color || '#3b82f6';
