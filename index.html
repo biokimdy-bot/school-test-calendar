@@ -17,8 +17,8 @@
     <!-- 토스트 알림 메시지 컨테이너 -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 max-w-sm"></div>
 
-    <!-- 커스텀 삭제/확인 비밀번호 모달 -->
-    <div id="confirm-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
+    <!-- 커스텀 삭제/확인 비밀번호 모달 (z-index를 z-[60]으로 올려 상세 모달 위에 정상 표시) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[60] p-4">
         <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
             <h3 id="confirm-modal-title" class="text-lg font-black text-slate-800 mb-2">일정 삭제 확인</h3>
             <p id="confirm-modal-msg" class="text-xs text-slate-500 mb-4">작성 비밀번호를 입력해주세요.</p>
@@ -88,21 +88,30 @@
                     <button onclick="logout()" class="text-rose-500 hover:underline text-[11px] ml-1">로그아웃</button>
                 </div>
                 
-                <button id="login-open-btn" onclick="openLoginModal('login')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
-                    🔐 로그인
-                </button>
+                <!-- 비활성화 상태에서 클릭 이벤트를 감지할 수 있도록 래퍼(div) 감싸기 -->
+                <div onclick="handleDisabledButtonClick(event)" class="inline-block">
+                    <button id="login-open-btn" onclick="openLoginModal('login')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
+                        🔐 로그인
+                    </button>
+                </div>
 
-                <button id="signup-open-btn" onclick="openLoginModal('signup')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
-                    ✨ 간편 가입
-                </button>
+                <div onclick="handleDisabledButtonClick(event)" class="inline-block">
+                    <button id="signup-open-btn" onclick="openLoginModal('signup')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
+                        ✨ 간편 가입
+                    </button>
+                </div>
 
-                <button id="register-open-btn" onclick="openRegisterModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
-                    ➕ 수행평가 등록
-                </button>
+                <div onclick="handleDisabledButtonClick(event)" class="inline-block">
+                    <button id="register-open-btn" onclick="openRegisterModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
+                        ➕ 수행평가 등록
+                    </button>
+                </div>
 
-                <button id="report-open-btn" onclick="openReportModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg shadow text-sm" title="오류 신고">
-                    ⚠️ 오류신고
-                </button>
+                <div onclick="handleDisabledButtonClick(event)" class="inline-block">
+                    <button id="report-open-btn" onclick="openReportModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg shadow text-sm" title="오류 신고">
+                        ⚠️ 오류신고
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -161,14 +170,15 @@
 
         <!-- D-Day 임박 수행평가 위젯 대시보드 -->
         <div class="mb-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-4 rounded-2xl border border-blue-200 shadow-sm transition-all duration-300">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <h3 class="text-sm font-black text-blue-900 flex items-center gap-2">
-                        🔥 다가오는 수행평가 D-Day 리스트
+            <div class="flex justify-between items-center gap-2">
+                <!-- flex-wrap 및 text-xs~sm 반응형 텍스트 크기 조정을 적용하여 한 줄 유지 -->
+                <div class="flex items-center gap-1.5 min-w-0">
+                    <h3 class="text-xs sm:text-sm font-black text-blue-900 flex items-center gap-1 whitespace-nowrap">
+                        🔥 D-Day 리스트
                     </h3>
-                    <span id="dday-count-badge" class="bg-blue-600 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full">0건</span>
+                    <span id="dday-count-badge" class="bg-blue-600 text-white text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">0건</span>
                 </div>
-                <button onclick="toggleDDayWidget()" id="dday-toggle-btn" class="text-xs font-bold text-blue-700 hover:text-blue-900 bg-white/80 px-2.5 py-1 rounded-lg border border-blue-200 shadow-sm transition">
+                <button onclick="toggleDDayWidget()" id="dday-toggle-btn" class="text-[11px] sm:text-xs font-bold text-blue-700 hover:text-blue-900 bg-white/80 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition whitespace-nowrap shrink-0">
                     ▲ 접기
                 </button>
             </div>
@@ -426,6 +436,14 @@
             });
         }
 
+        // 비활성화된 버튼 클릭 시 "데이터 로딩 중입니다." 안내 메시지 출력
+        function handleDisabledButtonClick(event) {
+            if (!isDataLoaded) {
+                showToast('데이터 로딩 중입니다.', 'error');
+                event.stopPropagation();
+            }
+        }
+
         window.onload = function() {
             const savedUser = localStorage.getItem('school_schedule_user');
             if (savedUser) {
@@ -510,7 +528,7 @@
 
         function checkDataLoadedOrWarn() {
             if (!isDataLoaded) {
-                showToast('데이터를 불러오는 중입니다.', 'error');
+                showToast('데이터 로딩 중입니다.', 'error');
                 return false;
             }
             return true;
@@ -994,56 +1012,46 @@
             renderDDayWidget();
         }
 
-        /* ----------------------------------------------------
-           수정된 필터링 메서드 (과목/분반 인식 오류 수정 부분)
-        ---------------------------------------------------- */
-function isEventMatchingFilter(e) {
-    const selectedGrade = document.getElementById('filter-grade').value;
-    const selectedClass = document.getElementById('filter-class').value;
-    const selectedSubject = document.getElementById('filter-subject').value;
+        function isEventMatchingFilter(e) {
+            const selectedGrade = document.getElementById('filter-grade').value;
+            const selectedClass = document.getElementById('filter-class').value;
+            const selectedSubject = document.getElementById('filter-subject').value;
 
-    // 1. 선택한 과목 필터링
-    if (selectedSubject !== 'all' && e.subject !== selectedSubject) {
-        return false;
-    }
+            if (selectedSubject !== 'all' && e.subject !== selectedSubject) {
+                return false;
+            }
 
-    // 2. 선택한 학년 필터링
-    if (selectedGrade !== 'all' && !e.target.includes(selectedGrade)) {
-        return false;
-    }
+            if (selectedGrade !== 'all' && !e.target.includes(selectedGrade)) {
+                return false;
+            }
 
-    // 3. 선택한 반 필터링
-    // 이벤트의 target이 숫자 반(예: '1반')을 포함하거나, 이동수업 분반(예: 'A반', 'B반', 'A1반')인지 확인
-    if (selectedClass !== 'all') {
-        const classPattern = `${selectedClass}반`;
-        const isNumericClassEvent = /\d+반/.test(e.target); // e.target에 '1반', '2반' 등 숫자 반이 들어있는지 체크
+            if (selectedClass !== 'all') {
+                const classPattern = `${selectedClass}반`;
+                const isNumericClassEvent = /\d+반/.test(e.target);
 
-        // 학급 전체이거나, 특정 숫자 반이 포함되었거나, 이동수업 분반 이벤트(숫자 반 지정이 없는 경우)는 통과
-        if (!e.target.includes('전체') && !e.target.includes(classPattern) && isNumericClassEvent) {
-            return false;
+                if (!e.target.includes('전체') && !e.target.includes(classPattern) && isNumericClassEvent) {
+                    return false;
+                }
+            }
+
+            if (currentUser && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
+                const matchesUserCourse = currentUser.enrolledCourses.some(courseStr => {
+                    const [cSub, cTarget] = courseStr.split(':');
+                    if (cSub !== e.subject) return false;
+                    
+                    if (cTarget === '전체' || e.target.includes('전체')) return true;
+
+                    const cleanUserClass = cTarget.replace(/\d+학년\s*/g, '').trim();
+                    const eventClasses = e.target.split(',').map(t => t.replace(/\d+학년\s*/g, '').trim());
+                    
+                    return eventClasses.includes(cleanUserClass) || e.target.includes(cleanUserClass);
+                });
+
+                if (!matchesUserCourse) return false;
+            }
+
+            return true;
         }
-    }
-
-    // 4. 로그인 학생 개인 수강 과목 & 분반 매칭 필터링
-    if (currentUser && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
-        const matchesUserCourse = currentUser.enrolledCourses.some(courseStr => {
-            const [cSub, cTarget] = courseStr.split(':');
-            if (cSub !== e.subject) return false;
-            
-            if (cTarget === '전체' || e.target.includes('전체')) return true;
-
-            // cTarget(예: "B반")과 e.target(예: "2학년 B반")의 분반 매칭
-            const cleanUserClass = cTarget.replace(/\d+학년\s*/g, '').trim(); // "B반"
-            const eventClasses = e.target.split(',').map(t => t.replace(/\d+학년\s*/g, '').trim()); // ["B반"]
-            
-            return eventClasses.includes(cleanUserClass) || e.target.includes(cleanUserClass);
-        });
-
-        if (!matchesUserCourse) return false;
-    }
-
-    return true;
-}
 
         function renderDDayWidget() {
             const widgetContainer = document.getElementById('dday-widget-container');
