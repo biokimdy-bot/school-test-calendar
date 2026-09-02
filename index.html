@@ -47,6 +47,27 @@
         </div>
     </div>
 
+    <!-- 수정 요청 비교 모달 (요청 2번 반영) -->
+    <div id="claim-compare-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[110] p-4">
+        <div class="bg-white rounded-3xl w-full max-w-2xl p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
+            <h3 class="text-xl font-black text-slate-800 mb-4 pb-2 border-b border-slate-200">🔍 수행평가 수정 요청 비교</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-y-auto mb-4">
+                <div class="bg-rose-50/50 p-4 rounded-2xl border border-rose-100">
+                    <h4 class="text-xs font-black text-rose-700 mb-2 uppercase tracking-wider">🔴 수정 전 (기존 정보)</h4>
+                    <div id="compare-before-content" class="space-y-2 text-xs text-slate-700"></div>
+                </div>
+                <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+                    <h4 class="text-xs font-black text-emerald-700 mb-2 uppercase tracking-wider">🟢 수정 후 (요청 내용)</h4>
+                    <div id="compare-after-content" class="space-y-2 text-xs text-slate-700"></div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                <button onclick="closeModal('claim-compare-modal')" class="bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">닫기</button>
+                <button id="compare-approve-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition">승인 및 반영</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 로그인/회원가입/과목수정 오버레이 모달 -->
     <div id="login-screen" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
         <div class="bg-white rounded-3xl w-full max-w-xl p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
@@ -58,9 +79,9 @@
 
             <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
                 <div id="login-id-field">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">학번 5자리 (또는 교사 마스터 암호) *</label>
-                    <input type="text" id="login-student-id" maxlength="5" placeholder="예: 20105 또는 마스터 암호" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-blue-500">
-                    <p class="text-[10px] text-slate-400 mt-1">※ 교사 마스터 비밀번호(9999) 입력 시 관리자 패널 이용이 가능합니다.</p>
+                    <!-- 요청 1번 반영: 마스터 암호 문구 제거 -->
+                    <label class="block text-xs font-bold text-slate-600 mb-1">학번 5자리 *</label>
+                    <input type="text" id="login-student-id" maxlength="5" placeholder="예: 20105" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-blue-500">
                 </div>
 
                 <div id="login-pw-field">
@@ -253,7 +274,7 @@
         </div>
     </div>
 
-    <!-- 1. 수행평가 등록 / 수정 요청 모달 (통합 공용 폼 - 비밀번호 입력 생략 가능하도록 수정) -->
+    <!-- 1. 수행평가 등록 / 수정 요청 모달 (통합 공용 폼) -->
     <div id="register-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
             <h3 id="register-modal-heading" class="text-xl font-black text-blue-600 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
@@ -269,7 +290,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                     <div>
                         <label class="block text-xs font-bold text-blue-700 mb-1">1단계: 학년 선택 *</label>
-                        <select id="reg-grade" onchange="onModalGradeChange()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-500">
+                        <select id="reg-grade" onchange="onModalGradeChange()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed">
                             <option value="">학년을 선택하세요</option>
                             <option value="1학년">1학년</option>
                             <option value="2학년">2학년</option>
@@ -299,7 +320,7 @@
                     <div id="reg-password-field-container">
                         <label id="reg-password-label" class="block text-xs font-bold text-slate-600 mb-1">작성자 비밀번호 (삭제용) *</label>
                         <input type="password" id="reg-password" placeholder="비밀번호 4자리 이상" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
-                        <p id="reg-password-notice" class="text-[10px] text-slate-400 mt-1 hidden">※ 수정 요청 시 비밀번호를 입력하지 않으면 기존 등록된 비밀번호가 그대로 유지됩니다.</p>
+                        <p id="reg-password-notice" class="text-[10px] text-slate-400 mt-1 hidden">※ 수정 요청 시 기존 작성된 비밀번호가 자동으로 적용되며 수정할 수 없습니다.</p>
                     </div>
                 </div>
 
@@ -677,7 +698,7 @@
                 triggerSubjectSelectionBuildForEdit();
             } else {
                 titleEl.textContent = '맞춤 로그인';
-                descEl.textContent = '학번(또는 교사 마스터 암호)과 비밀번호를 입력해주세요.';
+                descEl.textContent = '학번과 비밀번호를 입력해주세요.';
                 submitBtn.innerHTML = '로그인';
                 stepContainer.classList.add('hidden');
             }
@@ -1303,11 +1324,12 @@
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const isToday = dateStr === getTodayDateString();
 
-                cell.className = `bg-white rounded-xl min-h-[100px] p-2 border ${isToday ? 'border-blue-500 ring-2 ring-blue-100 bg-blue-50/20' : 'border-slate-200'} flex flex-col gap-1 transition hover:shadow-md`;
+                // 요청 3번 반영: 오늘 날짜 칸과 수행평가 표시 마크 강조
+                cell.className = `bg-white rounded-xl min-h-[100px] p-2 border ${isToday ? 'border-blue-600 ring-4 ring-blue-100 bg-blue-50/30' : 'border-slate-200'} flex flex-col gap-1 transition hover:shadow-md`;
                 
                 const dayHeader = document.createElement('div');
                 dayHeader.className = 'flex justify-between items-center text-xs font-bold';
-                dayHeader.innerHTML = `<span class="${isToday ? 'bg-blue-600 text-white px-1.5 py-0.5 rounded-full' : 'text-slate-700'}">${day}</span>`;
+                dayHeader.innerHTML = `<span class="${isToday ? 'bg-blue-600 text-white px-2 py-0.5 rounded-full shadow' : 'text-slate-700'}">${day}</span>${isToday ? '<span class="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded animate-pulse">오늘</span>' : ''}`;
                 cell.appendChild(dayHeader);
 
                 const eventsContainer = document.createElement('div');
@@ -1317,10 +1339,12 @@
                 dayEvents.forEach(ev => {
                     const pill = document.createElement('button');
                     pill.onclick = () => openDetailModal(ev);
-                    pill.className = 'text-left text-[10px] font-bold px-2 py-1 rounded-lg text-white truncate shadow-sm transition transform hover:scale-[1.02] active:scale-95';
+                    // 오늘 날짜의 수행평가는 특별한 테두리와 뱃지 마크 부여
+                    const isTodayEvent = ev.date === getTodayDateString();
+                    pill.className = `text-left text-[10px] font-bold px-2 py-1 rounded-lg text-white truncate shadow-sm transition transform hover:scale-[1.02] active:scale-95 flex items-center justify-between ${isTodayEvent ? 'ring-2 ring-yellow-300 font-black' : ''}`;
                     pill.style.backgroundColor = ev.color || '#3b82f6';
                     pill.title = `[${ev.subject}] ${ev.title} (${ev.target})`;
-                    pill.textContent = `[${ev.subject}] ${ev.title}`;
+                    pill.innerHTML = `<span>[${ev.subject}] ${ev.title}</span>${isTodayEvent ? '<span class="bg-yellow-300 text-slate-900 text-[8px] px-1 rounded ml-1 shrink-0">D-0</span>' : ''}`;
                     eventsContainer.appendChild(pill);
                 });
 
@@ -1351,7 +1375,10 @@
             monthEvents.forEach(ev => {
                 const card = document.createElement('div');
                 card.onclick = () => openDetailModal(ev);
-                card.className = 'bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:border-blue-300 hover:shadow-md transition cursor-pointer';
+                const isTodayEvent = ev.date === getTodayDateString();
+                
+                // 요청 3번 반영: 리스트 보기에서 오늘 날짜와 수행평가 마크 별도 표시
+                card.className = `bg-white p-4 rounded-xl border ${isTodayEvent ? 'border-blue-500 ring-2 ring-blue-100 bg-blue-50/10' : 'border-slate-200'} shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:border-blue-300 hover:shadow-md transition cursor-pointer`;
                 
                 card.innerHTML = `
                     <div class="flex items-start gap-3">
@@ -1359,7 +1386,8 @@
                             ${ev.date.substring(5)}
                         </div>
                         <div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                ${isTodayEvent ? '<span class="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">🔥 오늘 수행평가</span>' : ''}
                                 <span class="bg-slate-100 text-slate-700 font-bold text-[11px] px-2 py-0.5 rounded">${ev.subject}</span>
                                 <span class="text-xs font-black text-slate-800">${ev.title}</span>
                             </div>
@@ -1437,6 +1465,7 @@
             const passwordLabel = document.getElementById('reg-password-label');
             const passwordInput = document.getElementById('reg-password');
             const passwordNotice = document.getElementById('reg-password-notice');
+            const gradeSelect = document.getElementById('reg-grade');
 
             modal.classList.remove('hidden');
             document.getElementById('register-form').reset();
@@ -1444,20 +1473,33 @@
             document.getElementById('reg-subject').disabled = true;
             document.getElementById('reg-subject').innerHTML = '<option value="">과목을 먼저 선택하세요</option>';
 
+            // 요청 5번 반영: 로그인 후 자기 학년 수행평가만 등록 가능하도록 설정 (관리자는 전체 선택 가능)
+            if (currentUser && !currentUser.isAdmin) {
+                gradeSelect.value = currentUser.gradeStr;
+                gradeSelect.disabled = true;
+                onModalGradeChange();
+            } else {
+                gradeSelect.disabled = false;
+            }
+
             if (isEditRequest && eventObj) {
                 heading.innerHTML = `✏️ '${eventObj.title}' 수정 요청 작성`;
                 submitBtn.innerHTML = '수정 요청 전송';
                 submitBtn.className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5';
                 
-                // 비밀번호 입력 생략 가능하도록 안내 문구 및 필수 속성 제거
-                passwordLabel.textContent = '작성자 비밀번호 (선택)';
+                // 요청 4번 반영: 비밀번호 입력 불가(readonly) 처리 및 기존 수행평가 생성 비밀번호 자동 입력
+                passwordLabel.textContent = '작성자 비밀번호 (기존 등록된 비밀번호 적용됨)';
+                passwordInput.value = eventObj.password || '';
+                passwordInput.setAttribute('readonly', 'true');
+                passwordInput.classList.add('bg-slate-100', 'cursor-not-allowed');
                 passwordInput.removeAttribute('required');
-                passwordInput.placeholder = '비밀번호 생략 가능 (기존 유지)';
                 passwordNotice.classList.remove('hidden');
 
                 document.getElementById('reg-title').value = eventObj.title;
-                document.getElementById('reg-grade').value = eventObj.target.includes('1학년') ? '1학년' : eventObj.target.includes('2학년') ? '2학년' : '3학년';
-                onModalGradeChange();
+                if (currentUser && currentUser.isAdmin) {
+                    gradeSelect.value = eventObj.target.includes('1학년') ? '1학년' : eventObj.target.includes('2학년') ? '2학년' : '3학년';
+                    onModalGradeChange();
+                }
                 document.getElementById('reg-subject').value = eventObj.subject;
                 onModalSubjectChange();
                 document.getElementById('reg-date').value = eventObj.date;
@@ -1470,6 +1512,9 @@
                 submitBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5';
                 
                 passwordLabel.textContent = '작성자 비밀번호 (삭제용) *';
+                passwordInput.value = '';
+                passwordInput.removeAttribute('readonly');
+                passwordInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
                 passwordInput.setAttribute('required', 'true');
                 passwordInput.placeholder = '비밀번호 4자리 이상';
                 passwordNotice.classList.add('hidden');
@@ -1572,7 +1617,7 @@
                     target: targetStrs,
                     date: date,
                     desc: desc,
-                    password: password, // 비밀번호가 비어있어도 백엔드에서 기존 Events 비밀번호로 매칭 처리
+                    password: password, 
                     color: randomColor,
                     createdAt: new Date().toISOString(),
                     author: currentUser ? `${currentUser.studentId} 학생` : '익명',
@@ -1789,12 +1834,43 @@
                         ${detailsHtml}
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
-                        ${currentAdminTab === 'claims' ? `<button onclick="updateAdminStatus('${item.id}', '승인됨', 'claims')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">승인</button>` : ''}
+                        ${currentAdminTab === 'claims' ? `<button onclick="openClaimCompareModal(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">🔍 비교 및 승인</button>` : ''}
                         <button onclick="updateAdminStatus('${item.id}', '확인 완료', '${currentAdminTab}')" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">확인완료</button>
                     </div>
                 `;
                 container.appendChild(card);
             });
+        }
+
+        // 요청 2번 반영: 수정 요청(Claim) 클릭 시 수정 전/후 비교 모달을 띄워 확인 후 승인
+        function openClaimCompareModal(claimItem) {
+            const originalEvent = sampleEvents.find(e => e.id === claimItem.id) || {
+                title: '(기존 정보 없음)', subject: '-', target: '-', date: '-', desc: '-'
+            };
+
+            document.getElementById('compare-before-content').innerHTML = `
+                <p><strong>제목:</strong> ${originalEvent.title}</p>
+                <p><strong>과목:</strong> ${originalEvent.subject}</p>
+                <p><strong>대상:</strong> ${originalEvent.target}</p>
+                <p><strong>날짜:</strong> ${originalEvent.date}</p>
+                <p><strong>내용:</strong> ${originalEvent.desc || '없음'}</p>
+            `;
+
+            document.getElementById('compare-after-content').innerHTML = `
+                <p><strong>제목:</strong> ${claimItem.title}</p>
+                <p><strong>과목:</strong> ${claimItem.subject}</p>
+                <p><strong>대상:</strong> ${claimItem.target}</p>
+                <p><strong>날짜:</strong> ${claimItem.date}</p>
+                <p><strong>내용:</strong> ${claimItem.desc || '없음'}</p>
+            `;
+
+            const approveBtn = document.getElementById('compare-approve-btn');
+            approveBtn.onclick = async () => {
+                await updateAdminStatus(claimItem.id, '승인됨', 'claims');
+                closeModal('claim-compare-modal');
+            };
+
+            document.getElementById('claim-compare-modal').classList.remove('hidden');
         }
 
         async function updateAdminStatus(id, newStatus, type) {
@@ -1874,4 +1950,3 @@
     </script>
 </body>
 </html>
-```[cite: 21, 22]
