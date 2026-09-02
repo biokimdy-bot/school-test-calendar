@@ -1470,7 +1470,6 @@
                 submitBtn.innerHTML = '수정 요청 전송';
                 submitBtn.className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5';
                 
-                // [요구사항 2 반영] 비밀번호 칸 불활성화 및 기존 작성된 비밀번호 자동 적용
                 passwordLabel.textContent = '작성자 비밀번호 (기존 등록된 비밀번호 적용됨)';
                 passwordInput.value = eventObj.password || '';
                 passwordInput.setAttribute('readonly', 'true');
@@ -1488,13 +1487,13 @@
                 document.getElementById('reg-date').value = eventObj.date;
                 document.getElementById('reg-desc').value = eventObj.desc;
                 
-                // 체크박스 값 정확히 복원
                 setTimeout(() => {
                     const checkboxes = document.querySelectorAll('input[name="target-checkbox"]');
                     const targetValues = eventObj.target.split(',').map(s => s.trim());
                     checkboxes.forEach(cb => {
                         cb.checked = targetValues.includes(cb.value);
                     });
+                    checkSelectAllStatus();
                 }, 50);
 
                 window.currentEditTargetEventId = eventObj.id;
@@ -1549,33 +1548,59 @@
             container.classList.remove('hidden');
             let options = [];
 
-            // [요구사항 1 반영] 학년별 공통과목 포함 반별 선택 기능 (1~7반, 2학년 일본어는 1~6반)
-            if (grade === '1학년') {
-                for (let i = 1; i <= 7; i++) {
-                    options.push(`${grade} ${i}반`);
-                }
-            } else if (grade === '2학년') {
-                if (subject === '일본어') {
-                    for (let i = 1; i <= 6; i++) {
+            const subjectBlocks = COURSE_DATA[grade] && COURSE_DATA[grade][subject];
+            if (subjectBlocks && subjectBlocks.length > 0) {
+                subjectBlocks.forEach(b => {
+                    options.push(`${grade} ${b}반`);
+                });
+            } else {
+                if (grade === '1학년') {
+                    for (let i = 1; i <= 7; i++) {
                         options.push(`${grade} ${i}반`);
                     }
-                } else {
+                } else if (grade === '2학년') {
+                    if (subject === '일본어') {
+                        for (let i = 1; i <= 6; i++) {
+                            options.push(`${grade} ${i}반`);
+                        }
+                    } else {
+                        for (let i = 1; i <= 7; i++) {
+                            options.push(`${grade} ${i}반`);
+                        }
+                    }
+                } else if (grade === '3학년') {
                     for (let i = 1; i <= 7; i++) {
                         options.push(`${grade} ${i}반`);
                     }
                 }
-            } else if (grade === '3학년') {
-                for (let i = 1; i <= 7; i++) {
-                    options.push(`${grade} ${i}반`);
-                }
             }
+
+            const selectAllLabel = document.createElement('label');
+            selectAllLabel.className = 'flex items-center gap-1.5 bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-300 text-xs font-black cursor-pointer hover:bg-blue-200 w-full mb-1';
+            selectAllLabel.innerHTML = `<input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAllTargets(this)" class="rounded text-blue-600"> <span>전체 선택</span>`;
+            wrapper.appendChild(selectAllLabel);
 
             options.forEach((optText, idx) => {
                 const label = document.createElement('label');
                 label.className = 'flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold cursor-pointer hover:bg-blue-50';
-                label.innerHTML = `<input type="checkbox" name="target-checkbox" value="${optText}" ${idx === 0 ? 'checked' : ''} class="rounded text-blue-600"> <span>${optText}</span>`;
+                label.innerHTML = `<input type="checkbox" name="target-checkbox" value="${optText}" onchange="checkSelectAllStatus()" class="rounded text-blue-600"> <span>${optText}</span>`;
                 wrapper.appendChild(label);
             });
+        }
+
+        function toggleSelectAllTargets(master) {
+            const checkboxes = document.querySelectorAll('input[name="target-checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = master.checked;
+            });
+        }
+
+        function checkSelectAllStatus() {
+            const checkboxes = document.querySelectorAll('input[name="target-checkbox"]');
+            const master = document.getElementById('select-all-checkbox');
+            if (!master) return;
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            master.checked = allChecked;
         }
 
         async function handleRegisterSubmit(e) {
@@ -1700,6 +1725,12 @@
         }
 
         function openClaimModalFromDetail() {
+            if (!currentUser) {
+                showToast('로그인을 해야만 수정 요청을 할 수 있습니다.', 'error');
+                closeModal('detail-modal');
+                openLoginModal('login');
+                return;
+            }
             if (!activeEventForDetail) return;
             closeModal('detail-modal');
             openRegisterModal(true, activeEventForDetail);
@@ -1907,61 +1938,87 @@
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'approveClaim', claimId: claimId })
-                }).catch(err => console.error("승인 통신 오류:", err));
+                    body: JSON.stringify({ action: 'approveClaim', id: claimId })
+                }).catch(err => console.error("수정 요청 승인 통신 오류:", err));
             }
 
             closeModal('claim-compare-modal');
             closeModal('admin-dashboard-modal');
             renderMainView();
             renderDDayWidget();
-            showToast('수정 요청이 승인되어 캘린더에 반영되었습니다.', 'success');
+            showToast('수정 요청이 승인되어 일정이 반영되었습니다.', 'success');
         }
 
         async function updateReportStatus(reportId, newStatus) {
-            const rep = reportItemsDB.find(r => r.id === reportId);
-            if (rep) {
-                rep.status = newStatus;
-                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
-                renderAdminList();
-                showToast('상태가 변경되었습니다.', 'success');
+            const report = reportItemsDB.find(r => r.id === reportId);
+            if (!report) return;
+            report.status = newStatus;
+            localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+
+            if (GAS_WEB_APP_URL) {
+                fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'updateReportStatus', id: reportId, status: newStatus })
+                }).catch(err => console.error("상태 변경 통신 오류:", err));
             }
+            renderAdminList();
+            showToast('신고 상태가 변경되었습니다.', 'success');
         }
 
         async function deleteAdminItem(itemId, type) {
-            if (!confirm("정말 삭제하시겠습니까?")) return;
+            if (!confirm("정말 이 내역을 삭제하시겠습니까?")) return;
+
             if (type === 'report') {
                 reportItemsDB = reportItemsDB.filter(r => r.id !== itemId);
                 localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'deleteReport', id: itemId })
+                    }).catch(err => console.error("신고 삭제 통신 오류:", err));
+                }
             } else {
                 claimItemsDB = claimItemsDB.filter(c => c.id !== itemId);
                 localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'deleteClaim', id: itemId })
+                    }).catch(err => console.error("수정 요청 삭제 통신 오류:", err));
+                }
             }
             renderAdminList();
-            showToast('항목이 삭제되었습니다.', 'info');
+            showToast('삭제되었습니다.', 'success');
         }
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
         }
 
-        function openConfirmModal(title, message, callback) {
+        let confirmCallback = null;
+        function openConfirmModal(title, msg, callback) {
             document.getElementById('confirm-modal-title').textContent = title;
-            document.getElementById('confirm-modal-msg').textContent = message;
+            document.getElementById('confirm-modal-msg').textContent = msg;
             document.getElementById('confirm-modal-input').value = '';
             document.getElementById('confirm-modal').classList.remove('hidden');
-
+            
             const submitBtn = document.getElementById('confirm-modal-submit-btn');
             const newBtn = submitBtn.cloneNode(true);
             submitBtn.parentNode.replaceChild(newBtn, submitBtn);
 
-            newBtn.onclick = async () => {
+            newBtn.addEventListener('click', async () => {
                 const pwd = document.getElementById('confirm-modal-input').value.trim();
                 const success = await callback(pwd);
                 if (success) {
                     closeModal('confirm-modal');
                 }
-            };
+            });
         }
     </script>
 </body>
