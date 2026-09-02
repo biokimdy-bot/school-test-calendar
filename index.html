@@ -17,9 +17,9 @@
     <!-- 토스트 알림 메시지 컨테이너 -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 max-w-sm"></div>
 
-    <!-- 커스텀 삭제/확인 비밀번호 모달 (z-index를 z-[60]으로 올려 상세 모달 위에 정상 표시) -->
-    <div id="confirm-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[60] p-4">
-        <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+    <!-- 1번 수정 반영: 커스텀 삭제/확인 비밀번호 모달을 최상단 레이어(z-[80])로 독립 배치하여 입력 방해 요소 제거 -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[80] p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative z-[90]">
             <h3 id="confirm-modal-title" class="text-lg font-black text-slate-800 mb-2">일정 삭제 확인</h3>
             <p id="confirm-modal-msg" class="text-xs text-slate-500 mb-4">작성 비밀번호를 입력해주세요.</p>
             
@@ -105,7 +105,7 @@
                     <button onclick="logout()" class="text-rose-500 hover:underline text-[11px] ml-1">로그아웃</button>
                 </div>
                 
-                <!-- 비활성화 상태에서 클릭 이벤트를 감지할 수 있도록 래퍼(div) 감싸기 -->
+                <!-- 2번 수정 반영: 로딩 중 빨간 표시 상태에서 버튼 클릭 시 안내 메시지 표출 -->
                 <div onclick="handleDisabledButtonClick(event)" class="inline-block">
                     <button id="login-open-btn" onclick="openLoginModal('login')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
                         🔐 로그인
@@ -158,9 +158,10 @@
                     </select>
                 </div>
 
+                <!-- 3번 수정 반영: 과목 필터 선택 시 정상적으로 과목별 필터링이 작동하도록 연결 -->
                 <div class="flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                     <label class="text-xs font-bold text-slate-600">과목:</label>
-                    <select id="filter-subject" onchange="renderMainView()" class="bg-transparent text-sm font-semibold focus:outline-none max-w-[180px]">
+                    <select id="filter-subject" onchange="handleSubjectFilterChange()" class="bg-transparent text-sm font-semibold focus:outline-none max-w-[180px]">
                         <option value="all">전체 과목</option>
                     </select>
                 </div>
@@ -188,7 +189,6 @@
         <!-- D-Day 임박 수행평가 위젯 대시보드 -->
         <div class="mb-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-4 rounded-2xl border border-blue-200 shadow-sm transition-all duration-300">
             <div class="flex justify-between items-center gap-2">
-                <!-- flex-wrap 및 text-xs~sm 반응형 텍스트 크기 조정을 적용하여 한 줄 유지 -->
                 <div class="flex items-center gap-1.5 min-w-0">
                     <h3 class="text-xs sm:text-sm font-black text-blue-900 flex items-center gap-1 whitespace-nowrap">
                         🔥 D-Day 리스트
@@ -274,7 +274,7 @@
         </div>
     </div>
 
-    <!-- 2. 상세 보기 및 삭제 모달 -->
+    <!-- 2. 상세 보기 및 삭제/수정요청 모달 -->
     <div id="detail-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <h3 id="detail-title" class="text-xl font-black text-slate-800 mb-3 pb-2 border-b border-slate-100">수행평가 상세정보</h3>
@@ -287,40 +287,44 @@
                     <p id="detail-desc-text" class="whitespace-pre-wrap text-slate-700"></p>
                 </div>
             </div>
-            <div class="flex justify-between items-center pt-2 border-t border-slate-100">
-                <button onclick="requestDeleteEvent()" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition">🗑️ 일정 삭제</button>
-                <button onclick="closeModal('detail-modal')" class="bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold px-4 py-2 rounded-lg text-sm transition">닫기</button>
+            <div class="flex justify-between items-center pt-2 border-t border-slate-100 gap-2">
+                <div class="flex gap-2">
+                    <button onclick="requestDeleteEvent()" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-2 rounded-lg text-xs transition">🗑️ 일정 삭제</button>
+                    <!-- 4번 수정 반영: 다른 사용자가 일정이 잘못된 것을 발견했을 때 신청할 수 있는 수정 요청 버튼 추가 -->
+                    <button onclick="openClaimModalFromDetail()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-3 py-2 rounded-lg text-xs transition">✏️ 수정 요청</button>
+                </div>
+                <button onclick="closeModal('detail-modal')" class="bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold px-3 py-2 rounded-lg text-xs transition">닫기</button>
             </div>
         </div>
     </div>
 
-    <!-- 3. 오류 신고 모달 -->
+    <!-- 3 & 4번 수정 반영: 오류 신고 및 Claim(수정/변경 요청) 통합 모달 -->
     <div id="report-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <h3 class="text-xl font-black text-amber-600 mb-3 pb-2 border-b border-slate-100">⚠️ 시스템 오류 신고</h3>
-            <p class="text-xs text-slate-500 mb-4">입력 오류, 일정 중복, 시스템 작동 이상 등을 관리자에게 간편하게 신고하세요.</p>
+            <h3 id="report-modal-heading" class="text-xl font-black text-amber-600 mb-3 pb-2 border-b border-slate-100">⚠️ 시스템 오류 신고 / 수정 요청 (Claim)</h3>
+            <p id="report-modal-desc" class="text-xs text-slate-500 mb-4">입력 오류, 일정 중복 또는 수행평가 일정 변경 요청 사항을 작성해 주세요. 제출 시 "Claim" 시트에 정리됩니다.</p>
             
             <div class="space-y-3 mb-6">
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">신고자 성명 / 소속</label>
-                    <input type="text" id="report-author" placeholder="예: 2학년부 교사 홍길동" class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">신고자 성명 / 학번 / 소속</label>
+                    <input type="text" id="report-author" placeholder="예: 20105 김동영 또는 2학년부 교사" class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-amber-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">오류 내용 및 요청사항 *</label>
-                    <textarea id="report-content" rows="4" placeholder="발생한 문제나 수정이 필요한 내용을 적어주세요." class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-amber-500"></textarea>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">요청 및 변경 사항 내용 *</label>
+                    <textarea id="report-content" rows="4" placeholder="수정이 필요한 일정 정보나 변경 요청 사유를 상세히 적어주세요." class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-amber-500"></textarea>
                 </div>
             </div>
 
             <div class="flex justify-end gap-2">
                 <button onclick="closeModal('report-modal')" class="bg-slate-400 hover:bg-slate-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition">취소</button>
-                <button onclick="submitReport()" id="report-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5">신고 전송</button>
+                <button onclick="submitReportOrClaim()" id="report-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5">제출하기 (Claim 시트 저장)</button>
             </div>
         </div>
     </div>
 
     <script>
         const ADMIN_MASTER_PASSWORD = "9999";
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx9l1MTLFnWJddoAIlN9D4WLW4104lamMhVTYX2fTAMc2bAoIcDYQars_imcpyDgBxK/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwJGPNxWaPSvLeMjvp_oX-Zjj3fLofjUaVVuT6hRJku6YnNoFn-MmEZj1r7VgDmY5IS/exec';
 
         const COURSE_DATA = {
             "1학년": {
@@ -414,6 +418,7 @@
         let currentViewMode = 'calendar';
         let isDDayWidgetExpanded = false;
         let isDataLoaded = false;
+        let reportModalMode = 'report'; // 'report' 또는 'claim'
 
         function getTodayDateString() {
             const today = new Date();
@@ -453,7 +458,7 @@
             });
         }
 
-        // 수정요청 2번 반영: 비활성화된 버튼 클릭 시 "데이터 로딩 중입니다." 안내 메시지 출력
+        // 2번 수정 반영: 데이터 로딩 중 빨간 표시 상태에서 버튼 클릭 시 안내 메시지 표출
         function handleDisabledButtonClick(event) {
             if (!isDataLoaded) {
                 showToast('데이터 로딩 중입니다.', 'error');
@@ -1048,6 +1053,7 @@
         function updateFilterSubjects() {
             const filterGrade = document.getElementById('filter-grade').value;
             const subjectSelect = document.getElementById('filter-subject');
+            const currentSelectedSubject = subjectSelect.value;
             let availableSubjects = new Set();
             
             let filteredEventsForSubject = sampleEvents.filter(e => {
@@ -1082,6 +1088,12 @@
                 opt.textContent = sub;
                 subjectSelect.appendChild(opt);
             });
+
+            if (availableSubjects.has(currentSelectedSubject)) {
+                subjectSelect.value = currentSelectedSubject;
+            } else {
+                subjectSelect.value = 'all';
+            }
         }
 
         function handleFilterChange() {
@@ -1093,6 +1105,13 @@
         function handleClassFilterChange() {
             updateFilterSubjects();
             renderMainView();
+            renderDDayWidget();
+        }
+
+        // 3번 수정 반영: 과목 필터 선택 시 메인 뷰와 위젯 필터링 연동
+        function handleSubjectFilterChange() {
+            renderMainView();
+            renderDDayWidget();
         }
 
         function isEventMatchingFilter(e) {
@@ -1100,6 +1119,7 @@
             const selectedClass = document.getElementById('filter-class').value;
             const selectedSubject = document.getElementById('filter-subject').value;
 
+            // 3번 수정 반영: 과목 선택 필터(selectedSubject)가 'all'이 아닐 때 일치하는 과목만 통과시키도록 수정
             if (selectedSubject !== 'all' && e.subject !== selectedSubject) {
                 return false;
             }
@@ -1381,7 +1401,27 @@
 
         function openReportModal() {
             if (!checkDataLoadedOrWarn()) return;
+            reportModalMode = 'report';
+            document.getElementById('report-modal-heading').textContent = "⚠️ 시스템 오류 신고";
+            document.getElementById('report-modal-desc').textContent = "입력 오류, 일정 중복, 시스템 작동 이상 등을 관리자에게 간편하게 신고하세요.";
+            document.getElementById('report-author').value = currentUser ? `${currentUser.studentId} 학생` : '';
+            document.getElementById('report-content').value = '';
+            document.getElementById('report-submit-btn').textContent = "신고 전송";
+            document.getElementById('report-modal').classList.remove('hidden');
+        }
 
+        // 4번 수정 반영: 상세 모달에서 [수정 요청] 버튼을 누를 때 Claim 모달 열기
+        function openClaimModalFromDetail() {
+            if (!activeEventForDetail) return;
+            if (!checkDataLoadedOrWarn()) return;
+            
+            closeModal('detail-modal');
+            reportModalMode = 'claim';
+            document.getElementById('report-modal-heading').textContent = "✏️ 수행평가 일정 수정 요청 (Claim)";
+            document.getElementById('report-modal-desc').textContent = `[${activeEventForDetail.subject}] "${activeEventForDetail.title}" (일자: ${activeEventForDetail.date}) 일정에 대한 변경/수정 요청 사항을 작성해주세요. 제출 시 "Claim" 시트에 정리됩니다.`;
+            document.getElementById('report-author').value = currentUser ? `${currentUser.studentId} 학생` : '';
+            document.getElementById('report-content').value = `[수정 요청 대상 일정]\n- 과목: ${activeEventForDetail.subject}\n- 제목: ${activeEventForDetail.title}\n- 기존 날짜: ${activeEventForDetail.date}\n- 요청 사유 및 변경 사항: `;
+            document.getElementById('report-submit-btn').textContent = "Claim 시트로 제출";
             document.getElementById('report-modal').classList.remove('hidden');
         }
 
@@ -1510,13 +1550,62 @@
             submitBtn.innerHTML = originalBtnHtml;
         }
 
+        // 4번 수정 반영: Claim 시트 또는 Reports 시트로 전송 처리
+        async function submitReportOrClaim() {
+            const author = document.getElementById('report-author').value.trim();
+            const content = document.getElementById('report-content').value.trim();
+
+            if (!content) {
+                alert("⚠️ 내용을 입력해 주세요.");
+                return;
+            }
+
+            const submitBtn = document.getElementById('report-submit-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = "전송 중...";
+
+            const actionType = reportModalMode === 'claim' ? 'addClaim' : 'addReport';
+            const targetSheetName = reportModalMode === 'claim' ? 'Claim' : 'Reports';
+
+            const payload = {
+                action: actionType,
+                report: {
+                    id: 'rep_' + Date.now(),
+                    author: author || '익명',
+                    content: content,
+                    timestamp: new Date().toISOString()
+                }
+            };
+
+            if (GAS_WEB_APP_URL) {
+                try {
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    showToast(`성공적으로 "${targetSheetName}" 시트에 접수되었습니다!`, "success");
+                } catch (err) {
+                    showToast("전송 실패: " + err.message, "error");
+                }
+            } else {
+                showToast(`[오프라인] "${targetSheetName}" 시트 접수 데이터가 기록되었습니다.`, "success");
+            }
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            closeModal('report-modal');
+        }
+
         function requestDeleteEvent() {
             if (!activeEventForDetail) return;
             if (!checkDataLoadedOrWarn()) return;
 
             document.getElementById('confirm-modal-input').value = '';
             
-            // 수정요청 1번 반영: 상세 모달을 닫은 후 확인 모달을 열어 레이블 겹침 및 입력 불가 문제 해결
+            // 1번 수정 반영: 상세 모달을 닫고 확인 모달을 열어 레이블 겹침 및 입력 불가 문제 원천 차단
             closeModal('detail-modal');
             document.getElementById('confirm-modal').classList.remove('hidden');
 
@@ -1529,8 +1618,7 @@
                     confirmBtn.disabled = true;
                     confirmBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 삭제 중...`;
 
-                    const eventId = activeEventForDetail.id;
-                    sampleEvents = sampleEvents.filter(e => e.id !== eventId);
+                    sampleEvents = sampleEvents.filter(e => e.id !== activeEventForDetail.id);
 
                     if (GAS_WEB_APP_URL) {
                         try {
@@ -1538,64 +1626,24 @@
                                 method: 'POST',
                                 mode: 'no-cors',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ action: 'deleteEvent', id: eventId })
+                                body: JSON.stringify({ action: 'deleteEvent', id: activeEventForDetail.id })
                             });
-                            showToast("구글 시트에서 삭제 완료되었습니다.", "success");
                         } catch (err) {
-                            showToast("시트 삭제 통신 실패: " + err.message, "error");
+                            console.error("삭제 시트 통신 오류:", err);
                         }
-                    } else {
-                        showToast("일정이 정상적으로 삭제되었습니다.", "success");
                     }
 
                     closeModal('confirm-modal');
                     renderMainView();
                     renderDDayWidget();
+                    showToast('수행평가 일정이 성공적으로 삭제되었습니다.', 'success');
 
                     confirmBtn.disabled = false;
                     confirmBtn.innerHTML = originalBtnHtml;
                 } else {
-                    alert("🔒 작성 비밀번호가 일치하지 않습니다.");
+                    alert("🔒 비밀번호가 일치하지 않습니다.");
                 }
             };
-        }
-
-        async function submitReport() {
-            if (!checkDataLoadedOrWarn()) return;
-
-            const author = document.getElementById('report-author').value.trim();
-            const content = document.getElementById('report-content').value.trim();
-            const reportBtn = document.getElementById('report-submit-btn');
-
-            if (!content) {
-                alert('⚠️ 오류 내용을 입력해 주세요.');
-                return;
-            }
-
-            const originalBtnHtml = reportBtn.innerHTML;
-            reportBtn.disabled = true;
-            reportBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 전송 중...`;
-
-            if (GAS_WEB_APP_URL) {
-                try {
-                    await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'submitReport', report: { author, content } })
-                    });
-                } catch (err) {
-                    console.error("오류 신고 전송 실패:", err);
-                }
-            }
-
-            showToast('관리자에게 오류 신고가 접수되었습니다. 감사합니다!', 'success');
-            closeModal('report-modal');
-            document.getElementById('report-author').value = '';
-            document.getElementById('report-content').value = '';
-
-            reportBtn.disabled = false;
-            reportBtn.innerHTML = originalBtnHtml;
         }
     </script>
 </body>
