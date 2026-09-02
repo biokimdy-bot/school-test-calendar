@@ -386,7 +386,7 @@
         let currentModalMode = 'login';
         let currentViewMode = 'calendar';
         let isDDayWidgetExpanded = true;
-        let isDataLoaded = false; // [수정3] 데이터 로드 완료 여부 상태 플래그
+        let isDataLoaded = false;
 
         function getTodayDateString() {
             const today = new Date();
@@ -411,7 +411,6 @@
             }, 3000);
         }
 
-        // [수정3] 빨간 표시일 때 작동 버튼 활성화/비활성화 처리 함수
         function setInteractiveButtonsState(enabled) {
             const btnIds = ['login-open-btn', 'signup-open-btn', 'register-open-btn', 'report-open-btn', 'edit-subject-btn'];
             btnIds.forEach(id => {
@@ -432,7 +431,6 @@
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
             }
-            // 시작 시 버튼 비활성화 (🔴 로딩 중 상태)
             setInteractiveButtonsState(false);
             fetchDataFromGas();
             setupLoginInputListener();
@@ -462,13 +460,13 @@
                 syncBadge.innerHTML = '🟢';
                 syncBadge.title = '구글 시트 라이브 연동 완료';
                 isDataLoaded = true;
-                setInteractiveButtonsState(true); // 🟢 성공 시 모든 버튼 활성화
+                setInteractiveButtonsState(true);
             } catch (err) {
                 console.error("데이터 로드 실패:", err);
                 syncBadge.innerHTML = '🔴';
                 syncBadge.title = '구글 시트 연동 오류 발생';
                 isDataLoaded = false;
-                setInteractiveButtonsState(false); // 🔴 실패 시 클릭 막기
+                setInteractiveButtonsState(false);
                 showToast('데이터를 불러오는 중이거나 연동 오류가 발생했습니다.', 'error');
             } finally {
                 applyUserSession();
@@ -510,7 +508,6 @@
             }
         }
 
-        // [수정3] 빨간 표시일 때 모달 접근 및 액션 차단 검증
         function checkDataLoadedOrWarn() {
             if (!isDataLoaded) {
                 showToast('데이터를 불러오는 중입니다.', 'error');
@@ -598,7 +595,6 @@
                 if (gradeStr && COURSE_DATA[gradeStr]) {
                     stepContainer.classList.remove('hidden');
 
-                    // 기존 사용자가 가입할 때 선택했던 수강과목 목록 불러오기 [수정1]
                     const existingCourses = (currentUser && currentUser.enrolledCourses) ? currentUser.enrolledCourses : [];
 
                     if (gradeStr === '1학년') {
@@ -641,7 +637,6 @@
                             </div>
                         </div>`;
 
-                        // [수정1] 2학년 슬롯별 선택과목 기존값 자동 맵핑 함수
                         const getSelectedForSlot = (slotLetter) => {
                             const found = existingCourses.find(c => c.endsWith(`:${slotLetter}반`) || c.endsWith(`:${slotLetter}1반`) || c.endsWith(`:${slotLetter}2반`));
                             return found || "";
@@ -694,7 +689,6 @@
                         dynamicArea.innerHTML = html + htmlA + htmlB + htmlC;
 
                     } else if (gradeStr === '3학년') {
-                        // [수정1] 3학년 블록별 기존값 자동 맵핑 함수
                         const getSelectedForBlock = (blockLetter) => {
                             const found = existingCourses.find(c => c.endsWith(`:${blockLetter}반`));
                             return found || "";
@@ -766,7 +760,6 @@
         async function handleLoginSubmit(e) {
             e.preventDefault();
 
-            // [수정2] 미선택(빈값) 방지 유효성 검사 함수
             const validateSelectionFilled = (gradeStr) => {
                 if (gradeStr === '2학년') {
                     const slotSelects = document.querySelectorAll('select[name="login-slot-course"]');
@@ -799,7 +792,6 @@
                     let gradeStr = currentUser.gradeStr;
                     let classNum = currentUser.classNum;
 
-                    // [수정2] 과목 수정 시 미선택 여부 검증
                     if (!validateSelectionFilled(gradeStr)) {
                         return;
                     }
@@ -871,7 +863,6 @@
                     }
                     currentUser = existingUser;
                 } else {
-                    // [수정2] 회원가입 시 미선택 여부 검증
                     if (!validateSelectionFilled(gradeStr)) {
                         return;
                     }
@@ -1003,6 +994,9 @@
             renderDDayWidget();
         }
 
+        /* ----------------------------------------------------
+           수정된 필터링 메서드 (과목/분반 인식 오류 수정 부분)
+        ---------------------------------------------------- */
         function isEventMatchingFilter(e) {
             const selectedGrade = document.getElementById('filter-grade').value;
             const selectedClass = document.getElementById('filter-class').value;
@@ -1027,8 +1021,16 @@
                 const matchesUserCourse = currentUser.enrolledCourses.some(courseStr => {
                     const [cSub, cTarget] = courseStr.split(':');
                     if (cSub !== e.subject) return false;
+                    
                     if (cTarget === '전체' || e.target.includes('전체')) return true;
-                    return e.target.includes(cTarget);
+
+                    // cTarget(예: "B반")과 e.target(예: "2학년 B반", "2학년 A반, 2학년 B반")의 분반 매칭 보완
+                    const cleanUserClass = cTarget.replace(/\d+학년\s*/g, '').trim(); // "B반"
+                    
+                    // e.target을 쉼표 단위로 분리해 정제 ("2학년 B반" -> "B반")
+                    const eventClasses = e.target.split(',').map(t => t.replace(/\d+학년\s*/g, '').trim());
+                    
+                    return eventClasses.includes(cleanUserClass) || e.target.includes(cleanUserClass);
                 });
                 if (!matchesUserCourse) return false;
             }
