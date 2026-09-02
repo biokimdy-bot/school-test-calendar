@@ -449,7 +449,7 @@
             if (mode === 'signup') {
                 titleEl.textContent = '신규 학생 간편 가입';
                 descEl.textContent = '학번 5자리를 입력하여 수강 과목을 설정하세요.';
-                submitBtn.innerHTML = '가입 및 맞춤 설정 완료';
+                submitBtn.innerHTML = '가입하기';
                 stepContainer.classList.remove('hidden');
                 triggerSubjectSelectionBuild();
             } else if (mode === 'edit') {
@@ -653,6 +653,9 @@
             const submitBtn = document.getElementById('login-submit-btn');
             const originalBtnHtml = submitBtn.innerHTML;
 
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
+
             if (currentModalMode === 'edit') {
                 let studentId = currentUser.studentId;
                 let gradeStr = currentUser.gradeStr;
@@ -698,6 +701,9 @@
                 closeModal('login-screen');
                 applyUserSession();
                 showToast('수강 과목이 정상적으로 수정되었습니다.', 'success');
+
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
                 return;
             }
 
@@ -706,11 +712,10 @@
 
             if (studentId.length < 5) {
                 showToast('올바른 학번 5자리를 입력해주세요.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
                 return;
             }
-
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
 
             const gradeNum = studentId.charAt(0);
             let gradeStr = gradeNum === '1' ? '1학년' : gradeNum === '2' ? '2학년' : gradeNum === '3' ? '3학년' : '';
@@ -993,6 +998,26 @@
             }
         }
 
+        function formatDisplayLabel(targetStr, subjectStr) {
+            if (!targetStr) return `[${subjectStr}]`;
+            
+            // 학년 전체를 대상으로 하는 경우
+            if (targetStr.includes('전체')) {
+                return `<span class="bg-black/20 px-1 rounded text-[9px] mr-1">${targetStr}</span>[${subjectStr}]`;
+            }
+
+            // 대상 텍스트에서 학년 및 "반" 제거하여 분반 텍스트만 추출 (예: "2학년 A반, 2학년 B반" -> "A, B반")
+            let classes = targetStr.split(',').map(t => {
+                let clean = t.trim().replace(/\d+학년\s*/g, '');
+                return clean.replace(/반$/g, '');
+            }).filter(Boolean);
+
+            if (classes.length > 0) {
+                return `${subjectStr} ${classes.join(', ')}반`;
+            }
+            return `[${subjectStr}] ${targetStr}`;
+        }
+
         function createDayCell(dayNum, isOtherMonth, events) {
             const cell = document.createElement('div');
             cell.className = `min-h-[130px] bg-white border border-slate-200 rounded-xl p-1.5 flex flex-col transition hover:shadow-md ${isOtherMonth ? 'opacity-30 bg-slate-50' : ''}`;
@@ -1010,7 +1035,9 @@
                     const badge = document.createElement('div');
                     badge.className = 'text-[11px] font-bold text-white px-1.5 py-1 rounded truncate cursor-pointer shadow-sm hover:opacity-90 transition';
                     badge.style.backgroundColor = e.color || '#3b82f6';
-                    badge.innerHTML = `<span class="bg-black/20 px-1 rounded text-[9px] mr-1">${e.target}</span>[${e.subject}] ${e.title}`;
+                    
+                    const formattedLabel = formatDisplayLabel(e.target, e.subject);
+                    badge.innerHTML = `${formattedLabel} ${e.title}`;
                     badge.onclick = () => openDetailModal(e);
                     listContainer.appendChild(badge);
                 });
