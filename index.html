@@ -997,46 +997,53 @@
         /* ----------------------------------------------------
            수정된 필터링 메서드 (과목/분반 인식 오류 수정 부분)
         ---------------------------------------------------- */
-        function isEventMatchingFilter(e) {
-            const selectedGrade = document.getElementById('filter-grade').value;
-            const selectedClass = document.getElementById('filter-class').value;
-            const selectedSubject = document.getElementById('filter-subject').value;
+function isEventMatchingFilter(e) {
+    const selectedGrade = document.getElementById('filter-grade').value;
+    const selectedClass = document.getElementById('filter-class').value;
+    const selectedSubject = document.getElementById('filter-subject').value;
 
-            if (selectedSubject !== 'all' && e.subject !== selectedSubject) {
-                return false;
-            }
+    // 1. 선택한 과목 필터링
+    if (selectedSubject !== 'all' && e.subject !== selectedSubject) {
+        return false;
+    }
 
-            if (selectedGrade !== 'all' && !e.target.includes(selectedGrade)) {
-                return false;
-            }
+    // 2. 선택한 학년 필터링
+    if (selectedGrade !== 'all' && !e.target.includes(selectedGrade)) {
+        return false;
+    }
 
-            if (selectedClass !== 'all') {
-                const classPattern = `${selectedClass}반`;
-                if (!e.target.includes('전체') && !e.target.includes(classPattern)) {
-                    return false;
-                }
-            }
+    // 3. 선택한 반 필터링
+    // 이벤트의 target이 숫자 반(예: '1반')을 포함하거나, 이동수업 분반(예: 'A반', 'B반', 'A1반')인지 확인
+    if (selectedClass !== 'all') {
+        const classPattern = `${selectedClass}반`;
+        const isNumericClassEvent = /\d+반/.test(e.target); // e.target에 '1반', '2반' 등 숫자 반이 들어있는지 체크
 
-            if (currentUser && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
-                const matchesUserCourse = currentUser.enrolledCourses.some(courseStr => {
-                    const [cSub, cTarget] = courseStr.split(':');
-                    if (cSub !== e.subject) return false;
-                    
-                    if (cTarget === '전체' || e.target.includes('전체')) return true;
-
-                    // cTarget(예: "B반")과 e.target(예: "2학년 B반", "2학년 A반, 2학년 B반")의 분반 매칭 보완
-                    const cleanUserClass = cTarget.replace(/\d+학년\s*/g, '').trim(); // "B반"
-                    
-                    // e.target을 쉼표 단위로 분리해 정제 ("2학년 B반" -> "B반")
-                    const eventClasses = e.target.split(',').map(t => t.replace(/\d+학년\s*/g, '').trim());
-                    
-                    return eventClasses.includes(cleanUserClass) || e.target.includes(cleanUserClass);
-                });
-                if (!matchesUserCourse) return false;
-            }
-
-            return true;
+        // 학급 전체이거나, 특정 숫자 반이 포함되었거나, 이동수업 분반 이벤트(숫자 반 지정이 없는 경우)는 통과
+        if (!e.target.includes('전체') && !e.target.includes(classPattern) && isNumericClassEvent) {
+            return false;
         }
+    }
+
+    // 4. 로그인 학생 개인 수강 과목 & 분반 매칭 필터링
+    if (currentUser && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
+        const matchesUserCourse = currentUser.enrolledCourses.some(courseStr => {
+            const [cSub, cTarget] = courseStr.split(':');
+            if (cSub !== e.subject) return false;
+            
+            if (cTarget === '전체' || e.target.includes('전체')) return true;
+
+            // cTarget(예: "B반")과 e.target(예: "2학년 B반")의 분반 매칭
+            const cleanUserClass = cTarget.replace(/\d+학년\s*/g, '').trim(); // "B반"
+            const eventClasses = e.target.split(',').map(t => t.replace(/\d+학년\s*/g, '').trim()); // ["B반"]
+            
+            return eventClasses.includes(cleanUserClass) || e.target.includes(cleanUserClass);
+        });
+
+        if (!matchesUserCourse) return false;
+    }
+
+    return true;
+}
 
         function renderDDayWidget() {
             const widgetContainer = document.getElementById('dday-widget-container');
