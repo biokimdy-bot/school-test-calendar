@@ -1918,7 +1918,7 @@ function openClaimModalFromDetail() {
                 approveBtn.textContent = '승인 및 반영';
                 approveBtn.className = "bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition";
                 approveBtn.onclick = function() {
-                    approveClaim(claimItem);
+                    approveClaim(claimItem.id);
                 };
             }
 
