@@ -1936,49 +1936,38 @@ function openClaimModalFromDetail() {
             const claimItem = claimItemsDB.find(c => c.id === claimId);
             if (!claimItem) return;
 
-            claimItem.status = '승인됨';
-            localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
-
-            const existingIdx = sampleEvents.findIndex(ev => ev.id === claimItem.id);
-            const updatedEvent = {
-                id: claimItem.id,
-                title: claimItem.title,
-                subject: claimItem.subject,
-                target: claimItem.target,
-                date: claimItem.date,
-                desc: claimItem.desc,
-                password: claimItem.password,
-                color: claimItem.color || '#3b82f6'
-            };
-
-            if (existingIdx >= 0) {
-                sampleEvents[existingIdx] = updatedEvent;
-            } else {
-                sampleEvents.push(updatedEvent);
+            // 1. 기존 메인 이벤트 배열 데이터 업데이트
+            const targetIndex = sampleEvents.findIndex(ev => ev.id === claimItem.id);
+            if (targetIndex !== -1) {
+                sampleEvents[targetIndex] = {
+                    ...sampleEvents[targetIndex],
+                    title: claimItem.title,
+                    subject: claimItem.subject,
+                    target: claimItem.target,
+                    date: claimItem.date,
+                    desc: claimItem.desc
+                };
             }
 
+            // 2. 요청 상태 변경 및 로컬 캐시 업데이트
+            claimItem.status = '승인됨';
+            localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
             localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
 
+            // 3. 구글 앱스 스크립트(GAS) 서버 전송
             if (GAS_WEB_APP_URL) {
                 fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'addEvent', event: updatedEvent })
-                }).catch(err => console.error("수정 승인 이벤트 저장 통신 오류:", err));
-
-                fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'updateAdminStatus', type: 'claims', id: claimItem.id, status: '승인됨' })
-                }).catch(err => console.error("수정 요청 상태 업데이트 통신 오류:", err));
+                    body: JSON.stringify({ action: 'approveClaim', claim: claimItem })
+                }).catch(err => console.error("수정 승인 통신 오류:", err));
             }
 
             closeModal('claim-compare-modal');
             renderAdminList();
             renderMainView();
-            showToast('수정 요청이 승인되어 일정표에 반영되었습니다.', 'success');
+            showToast('수정 요청이 승인되고 일정표에 반영되었습니다.', 'success');
         }
     </script>
 </body>
