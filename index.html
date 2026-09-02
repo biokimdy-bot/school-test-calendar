@@ -523,19 +523,10 @@
                 currentUser = JSON.parse(savedUser);
             }
 
-            const cachedEvents = localStorage.getItem('school_schedule_events_cache');
             const cachedUsers = localStorage.getItem('school_schedule_users_cache');
             const cachedReports = localStorage.getItem('school_schedule_reports_cache');
             const cachedClaims = localStorage.getItem('school_schedule_claims_cache');
 
-            if (cachedEvents) {
-                try {
-                    sampleEvents = JSON.parse(cachedEvents);
-                    isDataLoaded = true;
-                    setInteractiveButtonsState(true);
-                    applyUserSession();
-                } catch (e) { console.error("캐시 파싱 오류", e); }
-            }
             if (cachedUsers) { try { registeredUsersDB = JSON.parse(cachedUsers); } catch(e){} }
             if (cachedReports) { try { reportItemsDB = JSON.parse(cachedReports); } catch(e){} }
             if (cachedClaims) { try { claimItemsDB = JSON.parse(cachedClaims); } catch(e){} }
@@ -557,7 +548,6 @@
                 const json = await res.json();
                 if (json.status === "success" && Array.isArray(json.data)) {
                     sampleEvents = json.data;
-                    localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
                 }
 
                 const userRes = await fetch(`${GAS_WEB_APP_URL}?action=getUsers`);
@@ -592,15 +582,10 @@
             } catch (err) {
                 console.error("데이터 로드 실패:", err);
                 syncBadge.innerHTML = '🟡';
-                syncBadge.title = '오프라인 모드 (캐시된 데이터 사용 중)';
-                if (sampleEvents.length > 0) {
-                    isDataLoaded = true;
-                    setInteractiveButtonsState(true);
-                } else {
-                    isDataLoaded = false;
-                    setInteractiveButtonsState(false);
-                    showToast('네트워크 지연 또는 오프라인 상태입니다.', 'error');
-                }
+                syncBadge.title = '오프라인 모드';
+                isDataLoaded = false;
+                setInteractiveButtonsState(false);
+                showToast('네트워크 지연 또는 오프라인 상태입니다.', 'error');
             } finally {
                 applyUserSession();
             }
@@ -1668,7 +1653,6 @@
                 };
 
                 sampleEvents.push(eventData);
-                localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
 
                 if (GAS_WEB_APP_URL) {
                     fetch(GAS_WEB_APP_URL, {
@@ -1705,7 +1689,6 @@
                 }
 
                 sampleEvents = sampleEvents.filter(e => e.id !== activeEventForDetail.id);
-                localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
 
                 if (GAS_WEB_APP_URL) {
                     fetch(GAS_WEB_APP_URL, {
@@ -1897,24 +1880,30 @@
                 <div><strong>내용:</strong> ${claim.desc || '없음'}</div>
             `;
 
-            document.getElementById('compare-approve-btn').onclick = () => approveClaim(claimId);
+            const approveBtn = document.getElementById('compare-approve-btn');
+            approveBtn.onclick = () => approveClaimAndReflect(claim.id);
+
             document.getElementById('claim-compare-modal').classList.remove('hidden');
         }
 
-        async function approveClaim(claimId) {
+        async function approveClaimAndReflect(claimId) {
             const claim = claimItemsDB.find(c => c.id === claimId);
             if (!claim) return;
 
-            const idx = sampleEvents.findIndex(e => e.id === claim.id);
-            if (idx !== -1) {
-                sampleEvents[idx] = {
-                    ...sampleEvents[idx],
+            claim.status = '승인됨';
+            localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+
+            let evIndex = sampleEvents.findIndex(e => e.id === claim.id);
+            if (evIndex !== -1) {
+                sampleEvents[evIndex] = {
+                    id: claim.id,
                     title: claim.title,
                     subject: claim.subject,
                     target: claim.target,
                     date: claim.date,
                     desc: claim.desc,
-                    password: claim.password || sampleEvents[idx].password
+                    password: claim.password || sampleEvents[evIndex].password,
+                    color: sampleEvents[evIndex].color
                 };
             } else {
                 sampleEvents.push({
@@ -1925,100 +1914,104 @@
                     date: claim.date,
                     desc: claim.desc,
                     password: claim.password,
-                    color: claim.color
+                    color: claim.color || '#3b82f6'
                 });
             }
 
-            claim.status = '승인됨';
-            localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
-            localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
-
             if (GAS_WEB_APP_URL) {
-                fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'approveClaim', id: claimId })
-                }).catch(err => console.error("수정 요청 승인 통신 오류:", err));
+                try {
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'updateClaimStatus', id: claimId, status: '승인됨' })
+                    });
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'addEvent', event: sampleEvents.find(e => e.id === claim.id) })
+                    });
+                } catch (err) {
+                    console.error("수정 요청 승인 반영 통신 오류:", err);
+                }
             }
 
             closeModal('claim-compare-modal');
             closeModal('admin-dashboard-modal');
             renderMainView();
             renderDDayWidget();
-            showToast('수정 요청이 승인되어 일정이 반영되었습니다.', 'success');
+            showToast('수정 요청이 승인되어 Events 및 Claims 시트에 정상 반영되었습니다.', 'success');
         }
 
-        async function updateReportStatus(reportId, newStatus) {
-            const report = reportItemsDB.find(r => r.id === reportId);
-            if (!report) return;
-            report.status = newStatus;
-            localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
-
-            if (GAS_WEB_APP_URL) {
-                fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'updateReportStatus', id: reportId, status: newStatus })
-                }).catch(err => console.error("상태 변경 통신 오류:", err));
-            }
-            renderAdminList();
-            showToast('신고 상태가 변경되었습니다.', 'success');
-        }
-
-        async function deleteAdminItem(itemId, type) {
-            if (!confirm("정말 이 내역을 삭제하시겠습니까?")) return;
-
-            if (type === 'report') {
-                reportItemsDB = reportItemsDB.filter(r => r.id !== itemId);
+        async function updateReportStatus(id, newStatus) {
+            let item = reportItemsDB.find(r => r.id === id);
+            if (item) {
+                item.status = newStatus;
                 localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
                 if (GAS_WEB_APP_URL) {
                     fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'deleteReport', id: itemId })
-                    }).catch(err => console.error("신고 삭제 통신 오류:", err));
+                        body: JSON.stringify({ action: 'updateReportStatus', id: id, status: newStatus })
+                    }).catch(err => {});
+                }
+                renderAdminList();
+                showToast('상태가 변경되었습니다.', 'success');
+            }
+        }
+
+        async function deleteAdminItem(id, type) {
+            if (!confirm("정말 삭제하시겠습니까?")) return;
+            if (type === 'report') {
+                reportItemsDB = reportItemsDB.filter(r => r.id !== id);
+                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'deleteReport', id: id })
+                    }).catch(err => {});
                 }
             } else {
-                claimItemsDB = claimItemsDB.filter(c => c.id !== itemId);
+                claimItemsDB = claimItemsDB.filter(c => c.id !== id);
                 localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
                 if (GAS_WEB_APP_URL) {
                     fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'deleteClaim', id: itemId })
-                    }).catch(err => console.error("수정 요청 삭제 통신 오류:", err));
+                        body: JSON.stringify({ action: 'deleteClaim', id: id })
+                    }).catch(err => {});
                 }
             }
             renderAdminList();
-            showToast('삭제되었습니다.', 'success');
+            showToast('항목이 삭제되었습니다.', 'info');
         }
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
         }
 
-        let confirmCallback = null;
         function openConfirmModal(title, msg, callback) {
             document.getElementById('confirm-modal-title').textContent = title;
             document.getElementById('confirm-modal-msg').textContent = msg;
             document.getElementById('confirm-modal-input').value = '';
             document.getElementById('confirm-modal').classList.remove('hidden');
-            
+
             const submitBtn = document.getElementById('confirm-modal-submit-btn');
             const newBtn = submitBtn.cloneNode(true);
             submitBtn.parentNode.replaceChild(newBtn, submitBtn);
 
-            newBtn.addEventListener('click', async () => {
-                const pwd = document.getElementById('confirm-modal-input').value.trim();
+            newBtn.onclick = async () => {
+                const pwd = document.getElementById('confirm-modal-input').value;
                 const success = await callback(pwd);
-                if (success) {
+                if (success !== false) {
                     closeModal('confirm-modal');
                 }
-            });
+            };
         }
     </script>
 </body>
