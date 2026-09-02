@@ -915,59 +915,63 @@
         }
 
         async function handleLoginSubmit(e) {
-            e.preventDefault();
+    e.preventDefault();
 
-            const studentId = document.getElementById('login-student-id').value.trim();
-            const password = document.getElementById('login-password').value.trim();
+    // 선택과목 수정 모드일 경우 학번/비밀번호 검증을 건너뛰고 바로 수정 프로세스를 실행
+    if (currentModalMode === 'edit') {
+        executeEditProcess();
+        return;
+    }
 
-            if (studentId === ADMIN_MASTER_PASSWORD || password === ADMIN_MASTER_PASSWORD || studentId === "admin") {
-                if (password === ADMIN_MASTER_PASSWORD || studentId === ADMIN_MASTER_PASSWORD) {
-                    currentUser = {
-                        studentId: "관리자(교사)",
-                        gradeStr: "교사",
-                        classNum: "전체",
-                        isAdmin: true,
-                        enrolledCourses: []
-                    };
-                    localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
-                    closeModal('login-screen');
-                    applyUserSession();
-                    showToast('관리자(마스터) 계정으로 로그인되었습니다.', 'success');
-                    return;
-                }
-            }
+    const studentId = document.getElementById('login-student-id').value.trim();
+    const password = document.getElementById('login-password').value.trim();
 
-            if (studentId.length < 5) {
-                alert("⚠️ 올바른 학번 5자리를 입력해 주세요 (예: 20105).");
-                return;
-            }
-
-            let existingUser = registeredUsersDB[studentId];
-
-            if (currentModalMode === 'login') {
-                if (!existingUser) {
-                    alert("⚠️ 등록되지 않은 학번입니다. 먼저 [간편 가입]을 진행해 주세요.");
-                    return;
-                }
-                if (existingUser.password !== password) {
-                    alert("🔒 비밀번호가 일치하지 않습니다. 다시 확인 후 입력해 주세요.");
-                    return;
-                }
-                currentUser = existingUser;
-                localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
-                closeModal('login-screen');
-                applyUserSession();
-                showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
-            } else if (currentModalMode === 'signup') {
-                if (existingUser) {
-                    document.getElementById('duplicate-signup-modal').classList.remove('hidden');
-                    return;
-                }
-                executeSignupProcess();
-            } else if (currentModalMode === 'edit') {
-                executeEditProcess();
-            }
+    if (studentId === ADMIN_MASTER_PASSWORD || password === ADMIN_MASTER_PASSWORD || studentId === "admin") {
+        if (password === ADMIN_MASTER_PASSWORD || studentId === ADMIN_MASTER_PASSWORD) {
+            currentUser = {
+                studentId: "관리자(교사)",
+                gradeStr: "교사",
+                classNum: "전체",
+                isAdmin: true,
+                enrolledCourses: []
+            };
+            localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+            closeModal('login-screen');
+            applyUserSession();
+            showToast('관리자(마스터) 계정으로 로그인되었습니다.', 'success');
+            return;
         }
+    }
+
+    if (studentId.length < 5) {
+        alert("⚠️ 올바른 학번 5자리를 입력해 주세요 (예: 20105).");
+        return;
+    }
+
+    let existingUser = registeredUsersDB[studentId];
+
+    if (currentModalMode === 'login') {
+        if (!existingUser) {
+            alert("⚠️ 등록되지 않은 학번입니다. 먼저 [간편 가입]을 진행해 주세요.");
+            return;
+        }
+        if (existingUser.password !== password) {
+            alert("🔒 비밀번호가 일치하지 않습니다. 다시 확인 후 입력해 주세요.");
+            return;
+        }
+        currentUser = existingUser;
+        localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+        closeModal('login-screen');
+        applyUserSession();
+        showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
+    } else if (currentModalMode === 'signup') {
+        if (existingUser) {
+            document.getElementById('duplicate-signup-modal').classList.remove('hidden');
+            return;
+        }
+        executeSignupProcess();
+    }
+}
 
         async function executeSignupProcess() {
             const submitBtn = document.getElementById('login-submit-btn');
