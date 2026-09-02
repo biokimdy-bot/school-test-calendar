@@ -373,7 +373,7 @@
 
     <script>
         const ADMIN_MASTER_PASSWORD = "9999";
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw-oR_oBHK6t1oQXnbjYD_5tzFSQTSRRnjXIa_Peg-8LlhVUdiZ1SrBrs4uvzEfSs1l/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbype7xvs3wxyVX-xx3mZ58LTscbUXtL0JwgA8D-HxcPz9eXXZQXvqFK0adipwyyYvD-/exec';
 
         const COURSE_DATA = {
             "1학년": {
@@ -1406,7 +1406,7 @@
                 submitBtn.textContent = '수정 요청 전송';
                 submitBtn.className = "bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5";
 
-                document.getElementById('reg-title').value = activeEventForDetail.title + " (수정요청)";
+                document.getElementById('reg-title').value = activeEventForDetail.title;
                 
                 gradeSelect.value = activeEventForDetail.target.includes('1학년') ? '1학년' : activeEventForDetail.target.includes('2학년') ? '2학년' : '3학년';
                 gradeSelect.disabled = true;
@@ -1415,6 +1415,17 @@
                 subjectSelect.value = activeEventForDetail.subject;
                 subjectSelect.disabled = true;
                 onModalSubjectChange();
+
+                // 등록 당시 선택했던 분반 그대로 체크 상태 반영
+                const targetValues = activeEventForDetail.target.split(',').map(s => s.trim());
+                const checkboxes = document.querySelectorAll('input[name="reg-target-class"]');
+                checkboxes.forEach(cb => {
+                    if (targetValues.includes(cb.value)) {
+                        cb.checked = true;
+                    } else {
+                        cb.checked = false;
+                    }
+                });
 
                 document.getElementById('reg-date').value = activeEventForDetail.date;
                 document.getElementById('reg-desc').value = activeEventForDetail.desc;
@@ -1477,18 +1488,18 @@
 
             let options = [];
             if (gradeVal === '1학년') {
-                options = ["전체 선택", "1학년 1반", "1학년 2반", "1학년 3반", "1학년 4반", "1학년 5반", "1학년 6반", "1학년 7반"];
+                options = ["1학년 전체", "1학년 1반", "1학년 2반", "1학년 3반", "1학년 4반", "1학년 5반", "1학년 6반", "1학년 7반"];
             } else if (gradeVal === '2학년') {
                 if (subjectVal === "일본어") {
-                    options = ["전체 선택", "2학년 1반", "2학년 2반", "2학년 3반", "2학년 4반", "2학년 5반", "2학년 6반"];
+                    options = ["2학년 전체", "2학년 1반", "2학년 2반", "2학년 3반", "2학년 4반", "2학년 5반", "2학년 6반"];
                 } else if (subjectVal === "중국어") {
-                    options = ["전체 선택", "2학년 7반"];
+                    options = ["2학년 전체", "2학년 7반"];
                 } else {
                     const blocks = COURSE_DATA['2학년'][subjectVal];
                     if (!blocks || blocks.length === 0) {
-                        options = ["전체 선택", "2학년 1반", "2학년 2반", "2학년 3반", "2학년 4반", "2학년 5반", "2학년 6반", "2학년 7반"];
+                        options = ["2학년 전체", "2학년 1반", "2학년 2반", "2학년 3반", "2학년 4반", "2학년 5반", "2학년 6반", "2학년 7반"];
                     } else {
-                        options.push("전체 선택");
+                        options.push("2학년 전체");
                         blocks.forEach(b => {
                             if (b === "A1" || b === "A2") {
                                 options.push(`2학년 ${b}반`);
@@ -1501,55 +1512,22 @@
             } else if (gradeVal === '3학년') {
                 const blocks = GRADE_3_BLOCK_MAP[subjectVal];
                 if (!blocks || blocks.length === 0) {
-                    options = ["전체 선택"];
+                    options = ["3학년 전체"];
                 } else {
-                    options.push("전체 선택");
+                    options.push("3학년 전체");
                     blocks.forEach(b => {
                         options.push(`3학년 ${b}반`);
                     });
                 }
             }
 
-            options.forEach((optText, index) => {
+            options.forEach(optText => {
                 const label = document.createElement('label');
                 label.className = "flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer shadow-sm";
-                
-                let inputHtml = `<input type="checkbox" name="reg-target-class" value="${optText}" checked class="rounded text-blue-600">`;
-                if (index === 0 && optText === "전체 선택") {
-                    inputHtml = `<input type="checkbox" id="reg-select-all" value="전체 선택" checked class="rounded text-blue-600" onchange="handleSelectAllChange(this)">`;
-                }
-
-                label.innerHTML = `${inputHtml} <span>${optText}</span>`;
+                label.innerHTML = `<input type="checkbox" name="reg-target-class" value="${optText}" checked class="rounded text-blue-600"> <span>${optText}</span>`;
                 checkboxesWrapper.appendChild(label);
             });
         }
-
-        // 전체 체크박스 연동 로직
-        function handleSelectAllChange(selectAllCheckbox) {
-            const checkboxes = document.querySelectorAll('input[name="reg-target-class"]');
-            checkboxes.forEach(cb => {
-                if (cb !== selectAllCheckbox) {
-                    cb.checked = selectAllCheckbox.checked;
-                }
-            });
-        }
-
-        // 개별 체크박스 해제 시 전체 체크박스 해제 / 모두 체크 시 전체 체크박스 체크 연동 로직
-        document.addEventListener('change', function(e) {
-            if (e.target && e.target.name === 'reg-target-class' && e.target.id !== 'reg-select-all') {
-                const selectAllCb = document.getElementById('reg-select-all');
-                if (selectAllCb) {
-                    const checkboxes = document.querySelectorAll('input[name="reg-target-class"]');
-                    let allChecked = true;
-                    checkboxes.forEach(cb => {
-                        if (cb !== selectAllCb && !cb.checked) {
-                            allChecked = false;
-                        }
-                    });
-                    selectAllCb.checked = allChecked;
-                }
-            }
-        });
 
         async function handleRegisterSubmit(e) {
             e.preventDefault();
@@ -1567,21 +1545,7 @@
                 return;
             }
 
-            let targetStrs = "";
-            const selectAllCb = document.getElementById('reg-select-all');
-
-            // 2번 요구사항: 전체를 체크한 경우 학년 전체로 들어가지 않고, 선택된 개별 분반 이름들로 구성되게 처리
-            if (selectAllCb && selectAllCb.checked) {
-                let actualClasses = [];
-                document.querySelectorAll('input[name="reg-target-class"]').forEach(cb => {
-                    if (cb !== selectAllCb && cb.checked) {
-                        actualClasses.push(cb.value);
-                    }
-                });
-                targetStrs = actualClasses.join(', ');
-            } else {
-                targetStrs = Array.from(checkedTargets).map(cb => cb.value).join(', ');
-            }
+            let targetStrs = Array.from(checkedTargets).map(cb => cb.value).join(', ');
 
             if (isEditClaimMode) {
                 const claimItem = {
