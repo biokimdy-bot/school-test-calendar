@@ -17,8 +17,8 @@
     <!-- 토스트 알림 메시지 컨테이너 -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 max-w-sm"></div>
 
-    <!-- 커스텀 삭제/확인 비밀번호 모달 -->
-    <div id="confirm-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
+    <!-- 커스텀 삭제/확인 비밀번호 모달 (z-index를 z-[60]으로 올려 상세 모달 위에 정상 표시) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[60] p-4">
         <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
             <h3 id="confirm-modal-title" class="text-lg font-black text-slate-800 mb-2">일정 삭제 확인</h3>
             <p id="confirm-modal-msg" class="text-xs text-slate-500 mb-4">작성 비밀번호를 입력해주세요.</p>
@@ -28,6 +28,23 @@
             <div class="flex justify-end gap-2">
                 <button onclick="closeModal('confirm-modal')" class="bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">취소</button>
                 <button id="confirm-modal-submit-btn" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5">삭제 완료</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 기존 가입 중복 안내 및 비밀번호 찾기(초기화 재가입) 모달 -->
+    <div id="duplicate-signup-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[70] p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center">
+            <div class="text-3xl mb-2">⚠️</div>
+            <h3 class="text-lg font-black text-slate-800 mb-2">이미 존재하는 학번입니다</h3>
+            <p class="text-xs text-slate-500 mb-5">입력하신 학번은 이미 가입되어 있습니다. 비밀번호를 잊으셨나요?</p>
+            <div class="flex flex-col gap-2">
+                <button onclick="handleResetAndRe-register()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs transition">
+                    비밀번호를 잊어버렸나요?<br><span class="text-[10px] font-normal opacity-90">(기존 데이터를 지우고 다시 가입하기)</span>
+                </button>
+                <button onclick="closeModal('duplicate-signup-modal')" class="w-full bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition">
+                    닫기
+                </button>
             </div>
         </div>
     </div>
@@ -46,15 +63,6 @@
                     <label class="block text-xs font-bold text-slate-600 mb-1">학번 5자리 *</label>
                     <input type="text" id="login-student-id" maxlength="5" placeholder="예: 20105" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-blue-500">
                     <p class="text-[10px] text-slate-400 mt-1">※ 학번 가운데 자리가 반으로 자동 인식됩니다 (예: 20105 → 2학년 1반)</p>
-                    
-                    <!-- 학번 중복 경고 및 비밀번호 찾기 안내 영역 -->
-                    <div id="signup-duplicate-warning" class="hidden mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                        <p class="font-bold">⚠️ 이미 존재하는 학번입니다.</p>
-                        <p class="text-[11px] text-amber-700 mt-0.5">기존에 가입된 학번입니다. 비밀번호가 기억나지 않으시나요?</p>
-                        <button type="button" onclick="startResetAndSignup()" class="mt-2 w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition shadow-sm">
-                            🔑 비밀번호를 잊어버렸나요? (초기화 후 재가입)
-                        </button>
-                    </div>
                 </div>
 
                 <div id="login-pw-field">
@@ -97,21 +105,30 @@
                     <button onclick="logout()" class="text-rose-500 hover:underline text-[11px] ml-1">로그아웃</button>
                 </div>
                 
-                <button id="login-open-btn" onclick="openLoginModal('login')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
-                    🔐 로그인
-                </button>
+                <!-- 비활성화 상태에서 클릭 이벤트를 감지할 수 있도록 래퍼(div) 감싸기 -->
+                <div onclick="handleDisabledButtonClick(event)" class="inline-block">
+                    <button id="login-open-btn" onclick="openLoginModal('login')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
+                        🔐 로그인
+                    </button>
+                </div>
 
-                <button id="signup-open-btn" onclick="openLoginModal('signup')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
-                    ✨ 간편 가입
-                </button>
+                <div onclick="handleDisabledButtonClick(event)" class="inline-block">
+                    <button id="signup-open-btn" onclick="openLoginModal('signup')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
+                        ✨ 간편 가입
+                    </button>
+                </div>
 
-                <button id="register-open-btn" onclick="openRegisterModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
-                    ➕ 수행평가 등록
-                </button>
+                <div onclick="handleDisabledButtonClick(event)" class="inline-block">
+                    <button id="register-open-btn" onclick="openRegisterModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-lg shadow transition transform active:scale-95 flex items-center gap-1 text-sm">
+                        ➕ 수행평가 등록
+                    </button>
+                </div>
 
-                <button id="report-open-btn" onclick="openReportModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg shadow text-sm" title="오류 신고">
-                    ⚠️ 오류신고
-                </button>
+                <div onclick="handleDisabledButtonClick(event)" class="inline-block">
+                    <button id="report-open-btn" onclick="openReportModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg shadow text-sm" title="오류 신고">
+                        ⚠️ 오류신고
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -129,7 +146,7 @@
 
                 <div class="flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                     <label class="text-xs font-bold text-slate-600">반:</label>
-                    <select id="filter-class" onchange="renderMainView()" class="bg-transparent text-sm font-semibold focus:outline-none">
+                    <select id="filter-class" onchange="handleClassFilterChange()" class="bg-transparent text-sm font-semibold focus:outline-none">
                         <option value="all">전체 반</option>
                         <option value="1">1반</option>
                         <option value="2">2반</option>
@@ -170,18 +187,19 @@
 
         <!-- D-Day 임박 수행평가 위젯 대시보드 -->
         <div class="mb-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-4 rounded-2xl border border-blue-200 shadow-sm transition-all duration-300">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <h3 class="text-sm font-black text-blue-900 flex items-center gap-2">
-                        🔥 다가오는 수행평가 D-Day 리스트
+            <div class="flex justify-between items-center gap-2">
+                <!-- flex-wrap 및 text-xs~sm 반응형 텍스트 크기 조정을 적용하여 한 줄 유지 -->
+                <div class="flex items-center gap-1.5 min-w-0">
+                    <h3 class="text-xs sm:text-sm font-black text-blue-900 flex items-center gap-1 whitespace-nowrap">
+                        🔥 D-Day 리스트
                     </h3>
-                    <span id="dday-count-badge" class="bg-blue-600 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full">0건</span>
+                    <span id="dday-count-badge" class="bg-blue-600 text-white text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">0건</span>
                 </div>
-                <button onclick="toggleDDayWidget()" id="dday-toggle-btn" class="text-xs font-bold text-blue-700 hover:text-blue-900 bg-white/80 px-2.5 py-1 rounded-lg border border-blue-200 shadow-sm transition">
-                    ▲ 접기
+                <button onclick="toggleDDayWidget()" id="dday-toggle-btn" class="text-[11px] sm:text-xs font-bold text-blue-700 hover:text-blue-900 bg-white/80 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition whitespace-nowrap shrink-0">
+                    ▼ 보기
                 </button>
             </div>
-            <div id="dday-widget-container" class="mt-3 flex overflow-x-auto gap-3 pb-2 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
+            <div id="dday-widget-container" class="mt-3 flex overflow-x-auto gap-3 pb-2 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent hidden">
             </div>
         </div>
 
@@ -394,9 +412,8 @@
         let currentUser = null; 
         let currentModalMode = 'login';
         let currentViewMode = 'calendar';
-        let isDDayWidgetExpanded = true;
+        let isDDayWidgetExpanded = false;
         let isDataLoaded = false;
-        let isResetMode = false; // 비밀번호 잊음(초기화) 상태 플래그
 
         function getTodayDateString() {
             const today = new Date();
@@ -434,6 +451,14 @@
                     }
                 }
             });
+        }
+
+        // 수정요청 2번 반영: 비활성화된 버튼 클릭 시 "데이터 로딩 중입니다." 안내 메시지 출력
+        function handleDisabledButtonClick(event) {
+            if (!isDataLoaded) {
+                showToast('데이터 로딩 중입니다.', 'error');
+                event.stopPropagation();
+            }
         }
 
         window.onload = function() {
@@ -483,9 +508,6 @@
             }
         }
 
-        /* ----------------------------------------------------
-           요청 2: 리스트 보기 누르면 D-Day 리스트 자동 접기
-        ---------------------------------------------------- */
         function setViewMode(mode) {
             currentViewMode = mode;
             const calBtn = document.getElementById('view-mode-calendar-btn');
@@ -503,11 +525,6 @@
                 calBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-800";
                 calGrid.classList.add('hidden');
                 listContainer.classList.remove('hidden');
-
-                // 리스트 보기 전환 시 D-Day 위젯 자동 접기
-                if (isDDayWidgetExpanded) {
-                    toggleDDayWidget();
-                }
             }
             renderMainView();
         }
@@ -528,7 +545,7 @@
 
         function checkDataLoadedOrWarn() {
             if (!isDataLoaded) {
-                showToast('데이터를 불러오는 중입니다.', 'error');
+                showToast('데이터 로딩 중입니다.', 'error');
                 return false;
             }
             return true;
@@ -538,7 +555,6 @@
             if (!checkDataLoadedOrWarn()) return;
 
             currentModalMode = mode;
-            isResetMode = false;
             const screen = document.getElementById('login-screen');
             const titleEl = document.getElementById('login-modal-title');
             const descEl = document.getElementById('login-modal-desc');
@@ -546,12 +562,10 @@
             const stepContainer = document.getElementById('subject-selection-step');
             const idField = document.getElementById('login-id-field');
             const pwField = document.getElementById('login-pw-field');
-            const dupWarning = document.getElementById('signup-duplicate-warning');
 
             screen.classList.remove('hidden');
             idField.classList.remove('hidden');
             pwField.classList.remove('hidden');
-            dupWarning.classList.add('hidden');
 
             document.getElementById('login-student-id').value = '';
             document.getElementById('login-password').value = '';
@@ -584,53 +598,13 @@
             openLoginModal('edit');
         }
 
-        /* ----------------------------------------------------
-           요청 3: 회원가입 시 학번 중복 감지 및 비밀번호 찾기(재가입) 처리
-        ---------------------------------------------------- */
         function setupLoginInputListener() {
             const studentIdInput = document.getElementById('login-student-id');
             studentIdInput.addEventListener('input', () => {
                 if (currentModalMode === 'signup') {
-                    checkSignupDuplicate();
                     triggerSubjectSelectionBuild();
                 }
             });
-        }
-
-        function checkSignupDuplicate() {
-            const studentIdVal = document.getElementById('login-student-id').value.trim();
-            const dupWarning = document.getElementById('signup-duplicate-warning');
-            const submitBtn = document.getElementById('login-submit-btn');
-
-            if (studentIdVal.length === 5 && registeredUsersDB[studentIdVal] && !isResetMode) {
-                dupWarning.classList.remove('hidden');
-                submitBtn.disabled = true;
-                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            } else {
-                dupWarning.classList.add('hidden');
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-        }
-
-        function startResetAndSignup() {
-            const studentIdVal = document.getElementById('login-student-id').value.trim();
-            if (!confirm(`${studentIdVal} 학번의 기존 등록 데이터를 삭제하고 새 비밀번호 및 수강 과목으로 재가입하시겠습니까?`)) {
-                return;
-            }
-
-            isResetMode = true;
-            document.getElementById('signup-duplicate-warning').classList.add('hidden');
-            
-            const submitBtn = document.getElementById('login-submit-btn');
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            submitBtn.innerHTML = '기존 정보 초기화 후 재가입';
-
-            const descEl = document.getElementById('login-modal-desc');
-            descEl.textContent = `${studentIdVal} 학번의 새로운 비밀번호와 수강과목을 설정해주세요.`;
-            
-            showToast(`${studentIdVal} 학번 재가입 모드로 전환되었습니다.`, 'info');
         }
 
         function triggerSubjectSelectionBuildForEdit() {
@@ -818,174 +792,209 @@
             }
         }
 
+        function handleResetAndRe-register() {
+            const studentId = document.getElementById('login-student-id').value.trim();
+            closeModal('duplicate-signup-modal');
+            
+            if (confirm("기존 학번의 데이터를 모두 지우고 다시 가입하시겠습니까?")) {
+                delete registeredUsersDB[studentId];
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'deleteUser', studentId: studentId })
+                    }).catch(err => console.error("사용자 데이터 삭제 통신 오류:", err));
+                }
+                executeSignupProcess();
+            }
+        }
+
         async function handleLoginSubmit(e) {
             e.preventDefault();
+
+            const studentId = document.getElementById('login-student-id').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            if (studentId.length < 5) {
+                alert("⚠️ 올바른 학번 5자리를 입력해 주세요 (예: 20105).");
+                return;
+            }
+
+            let existingUser = registeredUsersDB[studentId];
+
+            if (currentModalMode === 'login') {
+                if (!existingUser) {
+                    alert("⚠️ 등록되지 않은 학번입니다. 먼저 [간편 가입]을 진행해 주세요.");
+                    return;
+                }
+                if (existingUser.password !== password) {
+                    alert("🔒 비밀번호가 일치하지 않습니다. 다시 확인 후 입력해 주세요.");
+                    return;
+                }
+                currentUser = existingUser;
+                localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+                closeModal('login-screen');
+                applyUserSession();
+                showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
+            } else if (currentModalMode === 'signup') {
+                if (existingUser) {
+                    document.getElementById('duplicate-signup-modal').classList.remove('hidden');
+                    return;
+                }
+                executeSignupProcess();
+            } else if (currentModalMode === 'edit') {
+                executeEditProcess();
+            }
+        }
+
+        async function executeSignupProcess() {
+            const submitBtn = document.getElementById('login-submit-btn');
+            const originalBtnHtml = submitBtn.innerHTML;
+            const studentId = document.getElementById('login-student-id').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            const gradeNum = studentId.charAt(0);
+            let gradeStr = gradeNum === '1' ? '1학년' : gradeNum === '2' ? '2학년' : gradeNum === '3' ? '3학년' : '';
+            let classNum = String(parseInt(studentId.substring(1, 3), 10)) || "1";
 
             const validateSelectionFilled = (gradeStr) => {
                 if (gradeStr === '2학년') {
                     const slotSelects = document.querySelectorAll('select[name="login-slot-course"]');
                     for (let sel of slotSelects) {
-                        if (!sel.value) {
-                            alert("⚠️ 수강 과목을 선택해 주세요.");
-                            sel.focus();
-                            return false;
-                        }
+                        if (!sel.value) { alert("⚠️ 수강 과목을 선택해 주세요."); sel.focus(); return false; }
                     }
                 } else if (gradeStr === '3학년') {
                     const blockSelects = document.querySelectorAll('select[name="login-grade3-block"]');
                     for (let sel of blockSelects) {
-                        if (!sel.value) {
-                            alert("⚠️ 수강 과목을 선택해 주세요.");
-                            sel.focus();
-                            return false;
-                        }
+                        if (!sel.value) { alert("⚠️ 수강 과목을 선택해 주세요."); sel.focus(); return false; }
                     }
                 }
                 return true;
             };
 
-            const submitBtn = document.getElementById('login-submit-btn');
-            const originalBtnHtml = submitBtn.innerHTML;
+            if (!validateSelectionFilled(gradeStr)) return;
 
             try {
-                if (currentModalMode === 'edit') {
-                    let studentId = currentUser.studentId;
-                    let gradeStr = currentUser.gradeStr;
-                    let classNum = currentUser.classNum;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
 
-                    if (!validateSelectionFilled(gradeStr)) {
-                        return;
-                    }
+                let collectedCourses = [];
+                if (gradeStr === '1학년') {
+                    ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학"].forEach(s => collectedCourses.push(`${s}:전체`));
+                    const artMusicRadio = document.querySelector('input[name="login-art-music"]:checked');
+                    if (artMusicRadio) collectedCourses.push(artMusicRadio.value);
+                } else if (gradeStr === '2학년') {
+                    let langSub = parseInt(classNum) === 7 ? "중국어" : "일본어";
+                    [ "미적분1", "화법과 언어", "영어2", "체육", langSub ].forEach(s => collectedCourses.push(`${s}:전체`));
+                    const artMusicRadio2 = document.querySelector('input[name="login-art-music-2"]:checked');
+                    if (artMusicRadio2) collectedCourses.push(artMusicRadio2.value);
 
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
-
-                    let collectedCourses = [];
-                    if (gradeStr === '1학년') {
-                        ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학"].forEach(s => collectedCourses.push(`${s}:전체`));
-                        const artMusicRadio = document.querySelector('input[name="login-art-music"]:checked');
-                        if (artMusicRadio) collectedCourses.push(artMusicRadio.value);
-                    } else if (gradeStr === '2학년') {
-                        let langSub = parseInt(classNum) === 7 ? "중국어" : "일본어";
-                        [ "미적분1", "화법과 언어", "영어2", "체육", langSub ].forEach(s => collectedCourses.push(`${s}:전체`));
-                        const artMusicRadio2 = document.querySelector('input[name="login-art-music-2"]:checked');
-                        if (artMusicRadio2) collectedCourses.push(artMusicRadio2.value);
-
-                        document.querySelectorAll('select[name="login-slot-course"]').forEach(sel => {
-                            if (sel.value) collectedCourses.push(sel.value);
-                        });
-                    } else if (gradeStr === '3학년') {
-                        document.querySelectorAll('select[name="login-grade3-block"]').forEach(sel => {
-                            if (sel.value) collectedCourses.push(sel.value);
-                        });
-                    }
-
-                    currentUser.enrolledCourses = collectedCourses;
-                    registeredUsersDB[studentId] = currentUser;
-
-                    if (GAS_WEB_APP_URL) {
-                        fetch(GAS_WEB_APP_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'registerUser', user: currentUser })
-                        }).catch(err => console.error("수강 과목 수정 저장 통신 오류:", err));
-                    }
-
-                    localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
-                    closeModal('login-screen');
-                    applyUserSession();
-                    showToast('수강 과목 정보가 정상적으로 수정되었습니다.', 'success');
-                    return;
+                    document.querySelectorAll('select[name="login-slot-course"]').forEach(sel => {
+                        if (sel.value) collectedCourses.push(sel.value);
+                    });
+                } else if (gradeStr === '3학년') {
+                    document.querySelectorAll('select[name="login-grade3-block"]').forEach(sel => {
+                        if (sel.value) collectedCourses.push(sel.value);
+                    });
                 }
 
-                const studentId = document.getElementById('login-student-id').value.trim();
-                const password = document.getElementById('login-password').value.trim();
+                currentUser = {
+                    studentId,
+                    gradeStr,
+                    classNum,
+                    password,
+                    enrolledCourses: collectedCourses
+                };
 
-                if (studentId.length < 5) {
-                    alert("⚠️ 올바른 학번 5자리를 입력해 주세요 (예: 20105).");
-                    return;
-                }
+                registeredUsersDB[studentId] = currentUser;
 
-                if (!password) {
-                    alert("⚠️ 비밀번호를 입력해 주세요.");
-                    return;
-                }
-
-                const gradeNum = studentId.charAt(0);
-                let gradeStr = gradeNum === '1' ? '1학년' : gradeNum === '2' ? '2학년' : gradeNum === '3' ? '3학년' : '';
-                let classNum = String(parseInt(studentId.substring(1, 3), 10)) || "1";
-
-                let existingUser = registeredUsersDB[studentId];
-
-                if (currentModalMode === 'login') {
-                    if (!existingUser) {
-                        alert("⚠️ 등록되지 않은 학번입니다. 먼저 [간편 가입]을 진행해 주세요.");
-                        return;
-                    }
-                    if (existingUser.password !== password) {
-                        alert("🔒 비밀번호가 일치하지 않습니다. 다시 확인 후 입력해 주세요.");
-                        return;
-                    }
-                    currentUser = existingUser;
-                } else {
-                    if (existingUser && !isResetMode) {
-                        checkSignupDuplicate();
-                        return;
-                    }
-
-                    if (!validateSelectionFilled(gradeStr)) {
-                        return;
-                    }
-
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
-
-                    let collectedCourses = [];
-                    if (gradeStr === '1학년') {
-                        ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학"].forEach(s => collectedCourses.push(`${s}:전체`));
-                        const artMusicRadio = document.querySelector('input[name="login-art-music"]:checked');
-                        if (artMusicRadio) collectedCourses.push(artMusicRadio.value);
-                    } else if (gradeStr === '2학년') {
-                        let langSub = parseInt(classNum) === 7 ? "중국어" : "일본어";
-                        [ "미적분1", "화법과 언어", "영어2", "체육", langSub ].forEach(s => collectedCourses.push(`${s}:전체`));
-                        const artMusicRadio2 = document.querySelector('input[name="login-art-music-2"]:checked');
-                        if (artMusicRadio2) collectedCourses.push(artMusicRadio2.value);
-
-                        document.querySelectorAll('select[name="login-slot-course"]').forEach(sel => {
-                            if (sel.value) collectedCourses.push(sel.value);
-                        });
-                    } else if (gradeStr === '3학년') {
-                        document.querySelectorAll('select[name="login-grade3-block"]').forEach(sel => {
-                            if (sel.value) collectedCourses.push(sel.value);
-                        });
-                    }
-
-                    currentUser = {
-                        studentId,
-                        gradeStr,
-                        classNum,
-                        password,
-                        enrolledCourses: collectedCourses
-                    };
-
-                    registeredUsersDB[studentId] = currentUser;
-
-                    if (GAS_WEB_APP_URL) {
-                        fetch(GAS_WEB_APP_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'registerUser', user: currentUser })
-                        }).catch(err => console.error("회원 정보 저장 통신 오류:", err));
-                    }
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'registerUser', user: currentUser })
+                    }).catch(err => console.error("회원 정보 저장 통신 오류:", err));
                 }
 
                 localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
                 closeModal('login-screen');
                 applyUserSession();
-                showToast(isResetMode ? `${currentUser.studentId}님 재가입 완료 되었습니다!` : `${currentUser.studentId}님 환영합니다!`, 'success');
-                isResetMode = false;
+                showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
+            } catch (err) {
+                console.error(err);
+                alert("처리 도중 오류가 발생했습니다: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+            }
+        }
+
+        async function executeEditProcess() {
+            const submitBtn = document.getElementById('login-submit-btn');
+            const originalBtnHtml = submitBtn.innerHTML;
+            let studentId = currentUser.studentId;
+            let gradeStr = currentUser.gradeStr;
+            let classNum = currentUser.classNum;
+
+            const validateSelectionFilled = (gradeStr) => {
+                if (gradeStr === '2학년') {
+                    const slotSelects = document.querySelectorAll('select[name="login-slot-course"]');
+                    for (let sel of slotSelects) {
+                        if (!sel.value) { alert("⚠️ 수강 과목을 선택해 주세요."); sel.focus(); return false; }
+                    }
+                } else if (gradeStr === '3학년') {
+                    const blockSelects = document.querySelectorAll('select[name="login-grade3-block"]');
+                    for (let sel of blockSelects) {
+                        if (!sel.value) { alert("⚠️ 수강 과목을 선택해 주세요."); sel.focus(); return false; }
+                    }
+                }
+                return true;
+            };
+
+            if (!validateSelectionFilled(gradeStr)) return;
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 처리 중...`;
+
+                let collectedCourses = [];
+                if (gradeStr === '1학년') {
+                    ["공통국어2", "공통수학2", "공통영어2", "한국사2", "통합과학2", "통합사회2", "과학탐구실험2", "스포츠과학"].forEach(s => collectedCourses.push(`${s}:전체`));
+                    const artMusicRadio = document.querySelector('input[name="login-art-music"]:checked');
+                    if (artMusicRadio) collectedCourses.push(artMusicRadio.value);
+                } else if (gradeStr === '2학년') {
+                    let langSub = parseInt(classNum) === 7 ? "중국어" : "일본어";
+                    [ "미적분1", "화법과 언어", "영어2", "체육", langSub ].forEach(s => collectedCourses.push(`${s}:전체`));
+                    const artMusicRadio2 = document.querySelector('input[name="login-art-music-2"]:checked');
+                    if (artMusicRadio2) collectedCourses.push(artMusicRadio2.value);
+
+                    document.querySelectorAll('select[name="login-slot-course"]').forEach(sel => {
+                        if (sel.value) collectedCourses.push(sel.value);
+                    });
+                } else if (gradeStr === '3학년') {
+                    document.querySelectorAll('select[name="login-grade3-block"]').forEach(sel => {
+                        if (sel.value) collectedCourses.push(sel.value);
+                    });
+                }
+
+                currentUser.enrolledCourses = collectedCourses;
+                registeredUsersDB[studentId] = currentUser;
+
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'registerUser', user: currentUser })
+                    }).catch(err => console.error("수강 과목 수정 저장 통신 오류:", err));
+                }
+
+                localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+                closeModal('login-screen');
+                applyUserSession();
+                showToast('수강 과목 정보가 정상적으로 수정되었습니다.', 'success');
             } catch (err) {
                 console.error(err);
                 alert("처리 도중 오류가 발생했습니다: " + err.message);
@@ -1041,18 +1050,33 @@
             const subjectSelect = document.getElementById('filter-subject');
             let availableSubjects = new Set();
             
-            if (currentUser && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
-                currentUser.enrolledCourses.forEach(item => availableSubjects.add(item.split(':')[0]));
-            } else {
-                if (filterGrade === 'all') {
-                    Object.values(COURSE_DATA).forEach(obj => Object.keys(obj).forEach(sub => availableSubjects.add(sub)));
-                } else if (COURSE_DATA[filterGrade]) {
-                    Object.keys(COURSE_DATA[filterGrade]).forEach(sub => availableSubjects.add(sub));
+            let filteredEventsForSubject = sampleEvents.filter(e => {
+                if (filterGrade !== 'all' && !e.target.includes(filterGrade)) return false;
+                const selectedClass = document.getElementById('filter-class').value;
+                if (selectedClass !== 'all') {
+                    const classPattern = `${selectedClass}반`;
+                    const isNumericClassEvent = /\d+반/.test(e.target);
+                    if (!e.target.includes('전체') && !e.target.includes(classPattern) && isNumericClassEvent) return false;
+                }
+                return true;
+            });
+
+            filteredEventsForSubject.forEach(e => availableSubjects.add(e.subject));
+
+            if (availableSubjects.size === 0) {
+                if (currentUser && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
+                    currentUser.enrolledCourses.forEach(item => availableSubjects.add(item.split(':')[0]));
+                } else {
+                    if (filterGrade === 'all') {
+                        Object.values(COURSE_DATA).forEach(obj => Object.keys(obj).forEach(sub => availableSubjects.add(sub)));
+                    } else if (COURSE_DATA[filterGrade]) {
+                        Object.keys(COURSE_DATA[filterGrade]).forEach(sub => availableSubjects.add(sub));
+                    }
                 }
             }
 
             subjectSelect.innerHTML = '<option value="all">전체 과목</option>';
-            availableSubjects.forEach(sub => {
+            Array.from(availableSubjects).sort().forEach(sub => {
                 const opt = document.createElement('option');
                 opt.value = sub;
                 opt.textContent = sub;
@@ -1064,6 +1088,11 @@
             updateFilterSubjects();
             renderMainView();
             renderDDayWidget();
+        }
+
+        function handleClassFilterChange() {
+            updateFilterSubjects();
+            renderMainView();
         }
 
         function isEventMatchingFilter(e) {
@@ -1215,9 +1244,6 @@
             }
         }
 
-        /* ----------------------------------------------------
-           요청 1: 리스트 보기 "오늘" 뱃지 글자 크기 조절 (줄바꿈 방지)
-        ---------------------------------------------------- */
         function renderListView() {
             const listContainer = document.getElementById('list-view-container');
             const monthText = document.getElementById('current-month-year');
@@ -1246,23 +1272,23 @@
                 card.onclick = () => openDetailModal(e);
 
                 card.innerHTML = `
-                    <div class="flex items-center gap-3 w-full md:w-auto">
-                        <div class="text-center min-w-[70px] bg-slate-100 p-2 rounded-xl border border-slate-200 flex-shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div class="text-center min-w-[70px] bg-slate-100 p-2 rounded-xl border border-slate-200">
                             <span class="block text-[10px] font-extrabold text-slate-500">${e.date.substring(5, 7)}월</span>
                             <span class="block text-lg font-black text-slate-800">${e.date.substring(8, 10)}일</span>
                         </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-                                <span class="text-xs font-bold text-white px-2 py-0.5 rounded-md flex-shrink-0" style="background-color: ${e.color || '#3b82f6'}">${e.subject}</span>
-                                ${isToday ? '<span class="bg-rose-500 text-white text-[10px] sm:text-xs font-black px-1.5 py-0.5 rounded-full animate-pulse whitespace-nowrap leading-none tracking-tighter flex-shrink-0">오늘</span>' : ''}
-                                <span class="text-xs font-semibold text-slate-500 truncate">🎯 ${e.target}</span>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs font-bold text-white px-2 py-0.5 rounded-md" style="background-color: ${e.color || '#3b82f6'}">${e.subject}</span>
+                                ${isToday ? '<span class="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">오늘</span>' : ''}
+                                <span class="text-xs font-semibold text-slate-500">🎯 ${e.target}</span>
                             </div>
-                            <h4 class="text-sm font-bold text-slate-800 truncate">${e.title}</h4>
+                            <h4 class="text-sm font-bold text-slate-800">${e.title}</h4>
                             ${e.desc ? `<p class="text-xs text-slate-500 mt-1 line-clamp-1">${e.desc}</p>` : ''}
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 self-end md:self-center flex-shrink-0">
-                        <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 whitespace-nowrap">상세 보기 ▶</span>
+                    <div class="flex items-center gap-2 self-end md:self-center">
+                        <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">상세 보기 ▶</span>
                     </div>
                 `;
                 listContainer.appendChild(card);
@@ -1300,7 +1326,7 @@
             numDiv.className = 'flex justify-between items-center text-xs font-bold text-slate-700 mb-1 px-1';
             
             if (isToday) {
-                numDiv.innerHTML = `<span>${dayNum}</span><span class="bg-blue-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full whitespace-nowrap">TODAY</span>`;
+                numDiv.innerHTML = `<span>${dayNum}</span><span class="bg-blue-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">TODAY</span>`;
             } else {
                 numDiv.textContent = dayNum;
             }
@@ -1489,6 +1515,9 @@
             if (!checkDataLoadedOrWarn()) return;
 
             document.getElementById('confirm-modal-input').value = '';
+            
+            // 수정요청 1번 반영: 상세 모달을 닫은 후 확인 모달을 열어 레이블 겹침 및 입력 불가 문제 해결
+            closeModal('detail-modal');
             document.getElementById('confirm-modal').classList.remove('hidden');
 
             document.getElementById('confirm-modal-submit-btn').onclick = async () => {
@@ -1520,7 +1549,6 @@
                     }
 
                     closeModal('confirm-modal');
-                    closeModal('detail-modal');
                     renderMainView();
                     renderDDayWidget();
 
