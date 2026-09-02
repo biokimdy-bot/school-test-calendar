@@ -83,7 +83,7 @@
         </div>
     </div>
 
-    <!-- 관리자 전용 대시보드 (Reports & Claims 승인/확인 완료 관리 패널) -->
+    <!-- 관리자 전용 대시보드 (새로고침 버튼 및 상태 필터링 추가) -->
     <div id="admin-dashboard-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[90] p-4 hidden">
         <div class="bg-white rounded-3xl w-full max-w-4xl p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center pb-4 border-b border-slate-200 mb-4">
@@ -94,13 +94,31 @@
                         <p class="text-xs text-slate-500">학생 오류 신고(Reports) 및 수정 요청(Claim) 내역 관리</p>
                     </div>
                 </div>
-                <button onclick="closeModal('admin-dashboard-modal')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition">닫기 ✕</button>
+                <div class="flex items-center gap-2">
+                    <!-- 새로고침 버튼 추가 -->
+                    <button onclick="fetchDataFromGas(); showToast('관리자 데이터를 새로고침했습니다.', 'success');" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                        🔄 새로고침
+                    </button>
+                    <button onclick="closeModal('admin-dashboard-modal')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition">닫기 ✕</button>
+                </div>
             </div>
 
-            <!-- 탭 전환 -->
-            <div class="flex gap-2 mb-4">
-                <button onclick="switchAdminTab('reports')" id="admin-tab-reports-btn" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition">오류 신고 내역 (<span id="admin-report-count">0</span>)</button>
-                <button onclick="switchAdminTab('claims')" id="admin-tab-claims-btn" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition">수정 요청 내역 (<span id="admin-claim-count">0</span>)</button>
+            <!-- 탭 전환 및 상태 필터링 영역 -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 bg-slate-100 p-3 rounded-2xl">
+                <div class="flex gap-2">
+                    <button onclick="switchAdminTab('reports')" id="admin-tab-reports-btn" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition">오류 신고 내역 (<span id="admin-report-count">0</span>)</button>
+                    <button onclick="switchAdminTab('claims')" id="admin-tab-claims-btn" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition">수정 요청 내역 (<span id="admin-claim-count">0</span>)</button>
+                </div>
+                <!-- 상태별 필터링 기능 추가 -->
+                <div class="flex items-center gap-1 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
+                    <label class="text-xs font-bold text-slate-600">상태 필터:</label>
+                    <select id="admin-filter-status" onchange="renderAdminList()" class="bg-transparent text-xs font-semibold focus:outline-none">
+                        <option value="all">전체 상태</option>
+                        <option value="접수됨">접수됨</option>
+                        <option value="확인 완료">확인 완료</option>
+                        <option value="승인됨">승인됨</option>
+                    </select>
+                </div>
             </div>
 
             <!-- 목록 컨테이너 -->
@@ -235,7 +253,7 @@
         </div>
     </div>
 
-    <!-- 1. 수행평가 등록 / 수정 요청 모달 (통합 공용 폼) -->
+    <!-- 1. 수행평가 등록 / 수정 요청 모달 (통합 공용 폼 - 비밀번호 입력 생략 가능하도록 수정) -->
     <div id="register-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
             <h3 id="register-modal-heading" class="text-xl font-black text-blue-600 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
@@ -278,9 +296,10 @@
                         <label class="block text-xs font-bold text-slate-600 mb-1">평가 날짜 *</label>
                         <input type="date" id="reg-date" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">작성자 비밀번호 (삭제용) *</label>
-                        <input type="password" id="reg-password" required placeholder="비밀번호 4자리 이상" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                    <div id="reg-password-field-container">
+                        <label id="reg-password-label" class="block text-xs font-bold text-slate-600 mb-1">작성자 비밀번호 (삭제용) *</label>
+                        <input type="password" id="reg-password" placeholder="비밀번호 4자리 이상" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                        <p id="reg-password-notice" class="text-[10px] text-slate-400 mt-1 hidden">※ 수정 요청 시 비밀번호를 입력하지 않으면 기존 등록된 비밀번호가 그대로 유지됩니다.</p>
                     </div>
                 </div>
 
@@ -346,7 +365,7 @@
 
     <script>
         const ADMIN_MASTER_PASSWORD = "9999";
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzXpsYfQES6Ptnh0gJVAQjGnzmjsReQ9hR-j8HIRwv0HXb8aw4csfe4LPPfsG5WWJc/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxeeunLDnAgXQil_NxuaK_up2BWYnufQRWwvQFERv4wKV2CC2XSC_rdLtqBb9kl4Ryk/exec';
 
         const COURSE_DATA = {
             "1학년": {
@@ -1228,188 +1247,235 @@
             }
 
             if (currentUser && !currentUser.isAdmin && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
-                const matchesUserCourse = currentUser.enrolledCourses.some(courseStr => {
-                    const [cSub, cTarget] = courseStr.split(':');
-                    if (cSub !== e.subject) return false;
-                    if (cTarget === '전체' || e.target.includes('전체')) return true;
-
-                    const cleanUserClass = cTarget.replace(/\d+학년\s*/g, '').trim();
-                    const eventClasses = e.target.split(',').map(t => t.replace(/\d+학년\s*/g, '').trim());
-                    return eventClasses.includes(cleanUserClass) || e.target.includes(cleanUserClass);
+                let isMatchUserCourse = false;
+                currentUser.enrolledCourses.forEach(courseStr => {
+                    let parts = courseStr.split(':');
+                    let subName = parts[0];
+                    let targetInfo = parts[1];
+                    if (e.subject === subName) {
+                        if (targetInfo === '전체' || e.target.includes(targetInfo)) {
+                            isMatchUserCourse = true;
+                        }
+                    }
                 });
-
-                if (!matchesUserCourse) return false;
+                if (!isMatchUserCourse) return false;
             }
 
             return true;
         }
 
-        function renderDDayWidget() {
-            const widgetContainer = document.getElementById('dday-widget-container');
-            const countBadge = document.getElementById('dday-count-badge');
-            if (!widgetContainer) return;
-
-            widgetContainer.innerHTML = '';
-            const todayStr = getTodayDateString();
-            const today = new Date(todayStr + 'T00:00:00');
-
-            let filtered = sampleEvents.filter(e => isEventMatchingFilter(e)).map(e => {
-                const evDate = new Date(e.date + 'T00:00:00');
-                const diffDays = Math.ceil((evDate - today) / (1000 * 60 * 60 * 24));
-                return { ...e, diffDays };
-            }).filter(e => e.diffDays >= 0).sort((a, b) => a.diffDays - b.diffDays);
-
-            countBadge.textContent = `${filtered.length}건`;
-
-            if (filtered.length === 0) {
-                widgetContainer.innerHTML = `<p class="text-xs text-slate-400 py-1 px-2">진행 예정인 수행평가 일정이 없습니다.</p>`;
-                return;
-            }
-
-            filtered.forEach(e => {
-                const badgeColor = e.diffDays === 0 ? 'bg-rose-600 text-white animate-pulse' : e.diffDays <= 3 ? 'bg-amber-500 text-white' : 'bg-blue-100 text-blue-800';
-                const ddayText = e.diffDays === 0 ? 'D-Day' : `D-${e.diffDays}`;
-                
-                const card = document.createElement('div');
-                card.className = "bg-white p-3 rounded-xl border border-blue-100 shadow-sm min-w-[200px] max-w-[240px] flex flex-col justify-between cursor-pointer hover:shadow-md transition shrink-0";
-                card.onclick = () => openDetailModal(e.id);
-                card.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full ${badgeColor}">${ddayText}</span>
-                            <span class="text-[10px] text-slate-400">${e.date}</span>
-                        </div>
-                        <h4 class="text-xs font-bold text-slate-800 truncate">${e.title}</h4>
-                        <p class="text-[11px] text-blue-600 font-semibold truncate">${e.subject}</p>
-                    </div>
-                    <div class="mt-2 text-[10px] text-slate-500 truncate">🎯 ${e.target}</div>
-                `;
-                widgetContainer.appendChild(card);
-            });
-        }
-
-        function changeMonth(delta) {
-            currentDate.setMonth(currentDate.getMonth() + delta);
-            renderMainView();
-        }
-
         function renderMainView() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            document.getElementById('current-month-year').textContent = `${year}년 ${month + 1}월`;
-
             if (currentViewMode === 'calendar') {
-                renderCalendar(year, month);
+                renderCalendar();
             } else {
-                renderListView(year, month);
+                renderListView();
             }
         }
 
-        function renderCalendar(year, month) {
+        function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             grid.innerHTML = '';
 
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            document.getElementById('current-month-year').textContent = `${year}년 ${month + 1}월`;
+
             const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
-            daysOfWeek.forEach((day, idx) => {
-                const headerDiv = document.createElement('div');
-                headerDiv.className = `text-center font-black text-xs py-2 rounded-lg ${idx === 0 ? 'text-rose-500 bg-rose-50/50' : idx === 6 ? 'text-blue-500 bg-blue-50/50' : 'text-slate-600 bg-slate-100'}`;
-                headerDiv.textContent = day;
-                grid.appendChild(headerDiv);
+            daysOfWeek.forEach((day, index) => {
+                const header = document.createElement('div');
+                header.className = `text-center font-bold text-xs py-2 rounded-lg ${index === 0 ? 'text-rose-500 bg-rose-50/50' : index === 6 ? 'text-blue-500 bg-blue-50/50' : 'text-slate-600 bg-slate-100'}`;
+                header.textContent = day;
+                grid.appendChild(header);
             });
 
             const firstDayIndex = new Date(year, month, 1).getDay();
             const lastDay = new Date(year, month + 1, 0).getDate();
-            const todayStr = getTodayDateString();
 
             for (let i = 0; i < firstDayIndex; i++) {
                 const emptyCell = document.createElement('div');
-                emptyCell.className = "bg-slate-50/50 rounded-2xl min-h-[110px] border border-slate-100 opacity-40";
+                emptyCell.className = 'bg-slate-50/40 rounded-xl min-h-[100px] border border-dashed border-slate-200 opacity-40';
                 grid.appendChild(emptyCell);
             }
 
             for (let day = 1; day <= lastDay; day++) {
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const cell = document.createElement('div');
-                const isToday = (dateStr === todayStr);
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = dateStr === getTodayDateString();
 
-                cell.className = `bg-white rounded-2xl min-h-[110px] p-2 border transition flex flex-col gap-1 overflow-y-auto ${isToday ? 'border-blue-500 ring-2 ring-blue-400/20 bg-blue-50/10' : 'border-slate-200 hover:border-slate-300'}`;
+                cell.className = `bg-white rounded-xl min-h-[100px] p-2 border ${isToday ? 'border-blue-500 ring-2 ring-blue-100 bg-blue-50/20' : 'border-slate-200'} flex flex-col gap-1 transition hover:shadow-md`;
                 
                 const dayHeader = document.createElement('div');
-                dayHeader.className = "flex justify-between items-center text-xs font-bold mb-0.5";
-                
-                const dayNumSpan = document.createElement('span');
-                dayNumSpan.className = `w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white font-black' : 'text-slate-700'}`;
-                dayNumSpan.textContent = day;
-                dayHeader.appendChild(dayNumSpan);
+                dayHeader.className = 'flex justify-between items-center text-xs font-bold';
+                dayHeader.innerHTML = `<span class="${isToday ? 'bg-blue-600 text-white px-1.5 py-0.5 rounded-full' : 'text-slate-700'}">${day}</span>`;
                 cell.appendChild(dayHeader);
 
+                const eventsContainer = document.createElement('div');
+                eventsContainer.className = 'flex flex-col gap-1 overflow-y-auto max-h-[80px] scrollbar-none';
+
                 const dayEvents = sampleEvents.filter(e => e.date === dateStr && isEventMatchingFilter(e));
-                dayEvents.forEach(e => {
-                    const badge = document.createElement('div');
-                    badge.className = "text-[10px] font-bold px-2 py-1 rounded-lg text-white truncate shadow-sm cursor-pointer transition transform hover:scale-[1.02]";
-                    badge.style.backgroundColor = e.color || '#3b82f6';
-                    badge.title = `[${e.subject}] ${e.title} (${e.target})`;
-                    badge.textContent = `[${e.subject}] ${e.title}`;
-                    badge.onclick = (ev) => {
-                        ev.stopPropagation();
-                        openDetailModal(e.id);
-                    };
-                    cell.appendChild(badge);
+                dayEvents.forEach(ev => {
+                    const pill = document.createElement('button');
+                    pill.onclick = () => openDetailModal(ev);
+                    pill.className = 'text-left text-[10px] font-bold px-2 py-1 rounded-lg text-white truncate shadow-sm transition transform hover:scale-[1.02] active:scale-95';
+                    pill.style.backgroundColor = ev.color || '#3b82f6';
+                    pill.title = `[${ev.subject}] ${ev.title} (${ev.target})`;
+                    pill.textContent = `[${ev.subject}] ${ev.title}`;
+                    eventsContainer.appendChild(pill);
                 });
 
+                cell.appendChild(eventsContainer);
                 grid.appendChild(cell);
             }
         }
 
-        function renderListView(year, month) {
+        function renderListView() {
             const container = document.getElementById('list-view-container');
             container.innerHTML = '';
 
-            let filtered = sampleEvents.filter(e => {
-                const [eYear, eMonth] = e.date.split('-').map(Number);
-                if (eYear !== year || eMonth !== month + 1) return false;
-                return isEventMatchingFilter(e);
-            }).sort((a, b) => a.date.localeCompare(b.date));
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            document.getElementById('current-month-year').textContent = `${year}년 ${month + 1}월`;
 
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-xs">해당 월에 조회되는 수행평가 일정이 없습니다.</div>`;
+            const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+            const monthEvents = sampleEvents.filter(e => e.date && e.date.startsWith(monthPrefix) && isEventMatchingFilter(e));
+            monthEvents.sort((a, b) => a.date.localeCompare(b.date));
+
+            if (monthEvents.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-slate-400 text-sm font-semibold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    해당 월에 등록된 수행평가 일정이 없습니다.
+                </div>`;
                 return;
             }
 
-            filtered.forEach(e => {
+            monthEvents.forEach(ev => {
                 const card = document.createElement('div');
-                card.className = "bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-blue-300 transition";
+                card.onclick = () => openDetailModal(ev);
+                card.className = 'bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:border-blue-300 hover:shadow-md transition cursor-pointer';
+                
                 card.innerHTML = `
                     <div class="flex items-start gap-3">
-                        <div class="w-3 h-12 rounded-full shrink-0" style="background-color: ${e.color || '#3b82f6'}"></div>
+                        <div class="px-3 py-2 rounded-xl text-white font-black text-xs text-center shrink-0" style="background-color: ${ev.color || '#3b82f6'}">
+                            ${ev.date.substring(5)}
+                        </div>
                         <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-blue-50 text-blue-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-blue-100">${e.subject}</span>
-                                <span class="text-xs font-bold text-slate-400">📅 ${e.date}</span>
-                                <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">🎯 ${e.target}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="bg-slate-100 text-slate-700 font-bold text-[11px] px-2 py-0.5 rounded">${ev.subject}</span>
+                                <span class="text-xs font-black text-slate-800">${ev.title}</span>
                             </div>
-                            <h3 class="text-sm font-black text-slate-800">${e.title}</h3>
-                            <p class="text-xs text-slate-500 mt-1 line-clamp-1">${e.desc || '상세 내용 없음'}</p>
+                            <p class="text-xs text-slate-500 mt-1">${ev.desc || '상세 내용 없음'}</p>
                         </div>
                     </div>
-                    <button onclick="openDetailModal('${e.id}')" class="bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition self-end md:self-auto shrink-0">
-                        상세보기 →
-                    </button>
+                    <div class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg shrink-0">
+                        🎯 ${ev.target}
+                    </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function openRegisterModal() {
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderMainView();
+        }
+
+        function renderDDayWidget() {
+            const container = document.getElementById('dday-widget-container');
+            const countBadge = document.getElementById('dday-count-badge');
+            container.innerHTML = '';
+
+            const todayStr = getTodayDateString();
+            const todayDateObj = new Date(todayStr);
+
+            const upcomingEvents = sampleEvents.filter(e => {
+                if (!e.date || !isEventMatchingFilter(e)) return false;
+                const evDateObj = new Date(e.date);
+                const diffTime = evDateObj - todayDateObj;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays >= 0 && diffDays <= 14;
+            }).map(e => {
+                const evDateObj = new Date(e.date);
+                const diffTime = evDateObj - todayDateObj;
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                return { ...e, diffDays };
+            }).sort((a, b) => a.diffDays - b.diffDays);
+
+            countBadge.textContent = `${upcomingEvents.length}건`;
+
+            if (upcomingEvents.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-400 font-medium py-1 px-2">14일 이내 임박한 수행평가 일정이 없습니다.</div>`;
+                return;
+            }
+
+            upcomingEvents.forEach(ev => {
+                const badgeText = ev.diffDays === 0 ? 'D-Day' : `D-${ev.diffDays}`;
+                const card = document.createElement('div');
+                card.onclick = () => openDetailModal(ev);
+                card.className = 'bg-white p-3 rounded-xl border border-blue-100 shadow-sm min-w-[220px] max-w-[260px] shrink-0 cursor-pointer hover:border-blue-400 transition flex flex-col justify-between';
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-1 mb-1">
+                        <span class="bg-blue-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full">${badgeText}</span>
+                        <span class="text-[10px] font-bold text-slate-400">${ev.date}</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-800 truncate">${ev.title}</div>
+                        <div class="text-[11px] text-slate-500 truncate">${ev.subject} (${ev.target})</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function openRegisterModal(isEditRequest = false, eventObj = null) {
             if (!checkDataLoadedOrWarn()) return;
-            isEditClaimMode = false;
-            document.getElementById('register-modal-heading').textContent = '📝 수행평가 일정 간편 등록';
-            document.getElementById('reg-submit-btn').textContent = '등록하기';
+
+            isEditClaimMode = isEditRequest;
+            const modal = document.getElementById('register-modal');
+            const heading = document.getElementById('register-modal-heading');
+            const submitBtn = document.getElementById('reg-submit-btn');
+            const passwordLabel = document.getElementById('reg-password-label');
+            const passwordInput = document.getElementById('reg-password');
+            const passwordNotice = document.getElementById('reg-password-notice');
+
+            modal.classList.remove('hidden');
             document.getElementById('register-form').reset();
-            document.getElementById('reg-subject').innerHTML = '<option value="">과목을 먼저 선택하세요</option>';
-            document.getElementById('reg-subject').disabled = true;
             document.getElementById('target-checkbox-container').classList.add('hidden');
-            document.getElementById('register-modal').classList.remove('hidden');
+            document.getElementById('reg-subject').disabled = true;
+            document.getElementById('reg-subject').innerHTML = '<option value="">과목을 먼저 선택하세요</option>';
+
+            if (isEditRequest && eventObj) {
+                heading.innerHTML = `✏️ '${eventObj.title}' 수정 요청 작성`;
+                submitBtn.innerHTML = '수정 요청 전송';
+                submitBtn.className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5';
+                
+                // 비밀번호 입력 생략 가능하도록 안내 문구 및 필수 속성 제거
+                passwordLabel.textContent = '작성자 비밀번호 (선택)';
+                passwordInput.removeAttribute('required');
+                passwordInput.placeholder = '비밀번호 생략 가능 (기존 유지)';
+                passwordNotice.classList.remove('hidden');
+
+                document.getElementById('reg-title').value = eventObj.title;
+                document.getElementById('reg-grade').value = eventObj.target.includes('1학년') ? '1학년' : eventObj.target.includes('2학년') ? '2학년' : '3학년';
+                onModalGradeChange();
+                document.getElementById('reg-subject').value = eventObj.subject;
+                onModalSubjectChange();
+                document.getElementById('reg-date').value = eventObj.date;
+                document.getElementById('reg-desc').value = eventObj.desc;
+                
+                window.currentEditTargetEventId = eventObj.id;
+            } else {
+                heading.innerHTML = '📝 수행평가 일정 간편 등록';
+                submitBtn.innerHTML = '등록하기';
+                submitBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5';
+                
+                passwordLabel.textContent = '작성자 비밀번호 (삭제용) *';
+                passwordInput.setAttribute('required', 'true');
+                passwordInput.placeholder = '비밀번호 4자리 이상';
+                passwordNotice.classList.add('hidden');
+
+                window.currentEditTargetEventId = null;
+            }
         }
 
         function onModalGradeChange() {
@@ -1420,7 +1486,7 @@
 
             if (grade && COURSE_DATA[grade]) {
                 subjectSelect.disabled = false;
-                Object.keys(COURSE_DATA[grade]).forEach(sub => {
+                Object.keys(COURSE_DATA[grade]).sort().forEach(sub => {
                     const opt = document.createElement('option');
                     opt.value = sub;
                     opt.textContent = sub;
@@ -1444,33 +1510,41 @@
             }
 
             container.classList.remove('hidden');
-            const subConfigs = COURSE_DATA[grade][subject];
+            let options = [];
 
-            if (!subConfigs || subConfigs.length === 0) {
-                wrapper.innerHTML = `<label class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border text-xs font-bold"><input type="checkbox" name="target-chk" value="${grade} 전체" checked disabled class="rounded text-blue-600"> ${grade} 전체</label>`;
-            } else {
-                let html = `<label class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border text-xs font-bold mr-2"><input type="checkbox" id="check-all-target" onchange="toggleAllTargets(this)" class="rounded text-blue-600"> 전체 선택</label>`;
-                subConfigs.forEach(val => {
-                    let labelText = `${grade} ${val}반`;
-                    let checkboxVal = `${grade} ${val}반`;
-                    if (val === 'A1' || val === 'A2') {
-                        labelText = `${grade} 사회와문화 (${val})`;
-                        checkboxVal = `${grade} ${val}반`;
-                    }
-                    html += `<label class="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer"><input type="checkbox" name="target-chk" value="${checkboxVal}" class="rounded text-blue-600"> ${labelText}</label>`;
-                });
-                wrapper.innerHTML = html;
+            if (grade === '1학년') {
+                options = [`${grade} 전체`];
+            } else if (grade === '2학년') {
+                const subDetails = COURSE_DATA[grade][subject];
+                if (!subDetails || subDetails.length === 0) {
+                    options = [`${grade} 전체`];
+                } else {
+                    subDetails.forEach(detail => {
+                        options.push(`${grade} ${detail}반`);
+                    });
+                }
+            } else if (grade === '3학년') {
+                const subDetails = COURSE_DATA[grade][subject];
+                if (!subDetails || subDetails.length === 0) {
+                    options = [`${grade} 전체`];
+                } else {
+                    subDetails.forEach(detail => {
+                        options.push(`${grade} ${detail}반`);
+                    });
+                }
             }
-        }
 
-        function toggleAllTargets(masterCheckbox) {
-            document.querySelectorAll('input[name="target-chk"]').forEach(chk => {
-                if (!chk.disabled) chk.checked = masterCheckbox.checked;
+            options.forEach((optText, idx) => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold cursor-pointer hover:bg-blue-50';
+                label.innerHTML = `<input type="checkbox" name="target-checkbox" value="${optText}" ${idx === 0 ? 'checked' : ''} class="rounded text-blue-600"> <span>${optText}</span>`;
+                wrapper.appendChild(label);
             });
         }
 
         async function handleRegisterSubmit(e) {
             e.preventDefault();
+
             const title = document.getElementById('reg-title').value.trim();
             const grade = document.getElementById('reg-grade').value;
             const subject = document.getElementById('reg-subject').value;
@@ -1478,213 +1552,128 @@
             const password = document.getElementById('reg-password').value.trim();
             const desc = document.getElementById('reg-desc').value.trim();
 
-            let targets = [];
-            const checkboxes = document.querySelectorAll('input[name="target-chk"]:checked');
-            checkboxes.forEach(chk => targets.push(chk.value));
-
-            if (targets.length === 0) {
-                alert("⚠️ 대상 학급 또는 분반을 최소 1개 이상 선택해 주세요.");
+            const checkedTargets = document.querySelectorAll('input[name="target-checkbox"]:checked');
+            if (checkedTargets.length === 0) {
+                alert("⚠️ 대상 학급을 최소 1개 이상 선택해 주세요.");
                 return;
             }
 
-            const targetStr = targets.join(', ');
+            let targetStrs = Array.from(checkedTargets).map(cb => cb.value).join(', ');
+
             const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-            const submitBtn = document.getElementById('reg-submit-btn');
-            const originalText = submitBtn.innerHTML;
-
-            if (isEditClaimMode && activeEventForDetail) {
-                // 수정 요청인 경우 Claims 시트에 저장
-                const claimItem = {
-                    id: activeEventForDetail.id,
+            if (isEditClaimMode && window.currentEditTargetEventId) {
+                // 수정 요청 (Claims)
+                const claimData = {
+                    id: window.currentEditTargetEventId,
                     title: title,
                     subject: subject,
-                    target: targetStr,
+                    target: targetStrs,
                     date: date,
                     desc: desc,
-                    password: password,
-                    color: activeEventForDetail.color || randomColor,
+                    password: password, // 비밀번호가 비어있어도 백엔드에서 기존 Events 비밀번호로 매칭 처리
+                    color: randomColor,
                     createdAt: new Date().toISOString(),
-                    author: currentUser ? currentUser.studentId : "익명 사용자",
-                    status: "접수됨",
+                    author: currentUser ? `${currentUser.studentId} 학생` : '익명',
+                    status: '접수됨',
                     timestamp: new Date().toISOString()
                 };
 
-                try {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = `요청 전송 중...`;
+                claimItemsDB.push(claimData);
+                localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
 
-                    claimItemsDB.push(claimItem);
-                    localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
-
-                    if (GAS_WEB_APP_URL) {
-                        await fetch(GAS_WEB_APP_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'addClaim', report: claimItem })
-                        });
-                    }
-
-                    closeModal('register-modal');
-                    closeModal('detail-modal');
-                    showToast('수정 요청이 정상적으로 접수되었습니다. 관리자 승인 후 반영됩니다.', 'success');
-                } catch (err) {
-                    console.error(err);
-                    alert("수정 요청 전송 중 오류 발생: " + err.message);
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'addClaim', report: claimData })
+                    }).catch(err => console.error("수정 요청 전송 통신 오류:", err));
                 }
+
+                closeModal('register-modal');
+                showToast('수정 요청이 정상적으로 접수되었습니다. 관리자 승인 후 반영됩니다.', 'success');
             } else {
-                // 신규 등록
-                const newEvent = {
-                    id: 'e_' + Date.now(),
+                // 신규 등록 (Events)
+                const newEventId = 'ev_' + Date.now();
+                const eventData = {
+                    id: newEventId,
                     title: title,
                     subject: subject,
-                    target: targetStr,
+                    target: targetStrs,
                     date: date,
                     desc: desc,
                     password: password,
                     color: randomColor
                 };
 
-                try {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = `등록 중...`;
+                sampleEvents.push(eventData);
+                localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
 
-                    sampleEvents.push(newEvent);
-                    localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
-
-                    if (GAS_WEB_APP_URL) {
-                        await fetch(GAS_WEB_APP_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'addEvent', event: newEvent })
-                        });
-                    }
-
-                    closeModal('register-modal');
-                    applyUserSession();
-                    showToast('수행평가 일정이 성공적으로 등록되었습니다.', 'success');
-                } catch (err) {
-                    console.error(err);
-                    alert("등록 중 오류 발생: " + err.message);
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'addEvent', event: eventData })
+                    }).catch(err => console.error("일정 등록 통신 오류:", err));
                 }
+
+                closeModal('register-modal');
+                renderMainView();
+                renderDDayWidget();
+                showToast('수행평가 일정이 성공적으로 등록되었습니다!', 'success');
             }
         }
 
-        function openDetailModal(eventId) {
-            const ev = sampleEvents.find(e => e.id === eventId);
-            if (!ev) return;
+        function openDetailModal(ev) {
             activeEventForDetail = ev;
-
             document.getElementById('detail-title').textContent = ev.title;
             document.getElementById('detail-subject-text').textContent = ev.subject;
             document.getElementById('detail-target-text').textContent = ev.target;
             document.getElementById('detail-date-text').textContent = ev.date;
             document.getElementById('detail-desc-text').textContent = ev.desc || '상세 내용이 없습니다.';
-
             document.getElementById('detail-modal').classList.remove('hidden');
         }
 
         function requestDeleteEvent() {
             if (!activeEventForDetail) return;
-            
-            const modal = document.getElementById('confirm-modal');
-            document.getElementById('confirm-modal-title').textContent = '일정 삭제 확인';
-            document.getElementById('confirm-modal-msg').textContent = `"${activeEventForDetail.title}" 일정을 삭제합니다. 작성 비밀번호를 입력해주세요.`;
-            document.getElementById('confirm-modal-input').value = '';
-            
-            const submitBtn = document.getElementById('confirm-modal-submit-btn');
-            submitBtn.onclick = async () => {
-                const inputPw = document.getElementById('confirm-modal-input').value.trim();
-                const isMaster = currentUser && currentUser.isAdmin;
-
-                if (!isMaster && inputPw !== activeEventForDetail.password) {
+            openConfirmModal("일정 삭제", "이 일정을 삭제하려면 작성 시 설정한 비밀번호를 입력하세요.", async (pwd) => {
+                if (pwd !== activeEventForDetail.password && currentUser && !currentUser.isAdmin) {
                     alert("🔒 비밀번호가 일치하지 않습니다.");
-                    return;
+                    return false;
                 }
 
-                try {
-                    sampleEvents = sampleEvents.filter(e => e.id !== activeEventForDetail.id);
-                    localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
+                sampleEvents = sampleEvents.filter(e => e.id !== activeEventForDetail.id);
+                localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
 
-                    if (GAS_WEB_APP_URL) {
-                        await fetch(GAS_WEB_APP_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'deleteEvent', id: activeEventForDetail.id })
-                        });
-                    }
-
-                    closeModal('confirm-modal');
-                    closeModal('detail-modal');
-                    applyUserSession();
-                    showToast('일정이 삭제되었습니다.', 'success');
-                } catch (err) {
-                    console.error(err);
-                    alert("삭제 중 오류 발생: " + err.message);
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'deleteEvent', id: activeEventForDetail.id })
+                    }).catch(err => console.error("일정 삭제 통신 오류:", err));
                 }
-            };
 
-            modal.classList.remove('hidden');
+                closeModal('detail-modal');
+                renderMainView();
+                renderDDayWidget();
+                showToast('일정이 삭제되었습니다.', 'success');
+                return true;
+            });
         }
 
-        // 1번 수정 반영: 수정 요청을 누르면 새로운 수행평가 등록 페이지와 같되, 기존 입력 내용을 그대로 보여주며 Claims에 저장
         function openClaimModalFromDetail() {
             if (!activeEventForDetail) return;
-            isEditClaimMode = true;
-
-            document.getElementById('register-modal-heading').textContent = '✏️ 수행평가 일정 수정 요청';
-            document.getElementById('reg-submit-btn').textContent = '수정 요청 제출';
-            document.getElementById('register-form').reset();
-
-            // 기존 입력 내용 바인딩
-            document.getElementById('reg-title').value = activeEventForDetail.title;
-            document.getElementById('reg-date').value = activeEventForDetail.date;
-            document.getElementById('reg-desc').value = activeEventForDetail.desc || '';
-            document.getElementById('reg-password').value = activeEventForDetail.password || '1234';
-
-            // 학년 및 과목 자동 선택
-            let matchedGrade = "1학년";
-            if (activeEventForDetail.id.startsWith('e2') || activeEventForDetail.target.includes('2학년')) {
-                matchedGrade = "2학년";
-            } else if (activeEventForDetail.id.startsWith('e3') || activeEventForDetail.target.includes('3학년')) {
-                matchedGrade = "3학년";
-            }
-            
-            document.getElementById('reg-grade').value = matchedGrade;
-            onModalGradeChange();
-
-            document.getElementById('reg-subject').value = activeEventForDetail.subject;
-            onModalSubjectChange();
-
-            // 기존 대상 체크박스 체크 반영
-            setTimeout(() => {
-                const targetValues = activeEventForDetail.target.split(',').map(s => s.trim());
-                document.querySelectorAll('input[name="target-chk"]').forEach(chk => {
-                    if (targetValues.includes(chk.value) || activeEventForDetail.target.includes('전체')) {
-                        chk.checked = true;
-                    }
-                });
-            }, 50);
-
-            document.getElementById('register-modal').classList.remove('hidden');
+            closeModal('detail-modal');
+            openRegisterModal(true, activeEventForDetail);
         }
 
         function openReportModal() {
             if (!checkDataLoadedOrWarn()) return;
-            reportModalMode = 'report';
-            document.getElementById('report-modal-heading').textContent = '⚠️ 시스템 오류 신고';
-            document.getElementById('report-modal-desc').textContent = '입력 오류 또는 시스템 개선 요청 사항을 작성해 주세요.';
-            document.getElementById('report-author').value = currentUser ? currentUser.studentId : '';
+            document.getElementById('report-author').value = currentUser ? `${currentUser.studentId} 학생` : '';
             document.getElementById('report-content').value = '';
             document.getElementById('report-modal').classList.remove('hidden');
         }
@@ -1694,189 +1683,189 @@
             const content = document.getElementById('report-content').value.trim();
 
             if (!content) {
-                alert("⚠️ 내용을 입력해 주세요.");
+                alert("⚠️ 신고 내용을 입력해 주세요.");
                 return;
             }
 
-            const newReport = {
+            const reportData = {
                 id: 'rep_' + Date.now(),
                 author: author,
                 content: content,
-                status: "접수됨", // 2번 수정 반영: default 상태 "접수됨"
+                status: '접수됨',
                 timestamp: new Date().toISOString()
             };
 
-            try {
-                reportItemsDB.push(newReport);
-                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
-
-                if (GAS_WEB_APP_URL) {
-                    await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'addReport', report: newReport })
-                    });
-                }
-
-                closeModal('report-modal');
-                showToast('오류 신고가 접수되었습니다.', 'success');
-            } catch (err) {
-                console.error(err);
-                alert("오류 신고 전송 실패: " + err.message);
-            }
-        }
-
-        function openAdminDashboard() {
-            if (!currentUser || !currentUser.isAdmin) return;
-            updateAdminDashboardCounts();
-            switchAdminTab('reports');
-            document.getElementById('admin-dashboard-modal').classList.remove('hidden');
-        }
-
-        function switchAdminTab(tabName) {
-            currentAdminTab = tabName;
-            const reportsBtn = document.getElementById('admin-tab-reports-btn');
-            const claimsBtn = document.getElementById('admin-tab-claims-btn');
-
-            if (tabName === 'reports') {
-                reportsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition";
-                claimsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition";
-            } else {
-                claimsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition";
-                reportsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition";
-            }
-            renderAdminList();
-        }
-
-        function updateAdminDashboardCounts() {
-            document.getElementById('admin-report-count').textContent = reportItemsDB.length;
-            document.getElementById('admin-claim-count').textContent = claimItemsDB.length;
-        }
-
-        function renderAdminList() {
-            const container = document.getElementById('admin-list-container');
-            container.innerHTML = '';
-
-            if (currentAdminTab === 'reports') {
-                if (reportItemsDB.length === 0) {
-                    container.innerHTML = `<div class="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl text-xs">접수된 오류 신고 내역이 없습니다.</div>`;
-                    return;
-                }
-
-                reportItemsDB.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = "bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3";
-                    card.innerHTML = `
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">${item.status || '접수됨'}</span>
-                                <span class="text-xs font-bold text-slate-600">👤 ${item.author}</span>
-                                <span class="text-[10px] text-slate-400">${new Date(item.timestamp).toLocaleString()}</span>
-                            </div>
-                            <p class="text-xs text-slate-800 font-medium whitespace-pre-wrap">${item.content}</p>
-                        </div>
-                        <div class="flex items-center gap-2 self-end md:self-auto shrink-0">
-                            <button onclick="updateAdminItemStatus('reports', '${item.id}', '처리완료')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] transition">처리완료</button>
-                            <button onclick="updateAdminItemStatus('reports', '${item.id}', 'deleted')" class="bg-slate-400 hover:bg-slate-500 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] transition">확인 완료</button>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-
-            } else {
-                if (claimItemsDB.length === 0) {
-                    container.innerHTML = `<div class="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl text-xs">접수된 수정 요청 내역이 없습니다.</div>`;
-                    return;
-                }
-
-                claimItemsDB.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = "bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3";
-                    card.innerHTML = `
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded">${item.status || '접수됨'}</span>
-                                <span class="text-xs font-bold text-slate-600">👤 ${item.author} (수정 요청)</span>
-                                <span class="text-[10px] text-slate-400">${new Date(item.timestamp).toLocaleString()}</span>
-                            </div>
-                            <h4 class="text-xs font-black text-slate-800">[${item.subject}] ${item.title}</h4>
-                            <p class="text-[11px] text-slate-600">📅 ${item.date} | 🎯 ${item.target}</p>
-                            <p class="text-[11px] text-slate-500 mt-0.5">${item.desc || '상세 내용 없음'}</p>
-                        </div>
-                        <div class="flex items-center gap-2 self-end md:self-auto shrink-0">
-                            <button onclick="approveClaim('${item.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] transition">승인(반영)</button>
-                            <button onclick="updateAdminItemStatus('claims', '${item.id}', 'deleted')" class="bg-slate-400 hover:bg-slate-500 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] transition">확인 완료</button>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-            }
-        }
-
-        async function approveClaim(claimId) {
-            const claim = claimItemsDB.find(c => c.id === claimId);
-            if (!claim) return;
-
-            // 1. 기존 Events 시트(샘플) 데이터 반영
-            const evIndex = sampleEvents.findIndex(e => e.id === claim.id);
-            if (evIndex >= 0) {
-                sampleEvents[evIndex] = {
-                    ...sampleEvents[evIndex],
-                    title: claim.title,
-                    subject: claim.subject,
-                    target: claim.target,
-                    date: claim.date,
-                    desc: claim.desc,
-                    password: claim.password,
-                    color: claim.color
-                };
-            } else {
-                sampleEvents.push({
-                    id: claim.id,
-                    title: claim.title,
-                    subject: claim.subject,
-                    target: claim.target,
-                    date: claim.date,
-                    desc: claim.desc,
-                    password: claim.password,
-                    color: claim.color
-                });
-            }
-            localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
-
-            // 2. Claim 상태 "승인됨"으로 변경
-            await updateAdminItemStatus('claims', claimId, '승인됨');
-            applyUserSession();
-            showToast('수정 요청이 승인되어 일정표에 즉시 반영되었습니다.', 'success');
-        }
-
-        async function updateAdminItemStatus(type, id, status) {
-            // 3번 수정 반영: 관리자 패널에서 삭제를 누르더라도(또는 상태 변경 시) 스프레드 시트에서 삭제되지 않고 "확인 완료"로 업데이트
-            const targetStatus = (status === 'deleted') ? '확인 완료' : status;
-
-            if (type === 'reports') {
-                const item = reportItemsDB.find(r => r.id === id);
-                if (item) item.status = targetStatus;
-                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
-            } else {
-                const item = claimItemsDB.find(c => c.id === id);
-                if (item) item.status = targetStatus;
-                localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
-            }
+            reportItemsDB.push(reportData);
+            localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
 
             if (GAS_WEB_APP_URL) {
                 fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'updateAdminStatus', type: type, id: id, status: targetStatus })
-                }).catch(err => console.error("상태 업데이트 통신 오류:", err));
+                    body: JSON.stringify({ action: 'addReport', report: reportData })
+                }).catch(err => console.error("오류 신고 통신 오류:", err));
             }
 
-            updateAdminDashboardCounts();
+            closeModal('report-modal');
+            showToast('오류 신고가 성공적으로 접수되었습니다.', 'success');
+        }
+
+        function openAdminDashboard() {
+            if (!currentUser || !currentUser.isAdmin) {
+                alert("⚠️ 관리자 권한이 필요합니다.");
+                return;
+            }
+            document.getElementById('admin-dashboard-modal').classList.remove('hidden');
             renderAdminList();
-            showToast(`상태가 [${targetStatus}]로 업데이트되었습니다.`, 'success');
+        }
+
+        function switchAdminTab(tab) {
+            currentAdminTab = tab;
+            const repBtn = document.getElementById('admin-tab-reports-btn');
+            const claimBtn = document.getElementById('admin-tab-claims-btn');
+
+            if (tab === 'reports') {
+                repBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition";
+                claimBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition";
+            } else {
+                claimBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition";
+                repBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition";
+            }
+            renderAdminList();
+        }
+
+        function renderAdminList() {
+            document.getElementById('admin-report-count').textContent = reportItemsDB.length;
+            document.getElementById('admin-claim-count').textContent = claimItemsDB.length;
+
+            const container = document.getElementById('admin-list-container');
+            container.innerHTML = '';
+
+            const statusFilter = document.getElementById('admin-filter-status').value;
+            const items = currentAdminTab === 'reports' ? reportItemsDB : claimItemsDB;
+
+            const filteredItems = items.filter(item => {
+                if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+                return true;
+            });
+
+            if (filteredItems.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs font-semibold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    관리할 내역이 없습니다.
+                </div>`;
+                return;
+            }
+
+            filteredItems.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3';
+
+                let detailsHtml = '';
+                if (currentAdminTab === 'reports') {
+                    detailsHtml = `
+                        <div class="text-xs font-bold text-slate-700">👤 신고자: ${item.author}</div>
+                        <div class="text-xs text-slate-600 mt-1">📋 ${item.content}</div>
+                    `;
+                } else {
+                    detailsHtml = `
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-bold">${item.subject}</span>
+                            <span class="text-xs font-black text-slate-800">${item.title}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-500 mt-1">🎯 대상: ${item.target} | 날짜: ${item.date}</div>
+                        <div class="text-[11px] text-slate-600 mt-0.5">📝 요청자: ${item.author} | 내용: ${item.desc}</div>
+                    `;
+                }
+
+                let badgeColor = item.status === '승인됨' ? 'bg-emerald-100 text-emerald-700' : item.status === '확인 완료' ? 'bg-slate-200 text-slate-700' : 'bg-amber-100 text-amber-700';
+
+                card.innerHTML = `
+                    <div class="space-y-1 flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${badgeColor}">${item.status || '접수됨'}</span>
+                            <span class="text-[10px] text-slate-400">${item.timestamp ? item.timestamp.substring(0, 10) : ''}</span>
+                        </div>
+                        ${detailsHtml}
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        ${currentAdminTab === 'claims' ? `<button onclick="updateAdminStatus('${item.id}', '승인됨', 'claims')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">승인</button>` : ''}
+                        <button onclick="updateAdminStatus('${item.id}', '확인 완료', '${currentAdminTab}')" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">확인완료</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function updateAdminStatus(id, newStatus, type) {
+            const items = type === 'reports' ? reportItemsDB : claimItemsDB;
+            const targetItem = items.find(i => i.id === id);
+            if (targetItem) {
+                targetItem.status = newStatus;
+                localStorage.setItem(type === 'reports' ? 'school_schedule_reports_cache' : 'school_schedule_claims_cache', JSON.stringify(items));
+
+                if (type === 'claims' && newStatus === '승인됨') {
+                    const existingEvIndex = sampleEvents.findIndex(e => e.id === targetItem.id);
+                    if (existingEvIndex >= 0) {
+                        sampleEvents[existingEvIndex] = {
+                            id: targetItem.id,
+                            title: targetItem.title,
+                            subject: targetItem.subject,
+                            target: targetItem.target,
+                            date: targetItem.date,
+                            desc: targetItem.desc,
+                            password: targetItem.password,
+                            color: targetItem.color
+                        };
+                    } else {
+                        sampleEvents.push({
+                            id: targetItem.id,
+                            title: targetItem.title,
+                            subject: targetItem.subject,
+                            target: targetItem.target,
+                            date: targetItem.date,
+                            desc: targetItem.desc,
+                            password: targetItem.password,
+                            color: targetItem.color
+                        });
+                    }
+                    localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
+                    renderMainView();
+                    renderDDayWidget();
+                }
+
+                if (GAS_WEB_APP_URL) {
+                    fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'updateAdminStatus', id: id, status: newStatus, type: type })
+                    }).catch(err => console.error("상태 업데이트 통신 오류:", err));
+                }
+
+                renderAdminList();
+                showToast(`상태가 '${newStatus}'(으)로 변경되었습니다.`, 'success');
+            }
+        }
+
+        function openConfirmModal(title, msg, callback) {
+            const modal = document.getElementById('confirm-modal');
+            document.getElementById('confirm-modal-title').textContent = title;
+            document.getElementById('confirm-modal-msg').textContent = msg;
+            document.getElementById('confirm-modal-input').value = '';
+            modal.classList.remove('hidden');
+
+            const submitBtn = document.getElementById('confirm-modal-submit-btn');
+            const newSubmitBtn = submitBtn.cloneNode(true);
+            submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+
+            newSubmitBtn.onclick = async () => {
+                const pwd = document.getElementById('confirm-modal-input').value.trim();
+                const success = await callback(pwd);
+                if (success) {
+                    closeModal('confirm-modal');
+                }
+            };
         }
 
         function closeModal(modalId) {
@@ -1885,3 +1874,4 @@
     </script>
 </body>
 </html>
+```[cite: 21, 22]
