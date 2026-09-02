@@ -457,7 +457,13 @@
             "중국문화 / 진로": ["L"]
         };
 
-        let sampleEvents = JSON.parse(localStorage.getItem('school_schedule_events_cache') || '[]');
+        let sampleEvents = JSON.parse(localStorage.getItem('school_schedule_events_cache') || '[]').map(ev => {
+    if (ev.date) {
+        // 날짜 문자열에 타임스탬프(T 또는 공백)가 포함된 경우 YYYY-MM-DD 형태로 안전하게 파싱
+        ev.date = ev.date.toString().split('T')[0].split(' ')[0];
+    }
+    return ev;
+});
         let registeredUsersDB = {};
         let reportItemsDB = [];
         let claimItemsDB = [];
@@ -556,7 +562,13 @@
                 const res = await fetch(`${GAS_WEB_APP_URL}?action=getEvents`);
                 const json = await res.json();
                 if (json.status === "success" && Array.isArray(json.data)) {
-                    sampleEvents = json.data;
+                    sampleEvents = json.data.map(ev => {
+    if (ev.date) {
+        ev.date = ev.date.toString().split('T')[0].split(' ')[0];
+    }
+    return ev;
+});
+                    });
                     // 수행평가 최신 정보를 로컬 스토리지에 캐시 저장
                     localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
                 }
