@@ -457,7 +457,7 @@
             "중국문화 / 진로": ["L"]
         };
 
-        let sampleEvents = [];
+        let sampleEvents = JSON.parse(localStorage.getItem('school_schedule_events_cache') || '[]');
         let registeredUsersDB = {};
         let reportItemsDB = [];
         let claimItemsDB = [];
@@ -537,17 +537,28 @@
 
         async function fetchDataFromGas() {
             const syncBadge = document.getElementById('gas-sync-badge');
+            
+            // 로컬 캐시에 데이터가 있는 경우 먼저 화면에 반영하여 즉시 띄움
+            if (sampleEvents.length > 0) {
+                isDataLoaded = true;
+                setInteractiveButtonsState(true);
+                applyUserSession();
+            }
+
             if (!GAS_WEB_APP_URL) {
                 syncBadge.innerHTML = '🔴';
                 syncBadge.title = '구글 시트 연동 안됨 (URL 미설정)';
-                setInteractiveButtonsState(false);
+                if (sampleEvents.length === 0) setInteractiveButtonsState(false);
                 return;
             }
+
             try {
                 const res = await fetch(`${GAS_WEB_APP_URL}?action=getEvents`);
                 const json = await res.json();
                 if (json.status === "success" && Array.isArray(json.data)) {
                     sampleEvents = json.data;
+                    // 수행평가 최신 정보를 로컬 스토리지에 캐시 저장
+                    localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
                 }
 
                 const userRes = await fetch(`${GAS_WEB_APP_URL}?action=getUsers`);
@@ -1521,12 +1532,44 @@
                 }
             }
 
+            // [수정 후] onModalSubjectChange() 내부의 체크박스 생성 및 이벤트 연동 코드 부분
             options.forEach(optText => {
                 const label = document.createElement('label');
                 label.className = "flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer shadow-sm";
                 label.innerHTML = `<input type="checkbox" name="reg-target-class" value="${optText}" checked class="rounded text-blue-600"> <span>${optText}</span>`;
                 checkboxesWrapper.appendChild(label);
             });
+
+            // "전체" 체크박스 연동 로직 추가
+            const checkboxes = checkboxesWrapper.querySelectorAll('input[name="reg-target-class"]');
+            const allCheckbox = Array.from(checkboxes).find(cb => cb.value.includes('전체'));
+
+            if (allCheckbox) {
+                // 1. "전체" 체크박스를 변경할 때: 하위 모든 체크박스를 일괄 체크/해제
+                allCheckbox.addEventListener('change', function() {
+                    checkboxes.forEach(cb => {
+                        cb.checked = allCheckbox.checked;
+                    });
+                });
+
+                // 2. 개별 체크박스를 변경할 때: 하나라도 해제되면 "전체" 체크박스 해제, 모두 체크되면 "전체" 체크
+                checkboxes.forEach(cb => {
+                    if (cb !== allCheckbox) {
+                        cb.addEventListener('change', function() {
+                            if (!cb.checked) {
+                                allCheckbox.checked = false;
+                            } else {
+                                const allOthersChecked = Array.from(checkboxes)
+                                    .filter(item => item !== allCheckbox)
+                                    .every(item => item.checked);
+                                if (allOthersChecked) {
+                                    allCheckbox.checked = true;
+                                }
+                            }
+                        });
+                    }
+                });
+            }
         }
 
         async function handleRegisterSubmit(e) {
@@ -1668,12 +1711,17 @@
             renderMainView();
             showToast('수행평가 일정이 삭제되었습니다.', 'success');
         }
-
-        function openClaimModalFromDetail() {
-            closeModal('detail-modal');
-            openRegisterModal(true);
-        }
-
+        
+        // [수정 후] 로그인 상태를 확인하고 수정 요청 모달을 여는 함수
+function openClaimModalFromDetail() {
+    if (!currentUser) {
+        alert("⚠️ 수정 요청을 하려면 로그인을 해야 합니다.");
+        showToast("로그인 후 이용해 주세요.", "error");
+        return;
+    }
+    closeModal('detail-modal');
+    openRegisterModal(true);
+}
         function openReportModal() {
             if (!checkDataLoadedOrWarn()) return;
             document.getElementById('report-author').value = currentUser ? `${currentUser.studentId}` : '';
@@ -1772,13 +1820,14 @@
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusBadgeColor}">${item.status || '접수됨'}</span>
                             </div>
                             <p class="text-xs text-slate-800 font-semibold">${item.content}</p>
-                            <span class="text-[10px] text-slate-400">${new Date(item.timestamp).toLocaleString()}</span>
+                            <span class="text-[10px] text-slate-400">${item.timestamp ? item.timestamp.split('T')[0] : ''}</span>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
                             ${item.status !== '확인 완료' ? `<button onclick="updateReportStatus('${item.id}', '확인 완료')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">확인 완료</button>` : ''}
                         </div>
                     `;
                 } else {
+                    const isApproved = item.status === '승인됨';
                     card.innerHTML = `
                         <div class="space-y-1 flex-1">
                             <div class="flex items-center gap-2">
@@ -1791,7 +1840,10 @@
                             <span class="text-[10px] text-slate-400">요청자: ${item.author} (${new Date(item.timestamp).toLocaleString()})</span>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
-                            <button onclick='openClaimCompareModal(${JSON.stringify(item)})' class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">비교 및 승인</button>
+                            ${isApproved 
+                                ? `<button onclick='openClaimCompareModal(${JSON.stringify(item)})' class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">확인</button>`
+                                : `<button onclick='openClaimCompareModal(${JSON.stringify(item)})' class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">비교 및 승인</button>`
+                            }
                         </div>
                     `;
                 }
@@ -1843,9 +1895,20 @@
                 <p><strong>설명:</strong> ${claimItem.desc || '-'}</p>
             `;
 
-            approveBtn.onclick = function() {
-                approveClaim(claimItem);
-            };
+            // 이미 승인된 데이터인 경우 버튼을 "확인"으로 변경하고 모달만 닫도록 설정
+            if (claimItem.status === '승인됨') {
+                approveBtn.textContent = '확인';
+                approveBtn.className = "bg-slate-600 hover:bg-slate-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition";
+                approveBtn.onclick = function() {
+                    closeModal('claim-compare-modal');
+                };
+            } else {
+                approveBtn.textContent = '승인 및 반영';
+                approveBtn.className = "bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition";
+                approveBtn.onclick = function() {
+                    approveClaim(claimItem);
+                };
+            }
 
             document.getElementById('claim-compare-modal').classList.remove('hidden');
         }
@@ -1855,43 +1918,48 @@
             localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
 
             const existingIdx = sampleEvents.findIndex(ev => ev.id === claimItem.id);
+            const updatedEvent = {
+                id: claimItem.id,
+                title: claimItem.title,
+                subject: claimItem.subject,
+                target: claimItem.target,
+                date: claimItem.date,
+                desc: claimItem.desc,
+                password: claimItem.password,
+                color: claimItem.color || '#3b82f6'
+            };
+
             if (existingIdx >= 0) {
-                sampleEvents[existingIdx] = {
-                    id: claimItem.id,
-                    title: claimItem.title,
-                    subject: claimItem.subject,
-                    target: claimItem.target,
-                    date: claimItem.date,
-                    desc: claimItem.desc,
-                    password: claimItem.password,
-                    color: claimItem.color
-                };
+                sampleEvents[existingIdx] = updatedEvent;
             } else {
-                sampleEvents.push({
-                    id: claimItem.id,
-                    title: claimItem.title,
-                    subject: claimItem.subject,
-                    target: claimItem.target,
-                    date: claimItem.date,
-                    desc: claimItem.desc,
-                    password: claimItem.password,
-                    color: claimItem.color
-                });
+                sampleEvents.push(updatedEvent);
             }
 
+            // 로컬 스토리지 이벤트 캐시 갱신
+            localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
+
             if (GAS_WEB_APP_URL) {
+                // 1. 관리자 승인 상태 업데이트 통신
                 fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'updateAdminStatus', type: 'claims', id: claimItem.id, status: '승인됨' })
-                }).catch(err => console.error("수정 요청 승인 통신 오류:", err));
+                }).catch(err => console.error("수정 요청 상태 업데이트 통신 오류:", err));
+
+                // 2. 실제 반영된 일정 수정/추가 통신 (필요시)
+                fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'addEvent', event: updatedEvent })
+                }).catch(err => console.error("일정 반영 통신 오류:", err));
             }
 
             closeModal('claim-compare-modal');
-            renderAdminList();
+            closeModal('admin-dashboard-modal');
             renderMainView();
-            showToast('수정 요청이 승인되어 기존 일정에 반영되었습니다.', 'success');
+            showToast('수정 요청이 승인되어 일정에 반영되었습니다.', 'success');
         }
     </script>
 </body>
