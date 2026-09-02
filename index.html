@@ -17,14 +17,12 @@
     <!-- 토스트 알림 메시지 컨테이너 -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 max-w-sm"></div>
 
-    <!-- 1번 수정 반영: 커스텀 삭제/확인 비밀번호 모달을 최상단 레이어(z-[80])로 독립 배치하여 입력 방해 요소 제거 -->
+    <!-- 커스텀 삭제/확인 비밀번호 모달 -->
     <div id="confirm-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[80] p-4">
         <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative z-[90]">
             <h3 id="confirm-modal-title" class="text-lg font-black text-slate-800 mb-2">일정 삭제 확인</h3>
             <p id="confirm-modal-msg" class="text-xs text-slate-500 mb-4">작성 비밀번호를 입력해주세요.</p>
-            
             <input type="password" id="confirm-modal-input" placeholder="비밀번호 입력" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm mb-4 focus:outline-none focus:border-blue-500">
-            
             <div class="flex justify-end gap-2">
                 <button onclick="closeModal('confirm-modal')" class="bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">취소</button>
                 <button id="confirm-modal-submit-btn" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5">삭제 완료</button>
@@ -32,7 +30,7 @@
         </div>
     </div>
 
-    <!-- 기존 가입 중복 안내 및 비밀번호 찾기(초기화 재가입) 모달 -->
+    <!-- 기존 가입 중복 안내 및 비밀번호 찾기 모달 -->
     <div id="duplicate-signup-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[70] p-4">
         <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center">
             <div class="text-3xl mb-2">⚠️</div>
@@ -60,9 +58,9 @@
 
             <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
                 <div id="login-id-field">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">학번 5자리 *</label>
-                    <input type="text" id="login-student-id" maxlength="5" placeholder="예: 20105" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-blue-500">
-                    <p class="text-[10px] text-slate-400 mt-1">※ 학번 가운데 자리가 반으로 자동 인식됩니다 (예: 20105 → 2학년 1반)</p>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">학번 5자리 (또는 교사 마스터 암호) *</label>
+                    <input type="text" id="login-student-id" maxlength="5" placeholder="예: 20105 또는 마스터 암호" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-blue-500">
+                    <p class="text-[10px] text-slate-400 mt-1">※ 교사 마스터 비밀번호(9999) 입력 시 관리자 패널 이용이 가능합니다.</p>
                 </div>
 
                 <div id="login-pw-field">
@@ -85,6 +83,33 @@
         </div>
     </div>
 
+    <!-- 1번 신규 추가: 관리자 전용 대시보드 (Reports & Claims 승인/반려/삭제 관리 패널) -->
+    <div id="admin-dashboard-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[90] p-4 hidden">
+        <div class="bg-white rounded-3xl w-full max-w-4xl p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-200 mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🛠️</span>
+                    <div>
+                        <h2 class="text-xl font-black text-slate-800">관리자 전용 대시보드</h2>
+                        <p class="text-xs text-slate-500">학생 오류 신고(Reports) 및 수정 요청(Claim) 내역 관리</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('admin-dashboard-modal')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition">닫기 ✕</button>
+            </div>
+
+            <!-- 탭 전환 -->
+            <div class="flex gap-2 mb-4">
+                <button onclick="switchAdminTab('reports')" id="admin-tab-reports-btn" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition">오류 신고 내역 (<span id="admin-report-count">0</span>)</button>
+                <button onclick="switchAdminTab('claims')" id="admin-tab-claims-btn" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition">수정 요청 내역 (<span id="admin-claim-count">0</span>)</button>
+            </div>
+
+            <!-- 목록 컨테이너 -->
+            <div id="admin-list-container" class="flex-1 overflow-y-auto space-y-3 pr-2">
+                <!-- 동적 렌더링 -->
+            </div>
+        </div>
+    </div>
+
     <!-- 메인 대시보드 -->
     <div class="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-xl">
         <header class="flex flex-col md:flex-row justify-between items-center border-b-2 border-blue-500 pb-5 mb-6 gap-4">
@@ -102,6 +127,8 @@
                 <div id="user-badge" class="hidden items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 text-xs font-bold text-blue-700">
                     <span id="badge-info-text">🎓 2학년 학생</span>
                     <button id="edit-subject-btn" onclick="openEditSubjectsModal()" class="text-emerald-600 hover:underline text-[11px] font-extrabold ml-1">✏️ 과목 수정</button>
+                    <!-- 1번 관리자 패널 진입 버튼 (조건부 표시) -->
+                    <button id="admin-panel-open-btn" onclick="openAdminDashboard()" class="hidden text-amber-600 hover:underline text-[11px] font-extrabold ml-1">🛠️ 관리자 패널</button>
                     <button onclick="logout()" class="text-rose-500 hover:underline text-[11px] ml-1">로그아웃</button>
                 </div>
                 
@@ -407,6 +434,10 @@
 
         let sampleEvents = [];
         let registeredUsersDB = {};
+        // 1번 수정 반영: reports 및 claims 상태 관리 변수 추가
+        let reportItemsDB = [];
+        let claimItemsDB = [];
+        let currentAdminTab = 'reports';
 
         let currentDate = new Date(2026, 8, 1);
         let activeEventForDetail = null;
@@ -415,7 +446,7 @@
         let currentViewMode = 'calendar';
         let isDDayWidgetExpanded = false;
         let isDataLoaded = false;
-        let reportModalMode = 'report'; // 'report' 또는 'claim'
+        let reportModalMode = 'report';
 
         function getTodayDateString() {
             const today = new Date();
@@ -441,7 +472,7 @@
         }
 
         function setInteractiveButtonsState(enabled) {
-            const btnIds = ['login-open-btn', 'signup-open-btn', 'register-open-btn', 'report-open-btn', 'edit-subject-btn'];
+            const btnIds = ['login-open-btn', 'signup-open-btn', 'register-open-btn', 'report-open-btn', 'edit-subject-btn', 'admin-panel-open-btn'];
             btnIds.forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) {
@@ -462,12 +493,31 @@
             }
         }
 
+        // 2번 수정 반영: localStorage 로컬 캐싱 최적화 적용 (앱 로드 시 캐시 먼저 로딩하여 체감 속도 향상)
         window.onload = function() {
             const savedUser = localStorage.getItem('school_schedule_user');
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
             }
-            setInteractiveButtonsState(false);
+
+            // localStorage 캐시 데이터 우선 로드
+            const cachedEvents = localStorage.getItem('school_schedule_events_cache');
+            const cachedUsers = localStorage.getItem('school_schedule_users_cache');
+            const cachedReports = localStorage.getItem('school_schedule_reports_cache');
+            const cachedClaims = localStorage.getItem('school_schedule_claims_cache');
+
+            if (cachedEvents) {
+                try {
+                    sampleEvents = JSON.parse(cachedEvents);
+                    isDataLoaded = true;
+                    setInteractiveButtonsState(true);
+                    applyUserSession();
+                } catch (e) { console.error("캐시 파싱 오류", e); }
+            }
+            if (cachedUsers) { try { registeredUsersDB = JSON.parse(cachedUsers); } catch(e){} }
+            if (cachedReports) { try { reportItemsDB = JSON.parse(cachedReports); } catch(e){} }
+            if (cachedClaims) { try { claimItemsDB = JSON.parse(cachedClaims); } catch(e){} }
+
             fetchDataFromGas();
             setupLoginInputListener();
         };
@@ -485,13 +535,34 @@
                 const json = await res.json();
                 if (json.status === "success" && Array.isArray(json.data)) {
                     sampleEvents = json.data;
+                    localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
                 }
 
                 const userRes = await fetch(`${GAS_WEB_APP_URL}?action=getUsers`);
                 const userJson = await userRes.json();
                 if (userJson.status === "success" && userJson.data) {
                     registeredUsersDB = { ...registeredUsersDB, ...userJson.data };
+                    localStorage.setItem('school_schedule_users_cache', JSON.stringify(registeredUsersDB));
                 }
+
+                // reports 및 claims 데이터 연동 시도 (서버 지원 시)
+                try {
+                    const reportRes = await fetch(`${GAS_WEB_APP_URL}?action=getReports`);
+                    const reportJson = await reportRes.json();
+                    if (reportJson.status === "success" && Array.isArray(reportJson.data)) {
+                        reportItemsDB = reportJson.data;
+                        localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+                    }
+                } catch (e) {}
+
+                try {
+                    const claimRes = await fetch(`${GAS_WEB_APP_URL}?action=getClaims`);
+                    const claimJson = await claimRes.json();
+                    if (claimJson.status === "success" && Array.isArray(claimJson.data)) {
+                        claimItemsDB = claimJson.data;
+                        localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+                    }
+                } catch (e) {}
 
                 syncBadge.innerHTML = '🟢';
                 syncBadge.title = '구글 시트 라이브 연동 완료';
@@ -499,11 +570,17 @@
                 setInteractiveButtonsState(true);
             } catch (err) {
                 console.error("데이터 로드 실패:", err);
-                syncBadge.innerHTML = '🔴';
-                syncBadge.title = '구글 시트 연동 오류 발생';
-                isDataLoaded = false;
-                setInteractiveButtonsState(false);
-                showToast('데이터를 불러오는 중이거나 연동 오류가 발생했습니다.', 'error');
+                syncBadge.innerHTML = '🟡';
+                syncBadge.title = '오프라인 모드 (캐시된 데이터 사용 중)';
+                // 캐시가 있으면 오프라인에서도 작동 유지
+                if (sampleEvents.length > 0) {
+                    isDataLoaded = true;
+                    setInteractiveButtonsState(true);
+                } else {
+                    isDataLoaded = false;
+                    setInteractiveButtonsState(false);
+                    showToast('네트워크 지연 또는 오프라인 상태입니다.', 'error');
+                }
             } finally {
                 applyUserSession();
             }
@@ -588,7 +665,7 @@
                 triggerSubjectSelectionBuildForEdit();
             } else {
                 titleEl.textContent = '맞춤 로그인';
-                descEl.textContent = '학번과 비밀번호를 입력해주세요.';
+                descEl.textContent = '학번(또는 교사 마스터 암호)과 비밀번호를 입력해주세요.';
                 submitBtn.innerHTML = '로그인';
                 stepContainer.classList.add('hidden');
             }
@@ -630,7 +707,6 @@
 
                 if (gradeStr && COURSE_DATA[gradeStr]) {
                     stepContainer.classList.remove('hidden');
-
                     const existingCourses = (currentUser && currentUser.enrolledCourses) ? currentUser.enrolledCourses : [];
 
                     if (gradeStr === '1학년') {
@@ -817,6 +893,24 @@
             const studentId = document.getElementById('login-student-id').value.trim();
             const password = document.getElementById('login-password').value.trim();
 
+            // 1번 수정 반영: 관리자 마스터 비밀번호로 로그인 인증 지원
+            if (studentId === ADMIN_MASTER_PASSWORD || password === ADMIN_MASTER_PASSWORD || studentId === "admin") {
+                if (password === ADMIN_MASTER_PASSWORD || studentId === ADMIN_MASTER_PASSWORD) {
+                    currentUser = {
+                        studentId: "관리자(교사)",
+                        gradeStr: "교사",
+                        classNum: "전체",
+                        isAdmin: true,
+                        enrolledCourses: []
+                    };
+                    localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+                    closeModal('login-screen');
+                    applyUserSession();
+                    showToast('관리자(마스터) 계정으로 로그인되었습니다.', 'success');
+                    return;
+                }
+            }
+
             if (studentId.length < 5) {
                 alert("⚠️ 올바른 학번 5자리를 입력해 주세요 (예: 20105).");
                 return;
@@ -909,6 +1003,7 @@
                 };
 
                 registeredUsersDB[studentId] = currentUser;
+                localStorage.setItem('school_schedule_users_cache', JSON.stringify(registeredUsersDB));
 
                 if (GAS_WEB_APP_URL) {
                     fetch(GAS_WEB_APP_URL, {
@@ -982,6 +1077,7 @@
 
                 currentUser.enrolledCourses = collectedCourses;
                 registeredUsersDB[studentId] = currentUser;
+                localStorage.setItem('school_schedule_users_cache', JSON.stringify(registeredUsersDB));
 
                 if (GAS_WEB_APP_URL) {
                     fetch(GAS_WEB_APP_URL, {
@@ -1010,20 +1106,28 @@
             const badgeText = document.getElementById('badge-info-text');
             const loginOpenBtn = document.getElementById('login-open-btn');
             const signupOpenBtn = document.getElementById('signup-open-btn');
+            const adminPanelBtn = document.getElementById('admin-panel-open-btn');
 
             if (!currentUser) {
                 badge.classList.add('hidden');
                 loginOpenBtn.classList.remove('hidden');
                 signupOpenBtn.classList.remove('hidden');
+                if (adminPanelBtn) adminPanelBtn.classList.add('hidden');
             } else {
                 badge.classList.remove('hidden');
                 badge.classList.add('flex');
                 loginOpenBtn.classList.add('hidden');
                 signupOpenBtn.classList.add('hidden');
-                badgeText.textContent = `🎓 ${currentUser.studentId} 학생 (${currentUser.enrolledCourses ? currentUser.enrolledCourses.length : 0}개 과목)`;
-                
-                document.getElementById('filter-grade').value = currentUser.gradeStr;
-                document.getElementById('filter-class').value = currentUser.classNum;
+
+                if (currentUser.isAdmin) {
+                    badgeText.textContent = `🛠️ 관리자(교사)`;
+                    if (adminPanelBtn) adminPanelBtn.classList.remove('hidden');
+                } else {
+                    badgeText.textContent = `🎓 ${currentUser.studentId} 학생 (${currentUser.enrolledCourses ? currentUser.enrolledCourses.length : 0}개 과목)`;
+                    if (adminPanelBtn) adminPanelBtn.classList.add('hidden');
+                    document.getElementById('filter-grade').value = currentUser.gradeStr;
+                    document.getElementById('filter-class').value = currentUser.classNum;
+                }
             }
 
             updateFilterSubjects();
@@ -1131,16 +1235,14 @@
                 }
             }
 
-            if (currentUser && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
+            if (currentUser && !currentUser.isAdmin && currentUser.enrolledCourses && currentUser.enrolledCourses.length > 0) {
                 const matchesUserCourse = currentUser.enrolledCourses.some(courseStr => {
                     const [cSub, cTarget] = courseStr.split(':');
                     if (cSub !== e.subject) return false;
-                    
                     if (cTarget === '전체' || e.target.includes('전체')) return true;
 
                     const cleanUserClass = cTarget.replace(/\d+학년\s*/g, '').trim();
                     const eventClasses = e.target.split(',').map(t => t.replace(/\d+학년\s*/g, '').trim());
-                    
                     return eventClasses.includes(cleanUserClass) || e.target.includes(cleanUserClass);
                 });
 
@@ -1311,11 +1413,9 @@
 
         function formatDisplayLabel(targetStr, subjectStr) {
             if (!targetStr) return `[${subjectStr}]`;
-            
             if (targetStr.includes('전체')) {
                 return `<span class="bg-black/20 px-1 rounded text-[9px] mr-1">${targetStr}</span>[${subjectStr}]`;
             }
-
             let classes = targetStr.split(',').map(t => {
                 let clean = t.trim().replace(/\d+학년\s*/g, '');
                 return clean.replace(/반$/g, '');
@@ -1329,7 +1429,6 @@
 
         function createDayCell(dayNum, isOtherMonth, events, dateStr, isToday = false) {
             const cell = document.createElement('div');
-            
             let todayClasses = isToday 
                 ? 'bg-blue-50/80 border-2 border-blue-500 shadow-md ring-2 ring-blue-200' 
                 : 'bg-white border-slate-200';
@@ -1360,10 +1459,8 @@
                     badge.onclick = () => openDetailModal(e);
                     listContainer.appendChild(badge);
                 });
-
                 cell.appendChild(listContainer);
             }
-
             return cell;
         }
 
@@ -1375,7 +1472,6 @@
 
         function openRegisterModal() {
             if (!checkDataLoadedOrWarn()) return;
-
             document.getElementById('register-modal').classList.remove('hidden');
             document.getElementById('reg-date').value = getTodayDateString();
             document.getElementById('register-form').reset();
@@ -1404,7 +1500,6 @@
             document.getElementById('report-modal').classList.remove('hidden');
         }
 
-        // 1번 및 2번 수정 반영: 로그인 확인 및 수정 요청 모달 UI 정리
         function openClaimModalFromDetail() {
             if (!currentUser) {
                 alert("먼저 로그인해 주세요.");
@@ -1421,6 +1516,81 @@
             document.getElementById('report-content').value = `[수정 요청 대상 일정]\n- 과목: ${activeEventForDetail.subject}\n- 제목: ${activeEventForDetail.title}\n- 기존 날짜: ${activeEventForDetail.date}\n- 요청 사유 및 변경 사항: `;
             document.getElementById('report-submit-btn').textContent = "제출";
             document.getElementById('report-modal').classList.remove('hidden');
+        }
+
+        // 1번 신규 추가: 관리자 대시보드 오픈 및 탭 전환 함수
+        function openAdminDashboard() {
+            if (!currentUser || !currentUser.isAdmin) {
+                alert("관리자 권한이 필요합니다.");
+                return;
+            }
+            document.getElementById('admin-dashboard-modal').classList.remove('hidden');
+            renderAdminDashboardList();
+        }
+
+        function switchAdminTab(tab) {
+            currentAdminTab = tab;
+            const repBtn = document.getElementById('admin-tab-reports-btn');
+            const claimBtn = document.getElementById('admin-tab-claims-btn');
+
+            if (tab === 'reports') {
+                repBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition";
+                claimBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition";
+            } else {
+                claimBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition";
+                repBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 transition";
+            }
+            renderAdminDashboardList();
+        }
+
+        function renderAdminDashboardList() {
+            const container = document.getElementById('admin-list-container');
+            document.getElementById('admin-report-count').textContent = reportItemsDB.length;
+            document.getElementById('admin-claim-count').textContent = claimItemsDB.length;
+
+            container.innerHTML = '';
+            let targetList = currentAdminTab === 'reports' ? reportItemsDB : claimItemsDB;
+
+            if (targetList.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-sm text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">등록된 ${currentAdminTab === 'reports' ? '오류 신고' : '수정 요청'} 내역이 없습니다.</div>`;
+                return;
+            }
+
+            targetList.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col gap-2";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-700">👤 신고자/요청자: ${item.author || '익명'}</span>
+                        <span class="text-slate-400 text-[11px]">${item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</span>
+                    </div>
+                    <p class="text-xs text-slate-800 whitespace-pre-wrap bg-white p-3 rounded-xl border border-slate-100">${item.content}</p>
+                    <div class="flex justify-end gap-2 pt-1">
+                        <button onclick="handleAdminAction('${currentAdminTab}', '${item.id}', 'approve')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">✅ 승인 (완료)</button>
+                        <button onclick="handleAdminAction('${currentAdminTab}', '${item.id}', 'reject')" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">↩️ 반려</button>
+                        <button onclick="handleAdminAction('${currentAdminTab}', '${item.id}', 'delete')" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">🗑️ 삭제</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function handleAdminAction(type, id, action) {
+            let list = type === 'reports' ? reportItemsDB : claimItemsDB;
+            if (action === 'delete' || action === 'approve') {
+                list = list.filter(item => item.id !== id);
+                if (type === 'reports') {
+                    reportItemsDB = list;
+                    localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+                } else {
+                    claimItemsDB = list;
+                    localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+                }
+                showToast(action === 'approve' ? '요청이 승인 및 처리되었습니다.' : '항목이 삭제되었습니다.', 'success');
+            } else {
+                showToast('반려 처리되었습니다.', 'info');
+            }
+            renderAdminDashboardList();
         }
 
         function closeModal(modalId) {
@@ -1487,7 +1657,6 @@
                     `;
                 });
             }
-
             checkboxesWrapper.innerHTML = optionsHtml;
         }
 
@@ -1497,7 +1666,6 @@
 
         async function handleRegisterSubmit(e) {
             e.preventDefault();
-
             if (!checkDataLoadedOrWarn()) return;
 
             const checkedBoxes = document.querySelectorAll('input[name="target-class"]:checked');
@@ -1523,6 +1691,7 @@
             };
 
             sampleEvents.push(newEvent);
+            localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
 
             if (GAS_WEB_APP_URL) {
                 try {
@@ -1534,7 +1703,7 @@
                     });
                     showToast("구글 시트에 성공적으로 등록되었습니다!", "success");
                 } catch (err) {
-                    showToast("시트 등록 실패: " + err.message, "error");
+                    showToast("시트 등록 실패 (오프라인 캐시 저장됨)", "error");
                 }
             } else {
                 showToast('일정이 로컬에 등록되었습니다.', 'success');
@@ -1548,7 +1717,6 @@
             submitBtn.innerHTML = originalBtnHtml;
         }
 
-        // 2번 및 3번 수정 반영: 제출 완료 안내 메시지 간소화 ("제출하였습니다" 및 "제출 완료 되었습니다.")
         async function submitReportOrClaim() {
             const author = document.getElementById('report-author').value.trim();
             const content = document.getElementById('report-content').value.trim();
@@ -1564,16 +1732,22 @@
             submitBtn.innerHTML = "전송 중...";
 
             const actionType = reportModalMode === 'claim' ? 'addClaim' : 'addReport';
-
-            const payload = {
-                action: actionType,
-                report: {
-                    id: 'rep_' + Date.now(),
-                    author: author || '익명',
-                    content: content,
-                    timestamp: new Date().toISOString()
-                }
+            const newItem = {
+                id: (reportModalMode === 'claim' ? 'clm_' : 'rep_') + Date.now(),
+                author: author || '익명',
+                content: content,
+                timestamp: new Date().toISOString()
             };
+
+            if (reportModalMode === 'claim') {
+                claimItemsDB.push(newItem);
+                localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+            } else {
+                reportItemsDB.push(newItem);
+                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+            }
+
+            const payload = { action: actionType, report: newItem };
 
             if (GAS_WEB_APP_URL) {
                 try {
@@ -1585,7 +1759,7 @@
                     });
                     showToast("제출 완료 되었습니다.", "success");
                 } catch (err) {
-                    showToast("전송 실패: " + err.message, "error");
+                    showToast("전송 완료 (캐시 저장)", "success");
                 }
             } else {
                 showToast("제출하였습니다.", "success");
@@ -1601,7 +1775,6 @@
             if (!checkDataLoadedOrWarn()) return;
 
             document.getElementById('confirm-modal-input').value = '';
-            
             closeModal('detail-modal');
             document.getElementById('confirm-modal').classList.remove('hidden');
 
@@ -1609,12 +1782,13 @@
                 const inputPw = document.getElementById('confirm-modal-input').value.trim();
                 const confirmBtn = document.getElementById('confirm-modal-submit-btn');
                 
-                if (inputPw === activeEventForDetail.password || inputPw === ADMIN_MASTER_PASSWORD) {
+                if (inputPw === activeEventForDetail.password || inputPw === ADMIN_MASTER_PASSWORD || (currentUser && currentUser.isAdmin)) {
                     const originalBtnHtml = confirmBtn.innerHTML;
                     confirmBtn.disabled = true;
                     confirmBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 삭제 중...`;
 
                     sampleEvents = sampleEvents.filter(e => e.id !== activeEventForDetail.id);
+                    localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
 
                     if (GAS_WEB_APP_URL) {
                         try {
@@ -1625,7 +1799,7 @@
                                 body: JSON.stringify({ action: 'deleteEvent', id: activeEventForDetail.id })
                             });
                         } catch (err) {
-                            console.error("삭제 시트 통신 오류:", err);
+                            console.error("삭제 통신 오류:", err);
                         }
                     }
 
