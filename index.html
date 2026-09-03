@@ -714,25 +714,42 @@
         }
 
         function setViewMode(mode) {
-            currentViewMode = mode;
-            const calBtn = document.getElementById('view-mode-calendar-btn');
-            const listBtn = document.getElementById('view-mode-list-btn');
-            const calGrid = document.getElementById('calendar-grid');
-            const listContainer = document.getElementById('list-view-container');
+    currentViewMode = mode;
+    const calBtn = document.getElementById('view-mode-calendar-btn');
+    const listBtn = document.getElementById('view-mode-list-btn');
+    const calGrid = document.getElementById('calendar-grid');
+    const listContainer = document.getElementById('list-view-container');
 
-            if (mode === 'calendar') {
-                calBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition bg-white text-blue-600 shadow-sm";
-                listBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-800";
-                calGrid.classList.remove('hidden');
-                listContainer.classList.add('hidden');
-            } else {
-                listBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition bg-white text-blue-600 shadow-sm";
-                calBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-800";
-                calGrid.classList.add('hidden');
-                listContainer.classList.remove('hidden');
-            }
-            renderMainView();
+    // 리스트 보기로 전환하면 D-Day 리스트를 자동으로 접기
+    if (mode === 'list') {
+        isDDayWidgetExpanded = false;
+
+        const ddayContainer = document.getElementById('dday-widget-container');
+        const ddayToggleBtn = document.getElementById('dday-toggle-btn');
+
+        if (ddayContainer) {
+            ddayContainer.classList.add('hidden');
         }
+
+        if (ddayToggleBtn) {
+            ddayToggleBtn.textContent = '▼ 보기';
+        }
+    }
+
+    if (mode === 'calendar') {
+        calBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition bg-white text-blue-600 shadow-sm";
+        listBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-800";
+        calGrid.classList.remove('hidden');
+        listContainer.classList.add('hidden');
+    } else {
+        listBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition bg-white text-blue-600 shadow-sm";
+        calBtn.className = "px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-800";
+        calGrid.classList.add('hidden');
+        listContainer.classList.remove('hidden');
+    }
+
+    renderMainView();
+}
 
         function toggleDDayWidget() {
             const container = document.getElementById('dday-widget-container');
@@ -1716,29 +1733,72 @@
             let targetStrs = Array.from(checkedTargets).map(cb => cb.value).join(', ');
 
             if (isEditClaimMode) {
-                const claimItem = {
-                    id: activeEventForDetail.id,
-                    title: title,
-                    subject: subject,
-                    target: targetStrs,
-                    date: date,
-                    desc: desc,
-                    
-                    color: activeEventForDetail.color || '#3b82f6',
-                    createdAt: activeEventForDetail.createdAt || new Date().toISOString(),
-                    author: currentUser ? currentUser.studentId : '익명 학생',
-                    status: '접수됨',
-                    timestamp: new Date().toISOString()
-                };
 
-                claimItemsDB.push(claimItem);
-                localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+    // 수정 요청 전송 버튼 상태 변경
+    const submitBtn = document.getElementById('reg-submit-btn');
 
-                await apiPost({ action: 'addClaim', token: getSessionToken(), report: claimItem });
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '⏳ 전송중...';
+        submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+    }
 
-                closeModal('register-modal');
-                closeModal('detail-modal');
-                showToast('수정 요청이 관리자에게 전송되었습니다.', 'success');
+    const claimItem = {
+        id: activeEventForDetail.id,
+        title: title,
+        subject: subject,
+        target: targetStrs,
+        date: date,
+        desc: desc,
+        
+        color: activeEventForDetail.color || '#3b82f6',
+        createdAt: activeEventForDetail.createdAt || new Date().toISOString(),
+        author: currentUser ? currentUser.studentId : '익명 학생',
+        status: '접수됨',
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        claimItemsDB.push(claimItem);
+        localStorage.setItem(
+            'school_schedule_claims_cache',
+            JSON.stringify(claimItemsDB)
+        );
+
+        await apiPost({
+            action: 'addClaim',
+            token: getSessionToken(),
+            report: claimItem
+        });
+
+        closeModal('register-modal');
+        closeModal('detail-modal');
+
+        showToast('수정 요청이 관리자에게 전송되었습니다.', 'success');
+
+    } catch (err) {
+        console.error('수정 요청 전송 실패:', err);
+
+        claimItemsDB = claimItemsDB.filter(item => item !== claimItem);
+
+        localStorage.setItem(
+            'school_schedule_claims_cache',
+            JSON.stringify(claimItemsDB)
+        );
+
+        showToast(
+            err.message || '수정 요청 전송에 실패했습니다.',
+            'error'
+        );
+
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '수정 요청 전송';
+            submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+        }
+    }
+
             } else {
                 const newId = 'e_' + Math.random().toString(36).substr(2, 9);
                 const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
