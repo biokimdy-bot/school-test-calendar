@@ -981,8 +981,8 @@
     if (studentId === ADMIN_MASTER_PASSWORD || password === ADMIN_MASTER_PASSWORD || studentId === "admin") {
         if (password === ADMIN_MASTER_PASSWORD || studentId === ADMIN_MASTER_PASSWORD) {
             currentUser = {
-                studentId: "관리자(교사)",
-                gradeStr: "교사",
+                studentId: "관리자",
+                gradeStr: "관리자",
                 classNum: "전체",
                 isAdmin: true,
                 enrolledCourses: []
@@ -1218,7 +1218,7 @@
                 signupOpenBtn.classList.add('hidden');
 
                 if (currentUser.isAdmin) {
-                    badgeText.textContent = `🛠️ 관리자(교사)`;
+                    badgeText.textContent = `🛠️ 관리자`;
                     if (adminPanelBtn) adminPanelBtn.classList.remove('hidden');
                 } else {
                     badgeText.textContent = `🎓 ${currentUser.gradeStr} ${currentUser.classNum}반 (${currentUser.studentId})`;
