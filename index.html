@@ -1927,47 +1927,65 @@ function openClaimModalFromDetail() {
 
             document.getElementById('claim-compare-modal').classList.remove('hidden');
         }
-        async function handleAdminRefresh() {
-    showToast('정보를 불러오는 중입니다.', 'info');
-    await fetchDataFromGas();
-    showToast('새로고침을 완료했습니다.', 'success');
-}
-        async function approveClaim(claimId) {
-            const claimItem = claimItemsDB.find(c => c.id === claimId);
-            if (!claimItem) return;
 
-            // 1. 기존 메인 이벤트 배열 데이터 업데이트
-            const targetIndex = sampleEvents.findIndex(ev => ev.id === claimItem.id);
-            if (targetIndex !== -1) {
-                sampleEvents[targetIndex] = {
-                    ...sampleEvents[targetIndex],
-                    title: claimItem.title,
-                    subject: claimItem.subject,
-                    target: claimItem.target,
-                    date: claimItem.date,
-                    desc: claimItem.desc
-                };
+        async function approveClaim(claimId) {
+            // 1. 수정 요청 데이터 조회
+            const claimItem = claimItemsDB.find(c => c.id === claimId);
+            if (!claimItem) {
+                alert("⚠️ 해당 수정 요청 내역을 찾을 수 없습니다.");
+                return;
             }
 
-            // 2. 요청 상태 변경 및 로컬 캐시 업데이트
-            claimItem.status = '승인됨';
-            localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+            // 2. 메인 일정 목록(sampleEvents)에서 기존 일정 교체
+            const updatedEvent = {
+                id: claimItem.id,
+                title: claimItem.title,
+                subject: claimItem.subject,
+                target: claimItem.target,
+                date: claimItem.date,
+                desc: claimItem.desc,
+                password: claimItem.password,
+                color: claimItem.color || '#3b82f6'
+            };
+
+            const eventIndex = sampleEvents.findIndex(ev => ev.id === claimId);
+            if (eventIndex !== -1) {
+                sampleEvents[eventIndex] = updatedEvent;
+            } else {
+                sampleEvents.push(updatedEvent);
+            }
+
+            // 3. 로컬 캐시 즉시 업데이트
             localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
 
-            // 3. 구글 앱스 스크립트(GAS) 서버 전송
+            // 4. 수정 요청 상태 변경 (접수됨 -> 승인됨)
+            claimItem.status = '승인됨';
+            localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+
+            // 5. 구글 스프레드시트(GAS)로 데이터 전송
             if (GAS_WEB_APP_URL) {
+                // 일정 정보 수정 반영 요청
                 fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'approveClaim', claim: claimItem })
-                }).catch(err => console.error("수정 승인 통신 오류:", err));
+                    body: JSON.stringify({ action: 'updateEvent', event: updatedEvent })
+                }).catch(err => console.error("일정 수정 전송 오류:", err));
+
+                // 관리자 수정 요청 상태 업데이트
+                fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'updateAdminStatus', type: 'claims', id: claimId, status: '승인됨' })
+                }).catch(err => console.error("수정 요청 상태 업데이트 오류:", err));
             }
 
+            // 6. UI 갱신 및 모달 닫기
             closeModal('claim-compare-modal');
             renderAdminList();
             renderMainView();
-            showToast('수정 요청이 승인되고 일정표에 반영되었습니다.', 'success');
+            showToast('수정 요청이 승인되어 일정과 스프레드시트에 반영되었습니다.', 'success');
         }
     </script>
 </body>
