@@ -38,7 +38,7 @@
             <p class="text-xs text-slate-500 mb-5">입력하신 학번은 이미 가입되어 있습니다. 비밀번호를 잊으셨나요?</p>
             <div class="flex flex-col gap-2">
                 <button onclick="handleResetAndReRegister()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs transition">
-                    비밀번호를 잊어버렸나요?<br><span class="text-[10px] font-normal opacity-90">(기존 데이터를 지우고 다시 가입하기)</span>
+                    비밀번호 초기화 요청<br><span class="text-[10px] font-normal opacity-90">(기존 데이터는 삭제되지 않습니다)</span>
                 </button>
                 <button onclick="closeModal('duplicate-signup-modal')" class="w-full bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition">
                     닫기
@@ -391,8 +391,40 @@
     </div>
 
     <script>
-        const ADMIN_MASTER_PASSWORD = "9999";
         const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxayrZh4Lr6dLFR-9sUfR3p7dURyUsjnQNiSX_zwPcGAatwaQe4lc6nJzSvg55NMuD0/exec';
+
+        // [보안 개선] 서버 인증 API 공통 함수
+        let loginFailureCount = 0;
+        let loginLockUntil = 0;
+
+        async function apiPost(payload) {
+            if (!GAS_WEB_APP_URL) throw new Error('Google Apps Script URL이 설정되지 않았습니다.');
+            const res = await fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
+            const json = await res.json();
+            if (json.status !== 'success') throw new Error(json.message || '서버 처리에 실패했습니다.');
+            return json;
+        }
+
+        function getSessionToken() {
+            return currentUser && currentUser.sessionToken ? currentUser.sessionToken : '';
+        }
+
+        function getAdminToken() {
+            return currentUser && currentUser.isAdmin ? getSessionToken() : '';
+        }
+
+        function saveSafeUser(user) {
+            if (!user) return;
+            const safeUser = { ...user };
+            delete safeUser.password;
+            currentUser = safeUser;
+            localStorage.setItem('school_schedule_user', JSON.stringify(safeUser));
+        }
+
 
         const COURSE_DATA = {
             "1학년": {
@@ -481,6 +513,7 @@
         // 날짜 문자열에 타임스탬프(T 또는 공백)가 포함된 경우 YYYY-MM-DD 형태로 안전하게 파싱
         ev.date = ev.date.toString().split('T')[0].split(' ')[0];
     }
+    delete ev.password;
     return ev;
 });
         let registeredUsersDB = {};
@@ -546,14 +579,25 @@
         window.onload = function() {
             const savedUser = localStorage.getItem('school_schedule_user');
             if (savedUser) {
-                currentUser = JSON.parse(savedUser);
+                try {
+                    const parsedUser = JSON.parse(savedUser);
+                    if (parsedUser && parsedUser.sessionToken) {
+                        delete parsedUser.password;
+                        currentUser = parsedUser;
+                        localStorage.setItem('school_schedule_user', JSON.stringify(parsedUser));
+                    } else {
+                        localStorage.removeItem('school_schedule_user');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('school_schedule_user');
+                }
             }
 
             const cachedReports = localStorage.getItem('school_schedule_reports_cache');
             const cachedClaims = localStorage.getItem('school_schedule_claims_cache');
 
-            if (cachedReports) { try { reportItemsDB = JSON.parse(cachedReports); } catch(e){} }
-            if (cachedClaims) { try { claimItemsDB = JSON.parse(cachedClaims); } catch(e){} }
+            if (cachedReports) { try { reportItemsDB = JSON.parse(cachedReports).map(item => { delete item.password; return item; }); } catch(e){} }
+            if (cachedClaims) { try { claimItemsDB = JSON.parse(cachedClaims).map(item => { delete item.password; return item; }); } catch(e){} }
 
             fetchDataFromGas();
             setupLoginInputListener();
@@ -651,6 +695,22 @@
         } finally {
                 applyUserSession();
             }
+        }
+
+        async function fetchAdminData() {
+            if (!currentUser || !currentUser.isAdmin || !getAdminToken()) return false;
+            const token = encodeURIComponent(getAdminToken());
+            const [reportRes, claimRes] = await Promise.all([
+                fetch(`${GAS_WEB_APP_URL}?action=getReports&token=${token}`),
+                fetch(`${GAS_WEB_APP_URL}?action=getClaims&token=${token}`)
+            ]);
+            const reportJson = await reportRes.json();
+            const claimJson = await claimRes.json();
+            if (reportJson.status === 'success') reportItemsDB = reportJson.data || [];
+            if (claimJson.status === 'success') claimItemsDB = claimJson.data || [];
+            localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+            localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+            return true;
         }
 
         function setViewMode(mode) {
@@ -936,101 +996,75 @@
             }
         }
 
-        function handleResetAndReRegister() {
+        async function handleResetAndReRegister() {
             const studentId = document.getElementById('login-student-id').value.trim();
             closeModal('duplicate-signup-modal');
-            
-            if (confirm("기존 학번의 데이터를 모두 지우고 다시 가입하시겠습니까?")) {
-                delete registeredUsersDB[studentId];
-                if (GAS_WEB_APP_URL) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'deleteUser', studentId: studentId })
-                    }).catch(err => console.error("사용자 데이터 삭제 통신 오류:", err));
-                }
-                executeSignupProcess();
+            if (!studentId) return;
+
+            try {
+                await apiPost({ action: 'requestPasswordReset', studentId: studentId });
+                showToast('비밀번호 초기화 요청이 관리자에게 전달되었습니다.', 'success');
+            } catch (err) {
+                showToast(err.message || '비밀번호 초기화 요청에 실패했습니다.', 'error');
             }
         }
 
         async function handleLoginSubmit(e) {
-    e.preventDefault();
+            e.preventDefault();
 
-    // 선택과목 수정 모드일 경우 학번/비밀번호 검증을 건너뛰고 바로 수정 프로세스를 실행
-    if (currentModalMode === 'edit') {
-        executeEditProcess();
-        return;
-    }
+            if (currentModalMode === 'edit') {
+                executeEditProcess();
+                return;
+            }
 
-    const submitBtn = document.getElementById('login-submit-btn');
-    const originalBtnHtml = submitBtn.innerHTML;
+            const studentId = document.getElementById('login-student-id').value.trim();
+            const password = document.getElementById('login-password').value.trim();
 
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `
-        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l-2.647-2.647z"></path>
-        </svg>
-        로그인 중입니다...
-    `;
+            if (currentModalMode === 'signup') {
+                if (registeredUsersDB[studentId]) {
+                    document.getElementById('duplicate-signup-modal').classList.remove('hidden');
+                    return;
+                }
+                executeSignupProcess();
+                return;
+            }
 
-    const studentId = document.getElementById('login-student-id').value.trim();
-    const password = document.getElementById('login-password').value.trim();
+            if (Date.now() < loginLockUntil) {
+                const remain = Math.ceil((loginLockUntil - Date.now()) / 1000);
+                alert(`🔒 로그인 시도가 잠시 제한됩니다. ${remain}초 후 다시 시도해 주세요.`);
+                return;
+            }
 
-    if (studentId === ADMIN_MASTER_PASSWORD || password === ADMIN_MASTER_PASSWORD || studentId === "admin") {
-        if (password === ADMIN_MASTER_PASSWORD || studentId === ADMIN_MASTER_PASSWORD) {
-            currentUser = {
-                studentId: "관리자",
-                gradeStr: "관리자",
-                classNum: "전체",
-                isAdmin: true,
-                enrolledCourses: []
-            };
-            localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
-            closeModal('login-screen');
-            applyUserSession();
-            showToast('관리자(마스터) 계정으로 로그인되었습니다.', 'success');
-            return;
+            if (studentId.length < 5 && studentId !== 'admin' && studentId !== '9999') {
+                alert("⚠️ 올바른 학번 5자리를 입력해 주세요 (예: 20105).");
+                return;
+            }
+
+            try {
+                const result = await apiPost({ action: 'loginUser', studentId, password });
+                loginFailureCount = 0;
+                loginLockUntil = 0;
+                saveSafeUser(result.user);
+                closeModal('login-screen');
+                applyUserSession();
+                if (currentUser.isAdmin) {
+                    await fetchAdminData();
+                    renderAdminList();
+                    showToast('관리자 계정으로 로그인되었습니다.', 'success');
+                } else {
+                    showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
+                }
+            } catch (err) {
+                loginFailureCount++;
+                if (loginFailureCount >= 5) {
+                    loginLockUntil = Date.now() + 30000;
+                    loginFailureCount = 0;
+                    alert('🔒 로그인 실패가 5회 누적되어 30초 동안 로그인이 잠깁니다.');
+                } else {
+                    alert(`🔒 ${err.message || '학번 또는 비밀번호가 올바르지 않습니다.'}`);
+                }
+            }
         }
-    }
-
-    if (studentId.length < 5) {
-        alert("⚠️ 올바른 학번 5자리를 입력해 주세요 (예: 20105).");
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnHtml;
-        return;
-    }
-
-    let existingUser = registeredUsersDB[studentId];
-
-    if (currentModalMode === 'login') {
-        if (!existingUser) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnHtml;
-            document.getElementById('unregistered-student-modal').classList.remove('hidden');
-            return;
-        }
-        if (existingUser.password !== password) {
-            alert("🔒 비밀번호가 일치하지 않습니다. 다시 확인 후 입력해 주세요.");
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnHtml;
-            return;
-        }
-
-        currentUser = existingUser;
-        localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
-        closeModal('login-screen');
-        applyUserSession();
-        showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
-    } else if (currentModalMode === 'signup') {
-        if (existingUser) {
-            document.getElementById('duplicate-signup-modal').classList.remove('hidden');
-            return;
-        }
-        executeSignupProcess();
-    }
-}
 
         async function executeSignupProcess() {
             const submitBtn = document.getElementById('login-submit-btn');
@@ -1083,26 +1117,13 @@
                     });
                 }
 
-                currentUser = {
-                    studentId,
-                    gradeStr,
-                    classNum,
-                    password,
-                    enrolledCourses: collectedCourses
-                };
+                const result = await apiPost({
+                    action: 'registerUser',
+                    user: { studentId, gradeStr, classNum, password, enrolledCourses: collectedCourses }
+                });
 
-                registeredUsersDB[studentId] = currentUser;
-                
-                if (GAS_WEB_APP_URL) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'registerUser', user: currentUser })
-                    }).catch(err => console.error("회원 정보 저장 통신 오류:", err));
-                }
-
-                localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+                registeredUsersDB[studentId] = result.user;
+                saveSafeUser(result.user);
                 closeModal('login-screen');
                 applyUserSession();
                 showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
@@ -1180,19 +1201,14 @@
                     });
                 }
 
-                currentUser.enrolledCourses = collectedCourses;
-                registeredUsersDB[studentId] = currentUser;
-                
-                if (GAS_WEB_APP_URL) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'registerUser', user: currentUser })
-                    }).catch(err => console.error("수강 과목 수정 저장 통신 오류:", err));
-                }
-
-                localStorage.setItem('school_schedule_user', JSON.stringify(currentUser));
+                const result = await apiPost({
+                    action: 'updateUserCourses',
+                    token: getSessionToken(),
+                    studentId: studentId,
+                    enrolledCourses: collectedCourses
+                });
+                registeredUsersDB[studentId] = result.user;
+                saveSafeUser(result.user);
                 closeModal('login-screen');
                 applyUserSession();
                 showToast('수강 과목 정보가 정상적으로 수정되었습니다.', 'success');
@@ -1529,7 +1545,7 @@
 
                 document.getElementById('reg-date').value = activeEventForDetail.date;
                 document.getElementById('reg-desc').value = activeEventForDetail.desc;
-                document.getElementById('reg-password').value = activeEventForDetail.password || "1234";
+                document.getElementById('reg-password').value = '';
                 document.getElementById('reg-password').disabled = true;
                 passwordNotice.classList.remove('hidden');
             } else {
@@ -1700,7 +1716,7 @@
                     target: targetStrs,
                     date: date,
                     desc: desc,
-                    password: password || activeEventForDetail.password,
+                    
                     color: activeEventForDetail.color || '#3b82f6',
                     createdAt: activeEventForDetail.createdAt || new Date().toISOString(),
                     author: currentUser ? currentUser.studentId : '익명 학생',
@@ -1711,14 +1727,7 @@
                 claimItemsDB.push(claimItem);
                 localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
 
-                if (GAS_WEB_APP_URL) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'addClaim', report: claimItem })
-                    }).catch(err => console.error("수정 요청 통신 오류:", err));
-                }
+                await apiPost({ action: 'addClaim', token: getSessionToken(), report: claimItem });
 
                 closeModal('register-modal');
                 closeModal('detail-modal');
@@ -1741,14 +1750,7 @@
 
                 sampleEvents.push(newEvent);
 
-                if (GAS_WEB_APP_URL) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'addEvent', event: newEvent })
-                    }).catch(err => console.error("일정 등록 통신 오류:", err));
-                }
+                await apiPost({ action: 'addEvent', token: getSessionToken(), event: newEvent });
 
                 closeModal('register-modal');
                 renderMainView();
@@ -1786,28 +1788,27 @@
                     executeDeleteEventConfirmed();
                     return;
                 }
-                if (pwd !== activeEventForDetail.password) {
-                    alert("🔒 비밀번호가 일치하지 않습니다.");
-                    return;
-                }
-                executeDeleteEventConfirmed();
+                executeDeleteEventConfirmed(pwd);
             };
 
             modal.classList.remove('hidden');
         }
 
-        function executeDeleteEventConfirmed() {
-            sampleEvents = sampleEvents.filter(ev => ev.id !== activeEventForDetail.id);
-
-            if (GAS_WEB_APP_URL) {
-                fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'deleteEvent', id: activeEventForDetail.id })
-                }).catch(err => console.error("일정 삭제 통신 오류:", err));
+        async function executeDeleteEventConfirmed(password = "") {
+            try {
+                await apiPost({
+                    action: 'deleteEvent',
+                    token: getSessionToken(),
+                    id: activeEventForDetail.id,
+                    password: password
+                });
+            } catch (err) {
+                alert(`🔒 ${err.message || '일정 삭제에 실패했습니다.'}`);
+                return;
             }
 
+            sampleEvents = sampleEvents.filter(ev => ev.id !== activeEventForDetail.id);
+            localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
             closeModal('confirm-modal');
             closeModal('detail-modal');
             renderMainView();
@@ -1851,13 +1852,13 @@ function openClaimModalFromDetail() {
             reportItemsDB.push(reportItem);
             localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
 
-            if (GAS_WEB_APP_URL) {
-                fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'addReport', report: reportItem })
-                }).catch(err => console.error("오류 신고 통신 오류:", err));
+            try {
+                await apiPost({ action: 'addReport', report: reportItem });
+            } catch (err) {
+                reportItemsDB = reportItemsDB.filter(r => r.id !== reportItem.id);
+                localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
+                showToast(err.message || '오류 신고 저장에 실패했습니다.', 'error');
+                return;
             }
 
             closeModal('report-modal');
@@ -1870,7 +1871,7 @@ function openClaimModalFromDetail() {
                 return;
             }
             document.getElementById('admin-dashboard-modal').classList.remove('hidden');
-            switchAdminTab('reports');
+            fetchAdminData().then(() => switchAdminTab('reports')).catch(err => { showToast(err.message || '관리자 데이터를 불러오지 못했습니다.', 'error'); });
         }
 
         function switchAdminTab(tabName) {
@@ -1955,20 +1956,15 @@ function openClaimModalFromDetail() {
 
         async function updateReportStatus(id, newStatus) {
             const item = reportItemsDB.find(r => r.id === id);
-            if (item) {
+            if (!item) return;
+            try {
+                await apiPost({ action: 'updateAdminStatus', token: getAdminToken(), type: 'reports', id: id, status: newStatus });
                 item.status = newStatus;
                 localStorage.setItem('school_schedule_reports_cache', JSON.stringify(reportItemsDB));
                 renderAdminList();
                 showToast('오류 신고 상태가 변경되었습니다.', 'success');
-
-                if (GAS_WEB_APP_URL) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'updateAdminStatus', type: 'reports', id: id, status: newStatus })
-                    }).catch(err => console.error("오류 신고 상태 업데이트 통신 오류:", err));
-                }
+            } catch (err) {
+                showToast(err.message || '상태 변경에 실패했습니다.', 'error');
             }
         }
 
@@ -2077,16 +2073,12 @@ function openClaimCompareModal(claimItem) {
 }
 
 async function approveClaim(claimId) {
-    const claim = claimItemsDB.find(
-        c => String(c.id) === String(claimId)
-    );
-
+    const claim = claimItemsDB.find(c => String(c.id) === String(claimId));
     if (!claim) {
         showToast('해당 수정 요청을 찾을 수 없습니다.', 'error');
         return;
     }
 
-    // 승인 버튼을 즉시 "반영 중..."으로 변경하여 중복 클릭 방지
     const approveBtn = document.getElementById('compare-approve-btn');
     if (approveBtn) {
         approveBtn.textContent = '⏳ 반영 중...';
@@ -2094,86 +2086,30 @@ async function approveClaim(claimId) {
         approveBtn.classList.add('opacity-70', 'cursor-not-allowed');
     }
 
-    // Claims에 저장된 내용이 "수정 후" 내용입니다.
-    const updatedEvent = {
-        id: claim.id,
-        title: claim.title,
-        subject: claim.subject,
-        target: claim.target,
-        date: claim.date,
-        desc: claim.desc,
-        password: claim.password,
-        color: claim.color,
-        createdAt: claim.createdAt
-    };
+    try {
+        await apiPost({
+            action: 'updateAdminStatus',
+            token: getAdminToken(),
+            type: 'claims',
+            id: claim.id,
+            status: '승인됨'
+        });
 
-    // 화면의 Events 데이터도 즉시 수정
-    const existingIndex = sampleEvents.findIndex(
-        ev => String(ev.id) === String(claim.id)
-    );
-
-    if (existingIndex !== -1) {
-        sampleEvents[existingIndex] = {
-            ...sampleEvents[existingIndex],
-            ...updatedEvent
-        };
-    } else {
-        sampleEvents.push(updatedEvent);
-    }
-
-    localStorage.setItem(
-        'school_schedule_events_cache',
-        JSON.stringify(sampleEvents)
-    );
-
-    // Claims 상태도 즉시 승인됨으로 변경
-    claim.status = '승인됨';
-
-    localStorage.setItem(
-        'school_schedule_claims_cache',
-        JSON.stringify(claimItemsDB)
-    );
-
-    if (GAS_WEB_APP_URL) {
-        try {
-            // Events의 기존 일정 내용을 Claims의 수정 후 내용으로 변경
-            await fetch(GAS_WEB_APP_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'updateEvent',
-                    event: updatedEvent
-                })
-            });
-
-            // Claims의 Status를 승인됨으로 변경
-            await fetch(GAS_WEB_APP_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'updateClaimStatus',
-                    claimId: claim.id,
-                    status: '승인됨'
-                })
-            });
-
-        } catch (e) {
-            console.error("GAS 통신 오류:", e);
+        await fetchDataFromGas();
+        closeModal('claim-compare-modal');
+        renderMainView();
+        renderAdminList();
+        showToast('수정 요청이 승인되어 수행평가 일정에 반영되었습니다.', 'success');
+    } catch (err) {
+        showToast(err.message || '수정 요청 반영에 실패했습니다.', 'error');
+    } finally {
+        if (approveBtn) {
+            approveBtn.disabled = false;
+            approveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
         }
     }
-
-    closeModal('claim-compare-modal');
-    renderMainView();
-    renderAdminList();
-
-    if (typeof updateAdminCounts === 'function') {
-        updateAdminCounts();
-    }
-
-    showToast('수정 요청이 승인되어 수행평가 일정에 반영되었습니다.', 'success');
 }
+
     </script>
 </body>
 </html>
