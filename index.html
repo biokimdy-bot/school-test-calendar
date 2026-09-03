@@ -373,7 +373,7 @@
 
     <script>
         const ADMIN_MASTER_PASSWORD = "9999";
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbype7xvs3wxyVX-xx3mZ58LTscbUXtL0JwgA8D-HxcPz9eXXZQXvqFK0adipwyyYvD-/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby51KtaBl5MMxv5ANyqws4EqZUmv-WLYuYD3KsedRCdZTJ_y1RaNIsCkbzwqjfAsIES/exec';
 
         const COURSE_DATA = {
             "1학년": {
@@ -1935,61 +1935,111 @@ function openClaimModalFromDetail() {
             showToast('최신 데이터로 새로고침되었습니다.', 'success');
         }
         
-        async function approveClaim(claimId) {
-            // 1. 수정 요청 데이터 조회
-            const claimItem = claimItemsDB.find(c => c.id === claimId);
-            if (!claimItem) {
-                alert("⚠️ 해당 수정 요청 내역을 찾을 수 없습니다.");
-                return;
-            }
+function openClaimCompareModal(claimId) {
+    const claim = claimItemsDB.find(c => c.id === claimId);
+    if (!claim) return;
 
-            // 2. 기존 이벤트 찾아 요청 내용으로 업데이트
-            const eventIdx = sampleEvents.findIndex(ev => ev.id === claimId);
-            const updatedEvent = {
-                id: claimItem.id,
-                title: claimItem.title,
-                subject: claimItem.subject,
-                target: claimItem.target,
-                date: claimItem.date,
-                desc: claimItem.desc,
-                password: claimItem.password,
-                color: claimItem.color || '#3b82f6'
-            };
+    const before = claim.before || {};
+    const after = claim.after || {};
 
-            if (eventIdx !== -1) {
-                sampleEvents[eventIdx] = updatedEvent;
-            } else {
-                sampleEvents.push(updatedEvent);
-            }
+    // 1. 비교 모달에 수정 전 / 수정 후 상세 정보를 안전하게 표시
+    document.getElementById('compare-before-content').innerHTML = `
+        <p><strong>제목:</strong> ${before.title || '-'}</p>
+        <p><strong>학년/과목:</strong> ${before.grade || ''} ${before.subject || ''}</p>
+        <p><strong>대상:</strong> ${before.target || '-'}</p>
+        <p><strong>날짜:</strong> ${before.date || '-'}</p>
+        <p><strong>내용:</strong> ${before.desc || '-'}</p>
+    `;
+    document.getElementById('compare-after-content').innerHTML = `
+        <p><strong>제목:</strong> ${after.title || '-'}</p>
+        <p><strong>학년/과목:</strong> ${after.grade || ''} ${after.subject || ''}</p>
+        <p><strong>대상:</strong> ${after.target || '-'}</p>
+        <p><strong>날짜:</strong> ${after.date || '-'}</p>
+        <p><strong>내용:</strong> ${after.desc || '-'}</p>
+    `;
 
-            // 3. 상태 변경 및 로컬 캐시 저장
-            claimItem.status = '승인됨';
-            localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
-            localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+    // 2. "승인 및 반영" 버튼 이벤트 바인딩
+    const approveBtn = document.getElementById('compare-approve-btn');
+    approveBtn.onclick = function() {
+        approveClaim(claimId);
+    };
 
-            // 4. 구글 앱스 스크립트 서버 연동
-            if (GAS_WEB_APP_URL) {
-                fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'addEvent', event: updatedEvent })
-                }).catch(err => console.error("이벤트 반영 통신 오류:", err));
+    document.getElementById('claim-compare-modal').classList.remove('hidden');
+}
 
-                fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'updateAdminStatus', type: 'claims', id: claimId, status: '승인됨' })
-                }).catch(err => console.error("수정 요청 상태 업데이트 통신 오류:", err));
-            }
+async function approveClaim(claimId) {
+    const claim = claimItemsDB.find(c => c.id === claimId);
+    if (!claim) {
+        showToast('해당 수정 요청을 찾을 수 없습니다.', 'error');
+        return;
+    }
 
-            // 5. 모달 닫기 및 화면 UI 갱신
-            closeModal('claim-compare-modal');
-            renderAdminList();
-            renderMainView();
-            showToast('수정 요청이 승인되어 일정에 반영되었습니다.', 'success');
+    // ✅ 1. 수정 요청된 데이터(after) 가져오기
+    const updatedEvent = claim.after;
+    if (!updatedEvent) {
+        showToast('반영할 수정 데이터가 없습니다.', 'error');
+        return;
+    }
+
+    const targetEventId = claim.eventId || updatedEvent.id || (claim.before && claim.before.id);
+
+    // ✅ 2. 메모리(sampleEvents) 내 기존 일정 데이터 찾아서 교체 (덮어쓰기)
+    const existingIndex = sampleEvents.findIndex(ev => String(ev.id) === String(targetEventId));
+    if (existingIndex !== -1) {
+        sampleEvents[existingIndex] = { ...updatedEvent, id: targetEventId };
+    } else {
+        sampleEvents.push(updatedEvent);
+    }
+
+    // 로컬 일정 캐시 저장
+    localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
+
+    // ✅ 3. 수정 요청 상태 변경 ('승인됨') 및 캐시 저장
+    claim.status = '승인됨';
+    localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
+
+    // ✅ 4. 구글 스프레드시트(GAS) 연동 (일정 수정 및 수정요청 상태 업데이트)
+    if (GAS_WEB_APP_URL) {
+        try {
+            // (1) Events 탭의 기존 일정 업데이트 요청
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'updateEvent',
+                    event: updatedEvent
+                })
+            }).catch(err => console.error("스프레드시트 일정 수정 연동 오류:", err));
+
+            // (2) Claims 탭의 수정 요청 상태 '승인됨'으로 업데이트 요청
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'updateClaimStatus',
+                    claimId: claim.id,
+                    status: '승인됨'
+                })
+            }).catch(err => console.error("스프레드시트 수정요청 상태 연동 오류:", err));
+
+        } catch (e) {
+            console.error("GAS 통신 오류:", e);
         }
+    }
+
+    // ✅ 5. 화면 및 관리자 패널 목록 즉시 새로고침
+    closeModal('claim-compare-modal');
+    renderMainView();        // 메인 캘린더/리스트 뷰 갱신
+    renderAdminList();       // 관리자 패널 수정요청 목록 UI 갱신
+
+    if (typeof updateAdminCounts === 'function') {
+        updateAdminCounts(); // 관리자 상단 뱃지 카운트 갱신
+    }
+
+    showToast('수정 요청이 승인되어 수행평가 일정에 반영되었습니다.', 'success');
+}
     </script>
 </body>
 </html>
