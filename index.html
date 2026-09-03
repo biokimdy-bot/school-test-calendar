@@ -14,12 +14,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
 
-    <!-- 초기 데이터 로딩 중 화면 조작 방지 -->
-    <div id="data-loading-overlay"
-         class="fixed inset-0 z-[40] hidden"
-         style="cursor: wait;">
-    </div>
-
     <!-- 토스트 알림 메시지 컨테이너 -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 max-w-sm"></div>
 
@@ -527,7 +521,7 @@
         }
 
         function setInteractiveButtonsState(enabled) {
-    const btnIds = ['login-open-btn', 'signup-open-btn', 'register-open-btn', 'report-open-btn', 'edit-subject-btn', 'admin-panel-open-btn'];
+    const btnIds = ['login-open-btn', 'signup-open-btn', 'register-open-btn', 'report-open-btn'];
 
     btnIds.forEach(id => {
         const btn = document.getElementById(id);
@@ -540,12 +534,6 @@
             }
         }
     });
-
-    // 초기 데이터 로딩 중에는 메인 화면 전체의 조작을 차단
-    const loadingOverlay = document.getElementById('data-loading-overlay');
-    if (loadingOverlay) {
-        loadingOverlay.classList.toggle('hidden', enabled);
-    }
 }
 
         function handleDisabledButtonClick(event) {
