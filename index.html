@@ -14,6 +14,12 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
 
+    <!-- 초기 데이터 로딩 중 화면 조작 방지 -->
+    <div id="data-loading-overlay"
+         class="fixed inset-0 z-[40] hidden"
+         style="cursor: wait;">
+    </div>
+
     <!-- 토스트 알림 메시지 컨테이너 -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 max-w-sm"></div>
 
@@ -167,6 +173,7 @@
                 <h1 class="text-2xl font-black text-blue-600 flex items-center gap-2">
                     📅 명지여고 수행평가 일정표
                     <span id="gas-sync-badge" class="text-lg" title="데이터 연동 상태">🔴</span>
+                    <span id="gas-sync-message" class="text-xs font-bold text-rose-500">데이터 로딩 중입니다.</span>
                 </h1>
                 <p id="user-welcome-text" class="text-xs text-slate-500 mt-1">고교학점제 선택과목 및 학급별 맞춤 일정 관리 시스템</p>
             </div>
@@ -520,19 +527,26 @@
         }
 
         function setInteractiveButtonsState(enabled) {
-            const btnIds = ['login-open-btn', 'signup-open-btn', 'register-open-btn', 'report-open-btn', 'edit-subject-btn', 'admin-panel-open-btn'];
-            btnIds.forEach(id => {
-                const btn = document.getElementById(id);
-                if (btn) {
-                    btn.disabled = !enabled;
-                    if (!enabled) {
-                        btn.classList.add('opacity-50', 'cursor-not-allowed');
-                    } else {
-                        btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    }
-                }
-            });
+    const btnIds = ['login-open-btn', 'signup-open-btn', 'register-open-btn', 'report-open-btn', 'edit-subject-btn', 'admin-panel-open-btn'];
+
+    btnIds.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.disabled = !enabled;
+            if (!enabled) {
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
         }
+    });
+
+    // 초기 데이터 로딩 중에는 메인 화면 전체의 조작을 차단
+    const loadingOverlay = document.getElementById('data-loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.toggle('hidden', enabled);
+    }
+}
 
         function handleDisabledButtonClick(event) {
             if (!isDataLoaded) {
@@ -557,14 +571,23 @@
             setupLoginInputListener();
         };
 
-        async function fetchDataFromGas() {
+       async function fetchDataFromGas() {
             const syncBadge = document.getElementById('gas-sync-badge');
+            const syncMessage = document.getElementById('gas-sync-message');
+
+            // 데이터 로딩 시작
+            isDataLoaded = false;
+            setInteractiveButtonsState(false);
+    
+            syncBadge.innerHTML = '🔴';
+            syncBadge.title = '데이터 로딩 중';
+            syncMessage.textContent = '데이터 로딩 중입니다.';
+            syncMessage.className = 'text-xs font-bold text-rose-500';
             
             // 로컬 캐시에 데이터가 있는 경우 먼저 화면에 반영하여 즉시 띄움
+            // 단, Google Sheets의 최신 데이터 로딩이 끝날 때까지는 조작을 허용하지 않음
             if (sampleEvents.length > 0) {
-                isDataLoaded = true;
-                setInteractiveButtonsState(true);
-                applyUserSession();
+                renderMainView();
             }
 
             if (!GAS_WEB_APP_URL) {
@@ -614,16 +637,30 @@
 
                 syncBadge.innerHTML = '🟢';
                 syncBadge.title = '구글 시트 라이브 연동 완료';
+
+                syncMessage.textContent = '데이터 로딩이 완료되었습니다.';
+                syncMessage.className = 'text-xs font-bold text-emerald-600';
+
                 isDataLoaded = true;
                 setInteractiveButtonsState(true);
+
+                // 완료 안내 문구를 잠시 보여준 후 숨김
+                setTimeout(() => {
+                    syncMessage.textContent = '';
+                }, 2500);
+                
             } catch (err) {
-                console.error("데이터 로드 실패:", err);
-                syncBadge.innerHTML = '🟡';
-                syncBadge.title = '오프라인 모드';
-                isDataLoaded = false;
-                setInteractiveButtonsState(false);
-                showToast('네트워크 지연 또는 오프라인 상태입니다.', 'error');
-            } finally {
+    console.error("데이터 로드 실패:", err);
+    syncBadge.innerHTML = '🟡';
+    syncBadge.title = '오프라인 모드';
+
+    syncMessage.textContent = '데이터를 불러오지 못했습니다.';
+    syncMessage.className = 'text-xs font-bold text-amber-600';
+
+    isDataLoaded = false;
+    setInteractiveButtonsState(false);
+    showToast('네트워크 지연 또는 오프라인 상태입니다.', 'error');
+        } finally {
                 applyUserSession();
             }
         }
