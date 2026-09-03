@@ -373,7 +373,7 @@
 
     <script>
         const ADMIN_MASTER_PASSWORD = "9999";
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby51KtaBl5MMxv5ANyqws4EqZUmv-WLYuYD3KsedRCdZTJ_y1RaNIsCkbzwqjfAsIES/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzAcrf9mC2zccPtMoN3PoiNlNnjNfnyDaSLWwzIDCg1X-AgKNeaPf3NQwZ7oqy-oDY0/exec';
 
         const COURSE_DATA = {
             "1학년": {
@@ -1935,74 +1935,114 @@ function openClaimModalFromDetail() {
             showToast('최신 데이터로 새로고침되었습니다.', 'success');
         }
         
-function openClaimCompareModal(claimId) {
-    const claim = claimItemsDB.find(c => c.id === claimId);
-    if (!claim) return;
+function openClaimCompareModal(claimItem) {
+    if (!claimItem) {
+        showToast('수정 요청 정보를 찾을 수 없습니다.', 'error');
+        return;
+    }
 
-    const before = claim.before || {};
-    const after = claim.after || {};
+    // 수정 전 내용은 Events에서 가져옵니다.
+    const originalEvent = sampleEvents.find(
+        ev => String(ev.id) === String(claimItem.id)
+    );
 
-    // 1. 비교 모달에 수정 전 / 수정 후 상세 정보를 안전하게 표시
-    document.getElementById('compare-before-content').innerHTML = `
-        <p><strong>제목:</strong> ${before.title || '-'}</p>
-        <p><strong>학년/과목:</strong> ${before.grade || ''} ${before.subject || ''}</p>
-        <p><strong>대상:</strong> ${before.target || '-'}</p>
-        <p><strong>날짜:</strong> ${before.date || '-'}</p>
-        <p><strong>내용:</strong> ${before.desc || '-'}</p>
-    `;
-    document.getElementById('compare-after-content').innerHTML = `
-        <p><strong>제목:</strong> ${after.title || '-'}</p>
-        <p><strong>학년/과목:</strong> ${after.grade || ''} ${after.subject || ''}</p>
-        <p><strong>대상:</strong> ${after.target || '-'}</p>
-        <p><strong>날짜:</strong> ${after.date || '-'}</p>
-        <p><strong>내용:</strong> ${after.desc || '-'}</p>
-    `;
+    if (!originalEvent) {
+        showToast('기존 수행평가 일정을 찾을 수 없습니다.', 'error');
+        return;
+    }
 
-    // 2. "승인 및 반영" 버튼 이벤트 바인딩
+    const beforeContainer = document.getElementById('compare-before-content');
+    const afterContainer = document.getElementById('compare-after-content');
     const approveBtn = document.getElementById('compare-approve-btn');
-    approveBtn.onclick = function() {
-        approveClaim(claimId);
-    };
+
+    beforeContainer.innerHTML = `
+        <p><strong>제목:</strong> ${originalEvent.title || '-'}</p>
+        <p><strong>과목:</strong> ${originalEvent.subject || '-'}</p>
+        <p><strong>대상:</strong> ${originalEvent.target || '-'}</p>
+        <p><strong>날짜:</strong> ${originalEvent.date || '-'}</p>
+        <p><strong>설명:</strong> ${originalEvent.desc || '-'}</p>
+    `;
+
+    // 수정 후 내용은 Claims에서 가져옵니다.
+    afterContainer.innerHTML = `
+        <p><strong>제목:</strong> ${claimItem.title || '-'}</p>
+        <p><strong>과목:</strong> ${claimItem.subject || '-'}</p>
+        <p><strong>대상:</strong> ${claimItem.target || '-'}</p>
+        <p><strong>날짜:</strong> ${claimItem.date || '-'}</p>
+        <p><strong>설명:</strong> ${claimItem.desc || '-'}</p>
+    `;
+
+    if (claimItem.status === '승인됨') {
+        approveBtn.textContent = '확인';
+        approveBtn.className = "bg-slate-600 hover:bg-slate-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition";
+        approveBtn.onclick = function() {
+            closeModal('claim-compare-modal');
+        };
+    } else {
+        approveBtn.textContent = '승인 및 반영';
+        approveBtn.className = "bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition";
+        approveBtn.onclick = function() {
+            approveClaim(claimItem.id);
+        };
+    }
 
     document.getElementById('claim-compare-modal').classList.remove('hidden');
 }
 
 async function approveClaim(claimId) {
-    const claim = claimItemsDB.find(c => c.id === claimId);
+    const claim = claimItemsDB.find(
+        c => String(c.id) === String(claimId)
+    );
+
     if (!claim) {
         showToast('해당 수정 요청을 찾을 수 없습니다.', 'error');
         return;
     }
 
-    // ✅ 1. 수정 요청된 데이터(after) 가져오기
-    const updatedEvent = claim.after;
-    if (!updatedEvent) {
-        showToast('반영할 수정 데이터가 없습니다.', 'error');
-        return;
-    }
+    // Claims에 저장된 내용이 "수정 후" 내용입니다.
+    const updatedEvent = {
+        id: claim.id,
+        title: claim.title,
+        subject: claim.subject,
+        target: claim.target,
+        date: claim.date,
+        desc: claim.desc,
+        password: claim.password,
+        color: claim.color,
+        createdAt: claim.createdAt
+    };
 
-    const targetEventId = claim.eventId || updatedEvent.id || (claim.before && claim.before.id);
+    // 화면의 Events 데이터도 즉시 수정
+    const existingIndex = sampleEvents.findIndex(
+        ev => String(ev.id) === String(claim.id)
+    );
 
-    // ✅ 2. 메모리(sampleEvents) 내 기존 일정 데이터 찾아서 교체 (덮어쓰기)
-    const existingIndex = sampleEvents.findIndex(ev => String(ev.id) === String(targetEventId));
     if (existingIndex !== -1) {
-        sampleEvents[existingIndex] = { ...updatedEvent, id: targetEventId };
+        sampleEvents[existingIndex] = {
+            ...sampleEvents[existingIndex],
+            ...updatedEvent
+        };
     } else {
         sampleEvents.push(updatedEvent);
     }
 
-    // 로컬 일정 캐시 저장
-    localStorage.setItem('school_schedule_events_cache', JSON.stringify(sampleEvents));
+    localStorage.setItem(
+        'school_schedule_events_cache',
+        JSON.stringify(sampleEvents)
+    );
 
-    // ✅ 3. 수정 요청 상태 변경 ('승인됨') 및 캐시 저장
+    // Claims 상태도 즉시 승인됨으로 변경
     claim.status = '승인됨';
-    localStorage.setItem('school_schedule_claims_cache', JSON.stringify(claimItemsDB));
 
-    // ✅ 4. 구글 스프레드시트(GAS) 연동 (일정 수정 및 수정요청 상태 업데이트)
+    localStorage.setItem(
+        'school_schedule_claims_cache',
+        JSON.stringify(claimItemsDB)
+    );
+
     if (GAS_WEB_APP_URL) {
         try {
-            // (1) Events 탭의 기존 일정 업데이트 요청
-            fetch(GAS_WEB_APP_URL, {
+            // Events의 기존 일정 내용을 Claims의 수정 후 내용으로 변경
+            await fetch(GAS_WEB_APP_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
@@ -2010,10 +2050,10 @@ async function approveClaim(claimId) {
                     action: 'updateEvent',
                     event: updatedEvent
                 })
-            }).catch(err => console.error("스프레드시트 일정 수정 연동 오류:", err));
+            });
 
-            // (2) Claims 탭의 수정 요청 상태 '승인됨'으로 업데이트 요청
-            fetch(GAS_WEB_APP_URL, {
+            // Claims의 Status를 승인됨으로 변경
+            await fetch(GAS_WEB_APP_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
@@ -2022,20 +2062,19 @@ async function approveClaim(claimId) {
                     claimId: claim.id,
                     status: '승인됨'
                 })
-            }).catch(err => console.error("스프레드시트 수정요청 상태 연동 오류:", err));
+            });
 
         } catch (e) {
             console.error("GAS 통신 오류:", e);
         }
     }
 
-    // ✅ 5. 화면 및 관리자 패널 목록 즉시 새로고침
     closeModal('claim-compare-modal');
-    renderMainView();        // 메인 캘린더/리스트 뷰 갱신
-    renderAdminList();       // 관리자 패널 수정요청 목록 UI 갱신
+    renderMainView();
+    renderAdminList();
 
     if (typeof updateAdminCounts === 'function') {
-        updateAdminCounts(); // 관리자 상단 뱃지 카운트 갱신
+        updateAdminCounts();
     }
 
     showToast('수정 요청이 승인되어 수행평가 일정에 반영되었습니다.', 'success');
