@@ -547,11 +547,9 @@
                 currentUser = JSON.parse(savedUser);
             }
 
-            const cachedUsers = localStorage.getItem('school_schedule_users_cache');
             const cachedReports = localStorage.getItem('school_schedule_reports_cache');
             const cachedClaims = localStorage.getItem('school_schedule_claims_cache');
 
-            if (cachedUsers) { try { registeredUsersDB = JSON.parse(cachedUsers); } catch(e){} }
             if (cachedReports) { try { reportItemsDB = JSON.parse(cachedReports); } catch(e){} }
             if (cachedClaims) { try { claimItemsDB = JSON.parse(cachedClaims); } catch(e){} }
 
@@ -593,9 +591,8 @@
                 const userRes = await fetch(`${GAS_WEB_APP_URL}?action=getUsers`);
                 const userJson = await userRes.json();
                 if (userJson.status === "success" && userJson.data) {
-                    registeredUsersDB = { ...registeredUsersDB, ...userJson.data };
-                    localStorage.setItem('school_schedule_users_cache', JSON.stringify(registeredUsersDB));
-                }
+    registeredUsersDB = { ...registeredUsersDB, ...userJson.data };
+}
 
                 try {
                     const reportRes = await fetch(`${GAS_WEB_APP_URL}?action=getReports`);
@@ -1052,8 +1049,7 @@
                 };
 
                 registeredUsersDB[studentId] = currentUser;
-                localStorage.setItem('school_schedule_users_cache', JSON.stringify(registeredUsersDB));
-
+                
                 if (GAS_WEB_APP_URL) {
                     fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
@@ -1143,8 +1139,7 @@
 
                 currentUser.enrolledCourses = collectedCourses;
                 registeredUsersDB[studentId] = currentUser;
-                localStorage.setItem('school_schedule_users_cache', JSON.stringify(registeredUsersDB));
-
+                
                 if (GAS_WEB_APP_URL) {
                     fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
