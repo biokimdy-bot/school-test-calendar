@@ -392,7 +392,7 @@
 
     <script>
         const ADMIN_MASTER_PASSWORD = "9999";
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzAcrf9mC2zccPtMoN3PoiNlNnjNfnyDaSLWwzIDCg1X-AgKNeaPf3NQwZ7oqy-oDY0/exec';
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxE5hd5oM8WX50Dk3rqghp6UEgM70SLQGYqfb8k775rVTyg5uOC1soBxZbWzbpLguVH/exec';
 
         const COURSE_DATA = {
             "1학년": {
@@ -995,9 +995,9 @@
             document.getElementById('unregistered-student-modal').classList.remove('hidden');
             return;
         }
-        if (existingUser.password !== password) {
-            alert("🔒 비밀번호가 일치하지 않습니다. 다시 확인 후 입력해 주세요.");
-            return;
+        if (String(existingUser.password).trim() !== String(password).trim()) {
+        alert("🔒 비밀번호가 일치하지 않습니다. 다시 확인 후 입력해 주세요.");
+        return;
         }
 
         currentUser = existingUser;
