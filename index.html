@@ -1010,61 +1010,68 @@
         }
 
         async function handleLoginSubmit(e) {
-            e.preventDefault();
+    e.preventDefault();
 
-            if (currentModalMode === 'edit') {
-                executeEditProcess();
-                return;
-            }
+    if (currentModalMode === 'edit') {
+        executeEditProcess();
+        return;
+    }
 
-            const studentId = document.getElementById('login-student-id').value.trim();
-            const password = document.getElementById('login-password').value.trim();
+    const submitBtn = document.getElementById('login-submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '로그인 중입니다...';
 
-            if (currentModalMode === 'signup') {
-                if (registeredUsersDB[studentId]) {
-                    document.getElementById('duplicate-signup-modal').classList.remove('hidden');
-                    return;
-                }
-                executeSignupProcess();
-                return;
-            }
+    const studentId = document.getElementById('login-student-id').value.trim();
+    const password = document.getElementById('login-password').value.trim();
 
-            if (Date.now() < loginLockUntil) {
-                const remain = Math.ceil((loginLockUntil - Date.now()) / 1000);
-                alert(`🔒 로그인 시도가 잠시 제한됩니다. ${remain}초 후 다시 시도해 주세요.`);
-                return;
-            }
-
-            if (studentId.length < 5 && studentId !== 'admin' && studentId !== '9999') {
-                alert("⚠️ 올바른 학번 5자리를 입력해 주세요 (예: 20105).");
-                return;
-            }
-
-            try {
-                const result = await apiPost({ action: 'loginUser', studentId, password });
-                loginFailureCount = 0;
-                loginLockUntil = 0;
-                saveSafeUser(result.user);
-                closeModal('login-screen');
-                applyUserSession();
-                if (currentUser.isAdmin) {
-                    await fetchAdminData();
-                    renderAdminList();
-                    showToast('관리자 계정으로 로그인되었습니다.', 'success');
-                } else {
-                    showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
-                }
-            } catch (err) {
-                loginFailureCount++;
-                if (loginFailureCount >= 5) {
-                    loginLockUntil = Date.now() + 30000;
-                    loginFailureCount = 0;
-                    alert('🔒 로그인 실패가 5회 누적되어 30초 동안 로그인이 잠깁니다.');
-                } else {
-                    alert(`🔒 ${err.message || '학번 또는 비밀번호가 올바르지 않습니다.'}`);
-                }
-            }
+    if (currentModalMode === 'signup') {
+        if (registeredUsersDB[studentId]) {
+            document.getElementById('duplicate-signup-modal').classList.remove('hidden');
+            return;
         }
+        executeSignupProcess();
+        return;
+    }
+
+    if (Date.now() < loginLockUntil) {
+        const remain = Math.ceil((loginLockUntil - Date.now()) / 1000);
+        alert(`🔒 로그인 시도가 잠시 제한됩니다. ${remain}초 후 다시 시도해 주세요.`);
+        return;
+    }
+
+    if (studentId.length < 5 && studentId !== 'admin' && studentId !== '9999') {
+        alert("⚠️ 올바른 학번 5자리를 입력해 주세요 (예: 20105).");
+        return;
+    }
+
+    try {
+        const result = await apiPost({ action: 'loginUser', studentId, password });
+        loginFailureCount = 0;
+        loginLockUntil = 0;
+        saveSafeUser(result.user);
+        closeModal('login-screen');
+        applyUserSession();
+        if (currentUser.isAdmin) {
+            await fetchAdminData();
+            renderAdminList();
+            showToast('관리자 계정으로 로그인되었습니다.', 'success');
+        } else {
+            showToast(`${currentUser.studentId}님 환영합니다!`, 'success');
+        }
+    } catch (err) {
+        loginFailureCount++;
+        if (loginFailureCount >= 5) {
+            loginLockUntil = Date.now() + 30000;
+            loginFailureCount = 0;
+            alert('🔒 로그인 실패가 5회 누적되어 30초 동안 로그인이 잠깁니다.');
+        } else {
+            alert(`🔒 ${err.message || '학번 또는 비밀번호가 올바르지 않습니다.'}`);
+        }
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '로그인';
+    }
+}
 
         async function executeSignupProcess() {
             const submitBtn = document.getElementById('login-submit-btn');
